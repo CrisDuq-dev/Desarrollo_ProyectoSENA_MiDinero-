@@ -1,0 +1,13 @@
+{
+  "name": "mi-dinero-plus-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix mi-dinero-plus run dev --",
+    "build": "npm --prefix mi-dinero-plus run build",
+    "preview": "npm --prefix mi-dinero-plus run preview"
+  },
+  "dependencies": {
+    "react-icons": "^5.7.0",
+    "recharts": "^3.10.1"
+  }
+}
