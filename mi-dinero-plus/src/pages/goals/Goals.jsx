@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { FiCpu, FiSearch, FiTrash2, FiX } from 'react-icons/fi'
+import { FiCpu, FiSearch, FiTrash2, FiEdit2, FiX } from 'react-icons/fi'
 import { useFinance } from '../../contexts/FinanceContext'
 import { convertToCOP } from '../../utils/currency'
 import Modal from '../../components/ui/Modal'
@@ -15,7 +15,6 @@ const formInicial = {
 
 const MODULE = 'goals'
 
-/** Fecha de hoy en formato YYYY-MM-DD (zona local) */
 function getTodayISO() {
   const d = new Date()
   const y = d.getFullYear()
@@ -24,7 +23,6 @@ function getTodayISO() {
   return `${y}-${m}-${day}`
 }
 
-/** Fecha legible sin desfase de zona: 4/07/2027 */
 function formatGoalDate(value) {
   if (value == null || value === '') return '—'
 
@@ -49,7 +47,6 @@ function formatGoalDate(value) {
   return `${day}/${month}/${year}`
 }
 
-/** Texto largo para la tarjeta: "4 de julio de 2027" (sin desfase) */
 function formatGoalDeadlineLong(value) {
   if (value == null || value === '') return '—'
 
@@ -84,11 +81,16 @@ function formatGoalDeadlineLong(value) {
   return formatGoalDate(value)
 }
 
-/** Etiqueta de prioridad en español */
 function priorityLabel(priority) {
   if (priority === 'high') return 'Alta'
   if (priority === 'low') return 'Baja'
   return 'Media'
+}
+
+function isGoalCompleted(goal) {
+  const current = Number(goal.currentAmount || 0)
+  const target = Number(goal.targetAmount || 0)
+  return goal.status === 'completed' || (target > 0 && current >= target)
 }
 
 function Goals() {
@@ -96,6 +98,7 @@ function Goals() {
   const {
     goals,
     addGoal,
+    updateGoal,
     addContribution,
     deleteGoal,
     formatMoney,
@@ -114,6 +117,7 @@ function Goals() {
 
   const [form, setForm] = useState(formInicial)
   const [errors, setErrors] = useState({})
+  const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState('')
   const [contributionTarget, setContributionTarget] = useState(null)
   const [contributionAmount, setContributionAmount] = useState('')
@@ -143,10 +147,8 @@ function Goals() {
       const name = String(g.name || '').toLowerCase()
       const deadlineShort = formatGoalDate(g.deadline).toLowerCase()
       const deadlineLong = formatGoalDeadlineLong(g.deadline).toLowerCase()
-
       const priorityCode = String(g.priority || '').toLowerCase()
       const priorityText = priorityLabel(g.priority).toLowerCase()
-
       const current = Number(g.currentAmount || 0)
       const target = Number(g.targetAmount || 0)
       const progress =
@@ -156,8 +158,6 @@ function Goals() {
         String(progress),
         String(Math.round(current)),
         String(Math.round(target)),
-        String(current),
-        String(target),
       ]
         .join(' ')
         .toLowerCase()
@@ -173,6 +173,16 @@ function Goals() {
     })
   }, [goalsAll, searchQuery])
 
+  const activeGoals = useMemo(
+    () => filteredGoals.filter((g) => !isGoalCompleted(g)),
+    [filteredGoals]
+  )
+
+  const completedGoals = useMemo(
+    () => filteredGoals.filter((g) => isGoalCompleted(g)),
+    [filteredGoals]
+  )
+
   const adviceForThisPage =
     aiEnabled &&
     aiSource === MODULE &&
@@ -186,19 +196,13 @@ function Goals() {
 
   useEffect(() => {
     if (!adviceForThisPage || aiStatus !== 'ready' || !aiAdvice) return undefined
-
-    const timer = window.setTimeout(() => {
-      clearAIAdvice()
-    }, readingMs)
-
+    const timer = window.setTimeout(() => clearAIAdvice(), readingMs)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adviceForThisPage, aiStatus, aiAdvice, readingMs])
 
   useEffect(() => {
-    return () => {
-      clearAIAdvice()
-    }
+    return () => clearAIAdvice()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
@@ -235,24 +239,57 @@ function Goals() {
     setErrors((prev) => ({ ...prev, [campo]: undefined }))
   }
 
+  const empezarEdicion = (goal) => {
+    setEditingId(goal.id)
+    setForm({
+      name: goal.name || '',
+      targetAmount: String(goal.targetAmount ?? ''),
+      deadline: goal.deadline || '',
+      priority: goal.priority || 'medium',
+    })
+    setErrors({})
+    setActionError('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const cancelarEdicion = () => {
+    setEditingId(null)
+    setForm(formInicial)
+    setErrors({})
+    setActionError('')
+  }
+
   const manejarEnvio = async (event) => {
     event.preventDefault()
     if (!validarFormulario()) return
     setActionError('')
 
     try {
-      await addGoal({
-        name: form.name,
-        targetAmount: Number(form.targetAmount),
-        currency: currencyLabel,
-        deadline: form.deadline,
-        priority: form.priority,
-      })
-      setForm(formInicial)
-      setToast({ message: 'Meta creada correctamente', visible: true })
+      if (editingId) {
+        await updateGoal(editingId, {
+          name: form.name,
+          targetAmount: Number(form.targetAmount),
+          currency: currencyLabel,
+          deadline: form.deadline,
+          priority: form.priority,
+        })
+        setEditingId(null)
+        setForm(formInicial)
+        setToast({ message: 'Meta actualizada', visible: true })
+      } else {
+        await addGoal({
+          name: form.name,
+          targetAmount: Number(form.targetAmount),
+          currency: currencyLabel,
+          deadline: form.deadline,
+          priority: form.priority,
+        })
+        setForm(formInicial)
+        setToast({ message: 'Meta creada correctamente', visible: true })
+      }
       setTimeout(() => setToast({ message: '', visible: false }), 3000)
     } catch (error) {
-      setActionError(error.message || 'No se pudo crear la meta')
+      setActionError(error.message || 'No se pudo guardar la meta')
     }
   }
 
@@ -313,12 +350,97 @@ function Goals() {
     if (!deleteTarget) return
     try {
       await deleteGoal(deleteTarget.id)
+      if (editingId === deleteTarget.id) cancelarEdicion()
       setDeleteTarget(null)
       setToast({ message: 'Meta eliminada', visible: true })
       setTimeout(() => setToast({ message: '', visible: false }), 3000)
     } catch (error) {
       setActionError(error.message || 'No se pudo eliminar la meta')
     }
+  }
+
+  const renderGoalCard = (goal, options = {}) => {
+    const current = Number(goal.currentAmount || 0)
+    const target = Number(goal.targetAmount || 0)
+    const progress =
+      target > 0 ? Math.min((current / target) * 100, 100) : 0
+    const completed = isGoalCompleted(goal)
+    const isEditing = editingId === goal.id
+
+    return (
+      <article
+        key={goal.id}
+        className={`goal-card ${completed ? 'completed' : ''}${
+          isEditing ? ' is-editing' : ''
+        }`}
+      >
+        <header className="goal-card-header">
+          <div className="goal-title-block">
+            <h3>{goal.name}</h3>
+            <span className={`priority ${goal.priority}`}>
+              {priorityLabel(goal.priority)}
+            </span>
+          </div>
+
+          <div className="goal-header-right">
+            <div className="goal-amount-block">
+              <strong>{formatMoney(current)}</strong>
+              <span>de {formatMoney(target)}</span>
+            </div>
+            {!options.hideEdit && (
+              <button
+                type="button"
+                className="icon-edit"
+                aria-label="Editar meta"
+                onClick={() => empezarEdicion(goal)}
+                disabled={goalActionLoading}
+              >
+                <FiEdit2 size={16} />
+              </button>
+            )}
+            <button
+              type="button"
+              className="icon-delete"
+              aria-label="Eliminar meta"
+              onClick={() => confirmarEliminar(goal)}
+              disabled={goalActionLoading}
+            >
+              <FiTrash2 size={16} />
+            </button>
+          </div>
+        </header>
+
+        <p className="goal-deadline">
+          Límite: {formatGoalDeadlineLong(goal.deadline)}
+        </p>
+
+        <div className="progress-row">
+          <span>Progreso</span>
+          <div className="progress-bar">
+            <div
+              className="progress-fill"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span className="progress-pct">{Math.round(progress)}%</span>
+        </div>
+
+        {completed ? (
+          <p className="completed-label">
+            ¡Lo lograste! Completaste esta meta de ahorro.
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="link-contribute"
+            onClick={() => abrirAporte(goal)}
+            disabled={goalActionLoading}
+          >
+            ↗ Aportar a meta
+          </button>
+        )}
+      </article>
+    )
   }
 
   return (
@@ -345,7 +467,7 @@ function Goals() {
         <div className="goals-layout">
           <div className="goals-left">
             <section className="goal-form-card">
-              <h1>Nueva Meta</h1>
+              <h1>{editingId ? 'Editar Meta' : 'Nueva Meta'}</h1>
               <form onSubmit={manejarEnvio} noValidate>
                 <label>
                   Nombre de la Meta
@@ -403,13 +525,33 @@ function Goals() {
                   )}
                 </label>
 
-                <button
-                  type="submit"
-                  className="primary-button"
-                  disabled={goalActionLoading}
-                >
-                  {goalActionLoading ? 'Guardando...' : 'Crear Meta'}
-                </button>
+                {editingId ? (
+                  <div className="goal-form-actions">
+                    <button
+                      type="submit"
+                      className="primary-button"
+                      disabled={goalActionLoading}
+                    >
+                      {goalActionLoading ? 'Guardando...' : 'Guardar cambios'}
+                    </button>
+                    <button
+                      type="button"
+                      className="cancel-button"
+                      onClick={cancelarEdicion}
+                      disabled={goalActionLoading}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="submit"
+                    className="primary-button"
+                    disabled={goalActionLoading}
+                  >
+                    {goalActionLoading ? 'Guardando...' : 'Crear Meta'}
+                  </button>
+                )}
                 {(actionError || goalActionError) && (
                   <p className="form-error">{actionError || goalActionError}</p>
                 )}
@@ -464,91 +606,41 @@ function Goals() {
             </section>
 
             <section className="goals-list">
+              <h2 className="goals-section-title">Metas activas</h2>
               {goalsLoading ? (
                 <p className="empty-state">Cargando metas...</p>
               ) : goalsError ? (
                 <p className="empty-state error">{goalsError}</p>
               ) : goalsAll.length === 0 ? (
                 <p className="empty-state">Aún no hay metas registradas...</p>
-              ) : filteredGoals.length === 0 ? (
+              ) : activeGoals.length === 0 ? (
                 <p className="empty-state">
-                  No se encontró ninguna meta con “{searchQuery.trim()}”.
+                  {searchQuery.trim()
+                    ? `No hay metas activas con “${searchQuery.trim()}”.`
+                    : 'No tienes metas activas. ¡Crea una o revisa tus logros abajo!'}
                 </p>
               ) : (
                 <div className="goal-cards">
-                  {filteredGoals.map((goal) => {
-                    const current = Number(goal.currentAmount || 0)
-                    const target = Number(goal.targetAmount || 0)
-                    const progress =
-                      target > 0 ? Math.min((current / target) * 100, 100) : 0
-                    const isCompleted =
-                      goal.status === 'completed' || progress >= 100
-
-                    return (
-                      <article
-                        key={goal.id}
-                        className={`goal-card ${isCompleted ? 'completed' : ''}`}
-                      >
-                        <header className="goal-card-header">
-                          <div className="goal-title-block">
-                            <h3>{goal.name}</h3>
-                            <span className={`priority ${goal.priority}`}>
-                              {priorityLabel(goal.priority)}
-                            </span>
-                          </div>
-
-                          <div className="goal-header-right">
-                            <div className="goal-amount-block">
-                              <strong>{formatMoney(current)}</strong>
-                              <span>de {formatMoney(target)}</span>
-                            </div>
-                            <button
-                              type="button"
-                              className="icon-delete"
-                              aria-label="Eliminar meta"
-                              onClick={() => confirmarEliminar(goal)}
-                              disabled={goalActionLoading}
-                            >
-                              <FiTrash2 size={16} />
-                            </button>
-                          </div>
-                        </header>
-
-                        <p className="goal-deadline">
-                          Límite: {formatGoalDeadlineLong(goal.deadline)}
-                        </p>
-
-                        <div className="progress-row">
-                          <span>Progreso</span>
-                          <div className="progress-bar">
-                            <div
-                              className="progress-fill"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <span className="progress-pct">
-                            {Math.round(progress)}%
-                          </span>
-                        </div>
-
-                        {!isCompleted ? (
-                          <button
-                            type="button"
-                            className="link-contribute"
-                            onClick={() => abrirAporte(goal)}
-                            disabled={goalActionLoading}
-                          >
-                            ↗ Aportar a meta
-                          </button>
-                        ) : (
-                          <p className="completed-label">Meta completada</p>
-                        )}
-                      </article>
-                    )
-                  })}
+                  {activeGoals.map((goal) => renderGoalCard(goal))}
                 </div>
               )}
             </section>
+
+            {completedGoals.length > 0 && (
+              <section className="goals-list goals-achievements">
+                <h2 className="goals-section-title achievements-title">
+                  Logros cumplidos
+                </h2>
+                <p className="achievements-intro">
+                  ¡Bien hecho! Estas metas ya alcanzaron su objetivo.
+                </p>
+                <div className="goal-cards">
+                  {completedGoals.map((goal) =>
+                    renderGoalCard(goal, { hideEdit: false })
+                  )}
+                </div>
+              </section>
+            )}
           </div>
         </div>
 
@@ -637,9 +729,7 @@ function Goals() {
           .goals-ai.is-idle {
             border-color: rgba(124, 58, 237, 0.22);
           }
-          .goals-ai.is-off {
-            opacity: 0.9;
-          }
+          .goals-ai.is-off { opacity: 0.9; }
           .goals-ai-icon {
             width: 2.4rem;
             height: 2.4rem;
@@ -759,6 +849,10 @@ function Goals() {
             background-size: 16px;
           }
 
+          .goal-form-actions {
+            display: grid;
+            gap: 0.55rem;
+          }
           .primary-button {
             width: 100%;
             margin-top: 0.15rem;
@@ -782,6 +876,22 @@ function Goals() {
             opacity: 0.7;
             cursor: not-allowed;
             transform: none;
+          }
+          .cancel-button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            background: transparent;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-weight: 750;
+            font-size: 0.95rem;
+            cursor: pointer;
+          }
+          .cancel-button:hover:not(:disabled) {
+            border-color: var(--goals-green);
+            color: var(--goals-green);
           }
 
           .goal-search-card {
@@ -816,7 +926,6 @@ function Goals() {
             font-size: 0.92rem;
             outline: none;
             box-sizing: border-box;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
           }
           .goal-search-wrap input:focus {
             border-color: var(--goals-green);
@@ -897,6 +1006,24 @@ function Goals() {
           .goals-list {
             padding: 1rem 1.1rem 1.15rem;
           }
+          .goals-section-title {
+            margin: 0 0 0.75rem;
+            font-size: 1.02rem;
+            font-weight: 800;
+            color: var(--text-primary);
+          }
+          .goals-achievements {
+            border-color: rgba(22, 163, 74, 0.35);
+          }
+          .achievements-title {
+            color: var(--goals-green);
+          }
+          .achievements-intro {
+            margin: -0.35rem 0 0.85rem;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 600;
+          }
 
           .goal-cards {
             display: grid;
@@ -918,6 +1045,10 @@ function Goals() {
           .goal-card.completed {
             border-color: rgba(22, 163, 74, 0.55);
             background: linear-gradient(180deg, rgba(22, 163, 74, 0.06), var(--bg-page));
+          }
+          .goal-card.is-editing {
+            border-color: rgba(37, 99, 235, 0.45);
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
           }
           .goal-card-header {
             display: flex;
@@ -959,13 +1090,14 @@ function Goals() {
           .goal-header-right {
             display: flex;
             align-items: flex-start;
-            gap: 0.65rem;
+            gap: 0.4rem;
           }
           .goal-amount-block {
             text-align: right;
             display: grid;
             gap: 0.12rem;
             justify-items: end;
+            margin-right: 0.25rem;
           }
           .goal-amount-block strong {
             font-size: 1.12rem;
@@ -1028,6 +1160,7 @@ function Goals() {
             font-weight: 800;
             font-size: 0.95rem;
           }
+          .icon-edit,
           .icon-delete {
             border: none;
             background: transparent;
@@ -1040,6 +1173,10 @@ function Goals() {
             flex-shrink: 0;
             margin-top: 0.1rem;
             transition: color 0.15s ease, background 0.15s ease;
+          }
+          .icon-edit:hover {
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.1);
           }
           .icon-delete:hover {
             color: #dc2626;
