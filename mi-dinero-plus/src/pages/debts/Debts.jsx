@@ -832,6 +832,7 @@ function Debts() {
         <Toast message={toast.message} visible={toast.visible} />
 
         <style>{`
+
           .debts-page {
             --debts-red: #dc2626;
             --debts-red-dark: #b91c1c;
@@ -1145,8 +1146,19 @@ function Debts() {
             font-size: 1.05rem;
             font-weight: 800;
           }
+
+          /* ===== Deudas saldadas (estilo logros / metas) ===== */
+          .debts-paid-section {
+            border-color: rgba(22, 163, 74, 0.4);
+          }
+          .paid-section-title {
+            margin: 0 0 0.35rem;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #16a34a;
+          }
           .paid-intro {
-            margin: -0.45rem 0 0.85rem;
+            margin: 0 0 0.85rem;
             color: var(--text-muted);
             font-size: 0.88rem;
             font-weight: 600;
@@ -1171,7 +1183,15 @@ function Debts() {
           }
           .debt-card.paid {
             border-color: rgba(22, 163, 74, 0.55);
-            background: linear-gradient(180deg, rgba(22, 163, 74, 0.06), var(--bg-page));
+            background: linear-gradient(
+              180deg,
+              rgba(22, 163, 74, 0.06),
+              var(--bg-page)
+            );
+          }
+          .debt-card.paid:hover {
+            border-color: rgba(22, 163, 74, 0.65);
+            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.1);
           }
           .debt-card.is-editing {
             border-color: rgba(37, 99, 235, 0.45);
@@ -1180,7 +1200,7 @@ function Debts() {
           .debt-card-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             gap: 0.75rem;
           }
           .debt-card-header h3 {
@@ -1193,6 +1213,53 @@ function Debts() {
             display: flex;
             align-items: center;
             gap: 0.25rem;
+          }
+
+          .debt-title-block {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+          }
+          .debt-badge {
+            padding: 0.22rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 800;
+          }
+          .debt-badge.paid {
+            background: #dcfce7;
+            color: #166534;
+          }
+
+          .debt-header-right {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.4rem;
+          }
+          .debt-amount-block {
+            text-align: right;
+            display: grid;
+            gap: 0.12rem;
+            justify-items: end;
+            margin-right: 0.2rem;
+          }
+          .debt-amount-block strong {
+            font-size: 1.12rem;
+            font-weight: 800;
+            color: #16a34a;
+          }
+          .debt-amount-block span {
+            color: var(--text-muted);
+            font-size: 0.84rem;
+            font-weight: 600;
+          }
+
+          .debt-deadline-line {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 500;
           }
 
           .debt-stats {
@@ -1237,6 +1304,9 @@ function Debts() {
             height: 100%;
             background: linear-gradient(90deg, #b91c1c, #ef4444);
             border-radius: 999px;
+          }
+          .progress-fill.paid-fill {
+            background: linear-gradient(90deg, #15803d, #22c55e);
           }
           .progress-pct {
             min-width: 2.6rem;
