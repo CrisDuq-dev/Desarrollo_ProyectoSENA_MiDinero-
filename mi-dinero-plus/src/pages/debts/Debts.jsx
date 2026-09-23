@@ -721,50 +721,70 @@ function Debts() {
 
             {paidDebts.length > 0 && (
               <section className="debts-list debts-paid-section">
-                <h2>Deudas saldadas</h2>
+                <h2 className="paid-section-title">Deudas saldadas</h2>
                 <p className="paid-intro">
                   ¡Bien hecho! Estas deudas ya quedaron en cero.
                 </p>
                 <div className="debt-cards">
-                  {paidDebts.map((debt) => (
-                    <article key={debt.id} className="debt-card paid">
-                      <header className="debt-card-header">
-                        <h3>{debt.name}</h3>
-                        <div className="debt-card-actions">
-                          <button
-                            type="button"
-                            className="icon-edit"
-                            aria-label="Editar deuda"
-                            onClick={() => empezarEdicion(debt)}
-                            disabled={debtActionLoading}
-                          >
-                            <FiEdit2 size={16} />
-                          </button>
-                          <button
-                            type="button"
-                            className="icon-delete"
-                            onClick={() => confirmarEliminar(debt)}
-                            disabled={debtActionLoading}
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
+                  {paidDebts.map((debt) => {
+                    const total = Number(debt.totalAmount) || 0
+                    return (
+                      <article key={debt.id} className="debt-card paid">
+                        <header className="debt-card-header">
+                          <div className="debt-title-block">
+                            <h3>{debt.name}</h3>
+                            <span className="debt-badge paid">Saldada</span>
+                          </div>
+                          <div className="debt-header-right">
+                            <div className="debt-amount-block">
+                              <strong>{formatMoney(0)}</strong>
+                              <span>de {formatMoney(total)}</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="icon-edit"
+                              aria-label="Editar deuda"
+                              onClick={() => empezarEdicion(debt)}
+                              disabled={debtActionLoading}
+                            >
+                              <FiEdit2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="icon-delete"
+                              aria-label="Eliminar deuda"
+                              onClick={() => confirmarEliminar(debt)}
+                              disabled={debtActionLoading}
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
+                        </header>
+
+                        <p className="debt-deadline-line">
+                          Vencía: {formatDebtDate(debt.dueDate)}
+                          {Number(debt.interestRate) > 0
+                            ? ` · Tasa ${Number(debt.interestRate)}% E.M.`
+                            : ''}
+                        </p>
+
+                        <div className="progress-row">
+                          <span>Progreso</span>
+                          <div className="progress-bar">
+                            <div
+                              className="progress-fill paid-fill"
+                              style={{ width: '100%' }}
+                            />
+                          </div>
+                          <span className="progress-pct">100%</span>
                         </div>
-                      </header>
-                      <p className="paid-label">
-                        ¡Deuda saldada! Ya no pesa en tu bolsillo.
-                      </p>
-                      <div className="debt-stats debt-stats-paid">
-                        <div>
-                          <span>Valor total</span>
-                          <strong>{formatMoney(debt.totalAmount)}</strong>
-                        </div>
-                        <div>
-                          <span>Saldo</span>
-                          <strong>{formatMoney(debt.pendingBalance)}</strong>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
+
+                        <p className="paid-label">
+                          ¡Deuda saldada! Ya no pesa en tu bolsillo.
+                        </p>
+                      </article>
+                    )
+                  })}
                 </div>
               </section>
             )}
