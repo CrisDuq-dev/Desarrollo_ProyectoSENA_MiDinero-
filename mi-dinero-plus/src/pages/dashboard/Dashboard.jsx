@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useFinance } from '../../contexts/FinanceContext'
 import { formatHistoricalFx } from '../../utils/currency'
 import { ARTICLES } from '../../data/mundoplus/articles'
+import { MdWavingHand } from 'react-icons/md'
 
 /**
  * Separa el texto de formatHistoricalFx en:
@@ -322,6 +323,9 @@ function Dashboard() {
         <div className="greeting-text">
           <p className="eyebrow">
             Hola, <span className="greeting-name">{userName}</span>
+            <span className="greeting-wave" aria-hidden="true">
+              <MdWavingHand size={20} />
+            </span>
           </p>
           <h1>Bienvenido de nuevo a tu centro financiero</h1>
           <p className="greeting-sub">
@@ -670,14 +674,14 @@ function Dashboard() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 1.25rem;
+          gap: 1rem;
           width: 100%;
           max-width: none;
           margin: 0;
           background: var(--dash-glass);
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
-          padding: 1rem 1.1rem;
+          padding: 0.9rem 1rem;
           border-radius: 1rem;
           border: 1px solid var(--border);
           box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
@@ -689,17 +693,29 @@ function Dashboard() {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          padding: 0.15rem 0;
+          padding: 0.1rem 0;
         }
 
         .dashboard-greeting .eyebrow {
-          margin: 0 0 0.3rem;
+          margin: 0 0 0.28rem;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
           font-family: inherit;
-          font-size: 1.22rem;
+          font-size: 1.18rem;
           font-weight: 700;
           letter-spacing: 0.01em;
           line-height: 1.25;
           color: var(--text-primary);
+        }
+
+        .greeting-wave {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--dash-blue-text);
+          flex-shrink: 0;
+          line-height: 1;
         }
 
         .dashboard-greeting .greeting-name {
@@ -708,8 +724,8 @@ function Dashboard() {
         }
 
         .dashboard-greeting h1 {
-          margin: 0 0 0.35rem;
-          font-size: clamp(1.28rem, 2.2vw, 1.5rem);
+          margin: 0 0 0.3rem;
+          font-size: clamp(1.22rem, 2vw, 1.42rem);
           font-weight: 800;
           letter-spacing: -0.02em;
           line-height: 1.2;
@@ -719,24 +735,24 @@ function Dashboard() {
         .greeting-text .greeting-sub {
           margin: 0;
           max-width: 32rem;
-          font-size: 0.88rem;
+          font-size: 0.85rem;
           line-height: 1.45;
           color: var(--text-muted);
         }
 
+        /* Tasas más compactas */
         .greeting-rates {
-          /* Ancho controlado: no se estira en pantallas anchas */
           flex: 0 0 auto;
           flex-shrink: 0;
-          width: min(100%, 34rem);
-          max-width: 34rem;
-          min-width: 18rem;
+          width: min(100%, 22.5rem);
+          max-width: 22.5rem;
+          min-width: 15rem;
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
-          gap: 0.55rem;
-          padding: 0.85rem 1rem;
-          border-radius: 0.9rem;
+          gap: 0.4rem;
+          padding: 0.55rem 0.7rem 0.5rem;
+          border-radius: 0.8rem;
           border: 1px solid color-mix(in srgb, var(--dash-blue) 28%, var(--border));
           background: color-mix(in srgb, var(--bg-page) 72%, transparent);
           backdrop-filter: blur(8px);
@@ -746,9 +762,9 @@ function Dashboard() {
         .rates-title {
           margin: 0;
           text-align: center;
-          font-size: 0.68rem;
+          font-size: 0.6rem;
           font-weight: 800;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.07em;
           text-transform: uppercase;
           color: var(--text-primary);
         }
@@ -756,14 +772,14 @@ function Dashboard() {
         .rates-status {
           margin: 0;
           text-align: center;
-          font-size: 0.82rem;
+          font-size: 0.75rem;
           color: var(--text-muted);
         }
 
         .rates-grid-equal {
           display: flex;
           align-items: stretch;
-          gap: 0.7rem;
+          gap: 0.45rem;
           width: 100%;
         }
 
@@ -774,9 +790,9 @@ function Dashboard() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          gap: 0.32rem;
-          padding: 0.65rem 0.85rem 0.6rem;
-          border-radius: 0.75rem;
+          gap: 0.2rem;
+          padding: 0.4rem 0.5rem 0.38rem;
+          border-radius: 0.6rem;
           border: 1px solid var(--border);
           background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
         }
@@ -786,18 +802,18 @@ function Dashboard() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 0.35rem;
+          gap: 0.25rem;
         }
 
         .rate-code {
-          font-size: 0.72rem;
+          font-size: 0.65rem;
           font-weight: 800;
           letter-spacing: 0.05em;
           color: var(--dash-blue-text);
         }
 
         .rate-delta {
-          font-size: 0.7rem;
+          font-size: 0.62rem;
           font-weight: 800;
           font-variant-numeric: tabular-nums;
         }
@@ -806,10 +822,10 @@ function Dashboard() {
         .rate-delta.is-neutral { color: var(--text-muted); }
 
         .rate-value {
-          margin: 0.05rem 0 0.1rem;
+          margin: 0;
           width: 100%;
           text-align: center;
-          font-size: 1.02rem;
+          font-size: 0.88rem;
           font-weight: 800;
           letter-spacing: -0.02em;
           color: var(--text-primary);
@@ -820,7 +836,7 @@ function Dashboard() {
         .rate-bar-track {
           width: 100%;
           max-width: 100%;
-          height: 0.28rem;
+          height: 0.22rem;
           border-radius: 999px;
           background: var(--border);
           overflow: hidden;
@@ -848,13 +864,13 @@ function Dashboard() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 0.4rem;
+          gap: 0.3rem;
           flex-wrap: wrap;
-          margin-top: 0.1rem;
+          margin-top: 0.05rem;
         }
 
         .rate-card-hint {
-          font-size: 0.6rem;
+          font-size: 0.55rem;
           font-weight: 600;
           color: var(--text-muted);
           white-space: nowrap;
@@ -874,14 +890,19 @@ function Dashboard() {
           stroke-dasharray: 3 3;
         }
 
+        .rate-card-foot .sparkline {
+          width: 56px;
+          height: 22px;
+        }
+
         .rates-note {
           margin: 0;
           text-align: center;
-          font-size: 0.64rem;
+          font-size: 0.58rem;
           font-weight: 600;
           letter-spacing: 0.02em;
           line-height: 1.3;
-          padding: 0 0.15rem;
+          padding: 0 0.1rem;
           color: var(--text-muted);
         }
 
