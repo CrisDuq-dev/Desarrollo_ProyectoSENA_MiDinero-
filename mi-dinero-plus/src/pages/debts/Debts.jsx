@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { FiCpu, FiSearch, FiTrash2, FiX } from 'react-icons/fi'
+import { FiCpu, FiSearch, FiTrash2, FiEdit2, FiX } from 'react-icons/fi'
 import { useFinance } from '../../contexts/FinanceContext'
 import { convertToCOP } from '../../utils/currency'
 import Modal from '../../components/ui/Modal'
@@ -28,7 +28,6 @@ function getTodayISO() {
 function formatDebtDate(value) {
   if (value == null || value === '') return '—'
 
-  // 1) String o ISO: tomar siempre YYYY-MM-DD
   const raw =
     typeof value === 'string'
       ? value
@@ -42,7 +41,6 @@ function formatDebtDate(value) {
     return `${Number(d)}/${m}/${y}`
   }
 
-  // 2) Fallback muy raro
   const date = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
   const day = date.getUTCDate()
@@ -114,6 +112,7 @@ function Debts() {
   const {
     debts,
     addDebt,
+    updateDebt,
     addPayment,
     deleteDebt,
     formatMoney,
@@ -132,6 +131,7 @@ function Debts() {
 
   const [form, setForm] = useState(formInicial)
   const [errors, setErrors] = useState({})
+  const [editingId, setEditingId] = useState(null)
   const [actionError, setActionError] = useState('')
   const [paymentTarget, setPaymentTarget] = useState(null)
   const [paymentAmount, setPaymentAmount] = useState('')
@@ -216,12 +216,15 @@ function Debts() {
     if (!form.totalAmount || Number(form.totalAmount) <= 0) {
       nuevosErrores.totalAmount = 'Valor total debe ser mayor a cero'
     }
-    if (!form.pendingBalance || Number(form.pendingBalance) <= 0) {
+    // Al editar se permite pendiente 0 (marcar saldada); al crear debe ser > 0
+    if (form.pendingBalance === '' || Number(form.pendingBalance) < 0) {
+      nuevosErrores.pendingBalance = 'Saldo pendiente no es válido'
+    } else if (!editingId && Number(form.pendingBalance) <= 0) {
       nuevosErrores.pendingBalance = 'Saldo pendiente debe ser mayor a cero'
     }
     if (
       form.totalAmount &&
-      form.pendingBalance &&
+      form.pendingBalance !== '' &&
       Number(form.pendingBalance) > Number(form.totalAmount)
     ) {
       nuevosErrores.pendingBalance =
@@ -233,7 +236,7 @@ function Debts() {
     }
     if (!form.dueDate) {
       nuevosErrores.dueDate = 'Fecha de vencimiento obligatoria'
-    } else if (form.dueDate < todayISO) {
+    } else if (!editingId && form.dueDate < todayISO) {
       nuevosErrores.dueDate =
         'La fecha de vencimiento no puede ser anterior a hoy'
     }
@@ -249,6 +252,7 @@ function Debts() {
     setForm((prev) => {
       const siguiente = { ...prev, [campo]: valor }
       if (
+        !editingId &&
         campo === 'totalAmount' &&
         (!prev.pendingBalance ||
           Number(prev.pendingBalance) === Number(prev.totalAmount))
@@ -260,25 +264,55 @@ function Debts() {
     setErrors((prev) => ({ ...prev, [campo]: undefined }))
   }
 
+  const empezarEdicion = (debt) => {
+    setEditingId(debt.id)
+    setForm({
+      name: debt.name || '',
+      totalAmount: String(debt.totalAmount ?? ''),
+      pendingBalance: String(debt.pendingBalance ?? ''),
+      dueDate: debt.dueDate || '',
+      interestRate: String(debt.interestRate ?? ''),
+    })
+    setErrors({})
+    setActionError('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const cancelarEdicion = () => {
+    setEditingId(null)
+    setForm(formInicial)
+    setErrors({})
+    setActionError('')
+  }
+
   const manejarEnvio = async (event) => {
     event.preventDefault()
     if (!validarFormulario()) return
     setActionError('')
 
+    const payload = {
+      name: form.name,
+      totalAmount: Number(form.totalAmount),
+      pendingBalance: Number(form.pendingBalance || form.totalAmount),
+      currency: currencyLabel,
+      dueDate: form.dueDate,
+      interestRate: Number(form.interestRate),
+    }
+
     try {
-      await addDebt({
-        name: form.name,
-        totalAmount: Number(form.totalAmount),
-        pendingBalance: Number(form.pendingBalance || form.totalAmount),
-        currency: currencyLabel,
-        dueDate: form.dueDate,
-        interestRate: Number(form.interestRate),
-      })
-      setForm(formInicial)
-      setToast({ message: 'Deuda registrada correctamente', visible: true })
+      if (editingId) {
+        await updateDebt(editingId, payload)
+        setEditingId(null)
+        setForm(formInicial)
+        setToast({ message: 'Deuda actualizada', visible: true })
+      } else {
+        await addDebt(payload)
+        setForm(formInicial)
+        setToast({ message: 'Deuda registrada correctamente', visible: true })
+      }
       setTimeout(() => setToast({ message: '', visible: false }), 3000)
     } catch (error) {
-      setActionError(error.message || 'No se pudo registrar la deuda')
+      setActionError(error.message || 'No se pudo guardar la deuda')
     }
   }
 
@@ -337,6 +371,7 @@ function Debts() {
     if (!deleteTarget) return
     try {
       await deleteDebt(deleteTarget.id)
+      if (editingId === deleteTarget.id) cancelarEdicion()
       setDeleteTarget(null)
       if (simDebtId === deleteTarget.id) setSimDebtId(null)
       setToast({ message: 'Deuda eliminada', visible: true })
@@ -374,7 +409,7 @@ function Debts() {
         <div className="debts-layout">
           <div className="debts-left">
             <section className="debt-form-card">
-              <h1>Registrar Deuda</h1>
+              <h1>{editingId ? 'Editar Deuda' : 'Registrar Deuda'}</h1>
               <form onSubmit={manejarEnvio} noValidate>
                 <label>
                   Nombre / Entidad
@@ -382,7 +417,7 @@ function Debts() {
                     type="text"
                     value={form.name}
                     onChange={manejarCambio('name')}
-                    placeholder="Entidad o acreedor"
+                    placeholder="Ej. Préstamo personal"
                   />
                   {errors.name && <span className="error">{errors.name}</span>}
                 </label>
@@ -424,7 +459,7 @@ function Debts() {
                       type="date"
                       value={form.dueDate}
                       onChange={manejarCambio('dueDate')}
-                      min={todayISO}
+                      min={editingId ? undefined : todayISO}
                     />
                     {errors.dueDate && (
                       <span className="error">{errors.dueDate}</span>
@@ -446,13 +481,33 @@ function Debts() {
                   </label>
                 </div>
 
-                <button
-                  type="submit"
-                  className="primary-button"
-                  disabled={debtActionLoading}
-                >
-                  {debtActionLoading ? 'Guardando...' : 'Guardar Deuda'}
-                </button>
+                {editingId ? (
+                  <div className="debt-form-actions">
+                    <button
+                      type="submit"
+                      className="primary-button"
+                      disabled={debtActionLoading}
+                    >
+                      {debtActionLoading ? 'Guardando...' : 'Guardar cambios'}
+                    </button>
+                    <button
+                      type="button"
+                      className="cancel-button"
+                      onClick={cancelarEdicion}
+                      disabled={debtActionLoading}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="submit"
+                    className="primary-button"
+                    disabled={debtActionLoading}
+                  >
+                    {debtActionLoading ? 'Guardando...' : 'Guardar Deuda'}
+                  </button>
+                )}
                 {(actionError || debtActionError) && (
                   <p className="form-error">{actionError || debtActionError}</p>
                 )}
@@ -513,7 +568,7 @@ function Debts() {
                 <p className="empty-state error">{debtsError}</p>
               ) : activeDebtsAll.length === 0 ? (
                 <p className="empty-state">
-                  No hay deudas activas por el momento...
+                  No hay deudas activas por el momento.
                 </p>
               ) : activeDebts.length === 0 ? (
                 <p className="empty-state">
@@ -537,20 +592,35 @@ function Debts() {
                           periods
                         )
                       : []
+                    const isEditing = editingId === debt.id
 
                     return (
-                      <article key={debt.id} className="debt-card">
+                      <article
+                        key={debt.id}
+                        className={`debt-card${isEditing ? ' is-editing' : ''}`}
+                      >
                         <header className="debt-card-header">
                           <h3>{debt.name}</h3>
-                          <button
-                            type="button"
-                            className="icon-delete"
-                            aria-label="Eliminar deuda"
-                            onClick={() => confirmarEliminar(debt)}
-                            disabled={debtActionLoading}
-                          >
-                            <FiTrash2 size={16} />
-                          </button>
+                          <div className="debt-card-actions">
+                            <button
+                              type="button"
+                              className="icon-edit"
+                              aria-label="Editar deuda"
+                              onClick={() => empezarEdicion(debt)}
+                              disabled={debtActionLoading}
+                            >
+                              <FiEdit2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              className="icon-delete"
+                              aria-label="Eliminar deuda"
+                              onClick={() => confirmarEliminar(debt)}
+                              disabled={debtActionLoading}
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </div>
                         </header>
 
                         <div className="debt-stats">
@@ -650,23 +720,39 @@ function Debts() {
             </section>
 
             {paidDebts.length > 0 && (
-              <section className="debts-list">
-                <h2>Deudas pagadas</h2>
+              <section className="debts-list debts-paid-section">
+                <h2>Deudas saldadas</h2>
+                <p className="paid-intro">
+                  ¡Bien hecho! Estas deudas ya quedaron en cero.
+                </p>
                 <div className="debt-cards">
                   {paidDebts.map((debt) => (
                     <article key={debt.id} className="debt-card paid">
                       <header className="debt-card-header">
                         <h3>{debt.name}</h3>
-                        <button
-                          type="button"
-                          className="icon-delete"
-                          onClick={() => confirmarEliminar(debt)}
-                          disabled={debtActionLoading}
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
+                        <div className="debt-card-actions">
+                          <button
+                            type="button"
+                            className="icon-edit"
+                            aria-label="Editar deuda"
+                            onClick={() => empezarEdicion(debt)}
+                            disabled={debtActionLoading}
+                          >
+                            <FiEdit2 size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className="icon-delete"
+                            onClick={() => confirmarEliminar(debt)}
+                            disabled={debtActionLoading}
+                          >
+                            <FiTrash2 size={16} />
+                          </button>
+                        </div>
                       </header>
-                      <p className="paid-label">Deuda liquidada</p>
+                      <p className="paid-label">
+                        ¡Deuda saldada! Ya no pesa en tu bolsillo.
+                      </p>
                       <div className="debt-stats debt-stats-paid">
                         <div>
                           <span>Valor total</span>
@@ -876,6 +962,10 @@ function Debts() {
             min-width: 0;
           }
 
+          .debt-form-actions {
+            display: grid;
+            gap: 0.55rem;
+          }
           .primary-button {
             width: 100%;
             margin-top: 0.15rem;
@@ -899,6 +989,22 @@ function Debts() {
             opacity: 0.7;
             cursor: not-allowed;
             transform: none;
+          }
+          .cancel-button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            background: transparent;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-weight: 750;
+            font-size: 0.95rem;
+            cursor: pointer;
+          }
+          .cancel-button:hover:not(:disabled) {
+            border-color: var(--debts-red);
+            color: var(--debts-red);
           }
 
           .debt-search-card {
@@ -939,7 +1045,6 @@ function Debts() {
             border-color: var(--debts-red);
             box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
           }
-          /* Oculta la X nativa del navegador (type=search) */
           .debt-search-wrap input[type='search']::-webkit-search-cancel-button,
           .debt-search-wrap input[type='search']::-webkit-search-decoration {
             -webkit-appearance: none;
@@ -1020,6 +1125,12 @@ function Debts() {
             font-size: 1.05rem;
             font-weight: 800;
           }
+          .paid-intro {
+            margin: -0.45rem 0 0.85rem;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 600;
+          }
 
           .debt-cards {
             display: grid;
@@ -1042,6 +1153,10 @@ function Debts() {
             border-color: rgba(22, 163, 74, 0.55);
             background: linear-gradient(180deg, rgba(22, 163, 74, 0.06), var(--bg-page));
           }
+          .debt-card.is-editing {
+            border-color: rgba(37, 99, 235, 0.45);
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+          }
           .debt-card-header {
             display: flex;
             justify-content: space-between;
@@ -1053,6 +1168,11 @@ function Debts() {
             font-size: 1.05rem;
             font-weight: 800;
             letter-spacing: -0.01em;
+          }
+          .debt-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
           }
 
           .debt-stats {
@@ -1176,6 +1296,7 @@ function Debts() {
             font-weight: 500;
           }
 
+          .icon-edit,
           .icon-delete {
             border: none;
             background: transparent;
@@ -1186,6 +1307,10 @@ function Debts() {
             place-items: center;
             border-radius: 0.45rem;
             transition: color 0.15s ease, background 0.15s ease;
+          }
+          .icon-edit:hover {
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.1);
           }
           .icon-delete:hover {
             color: #dc2626;
