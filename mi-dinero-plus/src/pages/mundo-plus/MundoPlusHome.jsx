@@ -233,7 +233,7 @@ function MundoPlusHome() {
               onChange={(e) => setDraft(e.target.value)}
               placeholder={
                 aiEnabled
-                  ? 'Los errores no existen, solo aprendizajes…'
+                  ? 'Todo error es información...'
                   : 'Activa la IA en Mi Perfil'
               }
               aria-label="Escribe tu pregunta"
