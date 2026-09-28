@@ -117,7 +117,10 @@ function Goals() {
 
   const [form, setForm] = useState(formInicial)
   const [errors, setErrors] = useState({})
+  const [editForm, setEditForm] = useState(formInicial)
+  const [editErrors, setEditErrors] = useState({})
   const [editingId, setEditingId] = useState(null)
+  const [editSaving, setEditSaving] = useState(false)
   const [actionError, setActionError] = useState('')
   const [contributionTarget, setContributionTarget] = useState(null)
   const [contributionAmount, setContributionAmount] = useState('')
@@ -214,24 +217,34 @@ function Goals() {
         ? aiAdvice
         : 'Crea o aporta a una meta y te daré un consejo personalizado.'
 
-  const validarFormulario = () => {
+  const showToast = (message) => {
+    setToast({ message, visible: true })
+    setTimeout(() => setToast({ message: '', visible: false }), 3000)
+  }
+
+  const validarFormulario = (data, forEdit = false) => {
     const nuevosErrores = {}
-    if (!form.name) nuevosErrores.name = 'El nombre de la meta es obligatorio'
-    if (!form.targetAmount || Number(form.targetAmount) <= 0) {
+    if (!data.name) nuevosErrores.name = 'El nombre de la meta es obligatorio'
+    if (!data.targetAmount || Number(data.targetAmount) <= 0) {
       nuevosErrores.targetAmount = 'Monto objetivo debe ser mayor a cero'
     }
     if (currencyLabel !== 'COP' && !exchangeRates) {
       nuevosErrores.targetAmount =
         'No hay tasas disponibles; ingresa el objetivo en COP'
     }
-    if (!form.deadline) {
+    if (!data.deadline) {
       nuevosErrores.deadline = 'Fecha límite obligatoria'
-    } else if (form.deadline < todayISO) {
+    } else if (!forEdit && data.deadline < todayISO) {
       nuevosErrores.deadline = 'La fecha límite no puede ser anterior a hoy'
+    } else if (forEdit && data.deadline < todayISO) {
+      // En edición se permite mantener una fecha pasada ya guardada;
+      // solo se exige no ir más atrás si el usuario la cambia a pasado
+      // respecto a hoy al crear no aplica. Aquí: permitir deadline < hoy
+      // solo si es la misma meta (usuario no amplía al pasado artificialmente).
+      // Política simple: en edición permitir cualquier fecha (metas viejas).
     }
-    if (!form.priority) nuevosErrores.priority = 'Selecciona prioridad'
-    setErrors(nuevosErrores)
-    return Object.keys(nuevosErrores).length === 0
+    if (!data.priority) nuevosErrores.priority = 'Selecciona prioridad'
+    return nuevosErrores
   }
 
   const manejarCambio = (campo) => (event) => {
@@ -239,57 +252,74 @@ function Goals() {
     setErrors((prev) => ({ ...prev, [campo]: undefined }))
   }
 
-  const empezarEdicion = (goal) => {
+  const manejarCambioEdit = (campo) => (event) => {
+    setEditForm((prev) => ({ ...prev, [campo]: event.target.value }))
+    setEditErrors((prev) => ({ ...prev, [campo]: undefined }))
+  }
+
+  const abrirEdicion = (goal) => {
     setEditingId(goal.id)
-    setForm({
+    setEditForm({
       name: goal.name || '',
       targetAmount: String(goal.targetAmount ?? ''),
       deadline: goal.deadline || '',
       priority: goal.priority || 'medium',
     })
-    setErrors({})
+    setEditErrors({})
     setActionError('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const cancelarEdicion = () => {
+  const cerrarEdicion = () => {
     setEditingId(null)
-    setForm(formInicial)
-    setErrors({})
-    setActionError('')
+    setEditForm(formInicial)
+    setEditErrors({})
+    setEditSaving(false)
   }
 
   const manejarEnvio = async (event) => {
     event.preventDefault()
-    if (!validarFormulario()) return
+    const nuevosErrores = validarFormulario(form, false)
+    setErrors(nuevosErrores)
+    if (Object.keys(nuevosErrores).length > 0) return
     setActionError('')
 
     try {
-      if (editingId) {
-        await updateGoal(editingId, {
-          name: form.name,
-          targetAmount: Number(form.targetAmount),
-          currency: currencyLabel,
-          deadline: form.deadline,
-          priority: form.priority,
-        })
-        setEditingId(null)
-        setForm(formInicial)
-        setToast({ message: 'Meta actualizada', visible: true })
-      } else {
-        await addGoal({
-          name: form.name,
-          targetAmount: Number(form.targetAmount),
-          currency: currencyLabel,
-          deadline: form.deadline,
-          priority: form.priority,
-        })
-        setForm(formInicial)
-        setToast({ message: 'Meta creada correctamente', visible: true })
-      }
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      await addGoal({
+        name: form.name,
+        targetAmount: Number(form.targetAmount),
+        currency: currencyLabel,
+        deadline: form.deadline,
+        priority: form.priority,
+      })
+      setForm(formInicial)
+      showToast('Meta creada correctamente')
     } catch (error) {
       setActionError(error.message || 'No se pudo guardar la meta')
+    }
+  }
+
+  const guardarEdicion = async () => {
+    if (!editingId) return
+    const nuevosErrores = validarFormulario(editForm, true)
+    setEditErrors(nuevosErrores)
+    if (Object.keys(nuevosErrores).length > 0) return
+
+    setEditSaving(true)
+    try {
+      await updateGoal(editingId, {
+        name: editForm.name,
+        targetAmount: Number(editForm.targetAmount),
+        currency: currencyLabel,
+        deadline: editForm.deadline,
+        priority: editForm.priority,
+      })
+      cerrarEdicion()
+      showToast('Meta actualizada')
+    } catch (error) {
+      setEditErrors({
+        form: error.message || 'No se pudo actualizar la meta',
+      })
+      setEditSaving(false)
     }
   }
 
@@ -335,8 +365,7 @@ function Goals() {
     try {
       await addContribution(contributionTarget.id, Number(contributionAmount))
       setContributionTarget(null)
-      setToast({ message: 'Aporte registrado', visible: true })
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      showToast('Aporte registrado')
     } catch (error) {
       setErrors({
         contributionAmount: error.message || 'No se pudo realizar el aporte',
@@ -350,16 +379,15 @@ function Goals() {
     if (!deleteTarget) return
     try {
       await deleteGoal(deleteTarget.id)
-      if (editingId === deleteTarget.id) cancelarEdicion()
+      if (editingId === deleteTarget.id) cerrarEdicion()
       setDeleteTarget(null)
-      setToast({ message: 'Meta eliminada', visible: true })
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      showToast('Meta eliminada')
     } catch (error) {
       setActionError(error.message || 'No se pudo eliminar la meta')
     }
   }
 
-  const renderGoalCard = (goal, options = {}) => {
+  const renderGoalCard = (goal) => {
     const current = Number(goal.currentAmount || 0)
     const target = Number(goal.targetAmount || 0)
     const progress =
@@ -387,17 +415,15 @@ function Goals() {
               <strong>{formatMoney(current)}</strong>
               <span>de {formatMoney(target)}</span>
             </div>
-            {!options.hideEdit && (
-              <button
-                type="button"
-                className="icon-edit"
-                aria-label="Editar meta"
-                onClick={() => empezarEdicion(goal)}
-                disabled={goalActionLoading}
-              >
-                <FiEdit2 size={16} />
-              </button>
-            )}
+            <button
+              type="button"
+              className="icon-edit"
+              aria-label="Editar meta"
+              onClick={() => abrirEdicion(goal)}
+              disabled={goalActionLoading}
+            >
+              <FiEdit2 size={16} />
+            </button>
             <button
               type="button"
               className="icon-delete"
@@ -467,7 +493,7 @@ function Goals() {
         <div className="goals-layout">
           <div className="goals-left">
             <section className="goal-form-card">
-              <h1>{editingId ? 'Editar Meta' : 'Nueva Meta'}</h1>
+              <h1>Nueva Meta</h1>
               <form onSubmit={manejarEnvio} noValidate>
                 <label>
                   Nombre de la Meta
@@ -525,33 +551,13 @@ function Goals() {
                   )}
                 </label>
 
-                {editingId ? (
-                  <div className="goal-form-actions">
-                    <button
-                      type="submit"
-                      className="primary-button"
-                      disabled={goalActionLoading}
-                    >
-                      {goalActionLoading ? 'Guardando...' : 'Guardar cambios'}
-                    </button>
-                    <button
-                      type="button"
-                      className="cancel-button"
-                      onClick={cancelarEdicion}
-                      disabled={goalActionLoading}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="submit"
-                    className="primary-button"
-                    disabled={goalActionLoading}
-                  >
-                    {goalActionLoading ? 'Guardando...' : 'Crear Meta'}
-                  </button>
-                )}
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={goalActionLoading}
+                >
+                  {goalActionLoading ? 'Guardando...' : 'Crear Meta'}
+                </button>
                 {(actionError || goalActionError) && (
                   <p className="form-error">{actionError || goalActionError}</p>
                 )}
@@ -635,14 +641,90 @@ function Goals() {
                   ¡Bien hecho! Estas metas ya alcanzaron su objetivo.
                 </p>
                 <div className="goal-cards">
-                  {completedGoals.map((goal) =>
-                    renderGoalCard(goal, { hideEdit: false })
-                  )}
+                  {completedGoals.map((goal) => renderGoalCard(goal))}
                 </div>
               </section>
             )}
           </div>
         </div>
+
+        {editingId && (
+          <div className="goal-edit-modal-root">
+            <Modal
+              title="Editar meta"
+              onCancel={cerrarEdicion}
+              onConfirm={guardarEdicion}
+              confirmLabel={
+                editSaving || goalActionLoading
+                  ? 'Guardando…'
+                  : 'Guardar cambios'
+              }
+              cancelLabel="Cancelar"
+            >
+              <div className="goal-edit-form">
+                <label>
+                  Nombre de la Meta
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={manejarCambioEdit('name')}
+                    placeholder="Nombre de tu objetivo"
+                  />
+                  {editErrors.name && (
+                    <span className="error">{editErrors.name}</span>
+                  )}
+                </label>
+
+                <label>
+                  Monto Objetivo ({currencyLabel})
+                  <input
+                    type="number"
+                    value={editForm.targetAmount}
+                    onChange={manejarCambioEdit('targetAmount')}
+                    min="0"
+                    step="0.01"
+                    placeholder={currencyLabel === 'COP' ? '0' : '0.00'}
+                  />
+                  {editErrors.targetAmount && (
+                    <span className="error">{editErrors.targetAmount}</span>
+                  )}
+                </label>
+
+                <label>
+                  Fecha Límite
+                  <input
+                    type="date"
+                    value={editForm.deadline}
+                    onChange={manejarCambioEdit('deadline')}
+                  />
+                  {editErrors.deadline && (
+                    <span className="error">{editErrors.deadline}</span>
+                  )}
+                </label>
+
+                <label>
+                  Prioridad
+                  <select
+                    className="priority-select"
+                    value={editForm.priority}
+                    onChange={manejarCambioEdit('priority')}
+                  >
+                    <option value="low">Baja</option>
+                    <option value="medium">Media</option>
+                    <option value="high">Alta</option>
+                  </select>
+                  {editErrors.priority && (
+                    <span className="error">{editErrors.priority}</span>
+                  )}
+                </label>
+
+                {editErrors.form && (
+                  <p className="form-error">{editErrors.form}</p>
+                )}
+              </div>
+            </Modal>
+          </div>
+        )}
 
         {contributionTarget && (
           <Modal
@@ -805,15 +887,19 @@ function Goals() {
             display: grid;
             gap: 0.95rem;
           }
-          .goal-form-card label {
+          .goal-form-card label,
+          .goal-edit-form label {
             display: grid;
             gap: 0.4rem;
             font-weight: 700;
             font-size: 0.9rem;
             color: var(--text-primary);
+            text-align: left;
           }
           .goal-form-card input,
-          .goal-form-card select {
+          .goal-form-card select,
+          .goal-edit-form input,
+          .goal-edit-form select {
             width: 100%;
             padding: 0.8rem 0.9rem;
             border: 1px solid var(--border);
@@ -827,7 +913,9 @@ function Goals() {
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
           }
           .goal-form-card input:focus,
-          .goal-form-card select:focus {
+          .goal-form-card select:focus,
+          .goal-edit-form input:focus,
+          .goal-edit-form select:focus {
             border-color: var(--goals-green);
             box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
           }
@@ -849,10 +937,6 @@ function Goals() {
             background-size: 16px;
           }
 
-          .goal-form-actions {
-            display: grid;
-            gap: 0.55rem;
-          }
           .primary-button {
             width: 100%;
             margin-top: 0.15rem;
@@ -877,21 +961,34 @@ function Goals() {
             cursor: not-allowed;
             transform: none;
           }
-          .cancel-button {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            background: transparent;
-            color: var(--text-primary);
-            font-family: inherit;
-            font-weight: 750;
-            font-size: 0.95rem;
-            cursor: pointer;
+
+          .goal-edit-form {
+            display: grid;
+            gap: 0.9rem;
+            min-width: min(100%, 22rem);
           }
-          .cancel-button:hover:not(:disabled) {
-            border-color: var(--goals-green);
-            color: var(--goals-green);
+
+          /* Botón confirmar del modal de edición → verde */
+          .goal-edit-modal-root :is(
+            button.confirm,
+            button.modal-confirm,
+            .modal-actions button:last-child,
+            .modal-footer button:last-child,
+            [data-modal-confirm]
+          ) {
+            background: linear-gradient(135deg, #15803d, #16a34a) !important;
+            border-color: transparent !important;
+            color: #fff !important;
+            box-shadow: 0 6px 16px rgba(22, 163, 74, 0.3);
+          }
+          .goal-edit-modal-root :is(
+            button.confirm,
+            button.modal-confirm,
+            .modal-actions button:last-child,
+            .modal-footer button:last-child,
+            [data-modal-confirm]
+          ):hover {
+            filter: brightness(1.06);
           }
 
           .goal-search-card {
@@ -1047,8 +1144,8 @@ function Goals() {
             background: linear-gradient(180deg, rgba(22, 163, 74, 0.06), var(--bg-page));
           }
           .goal-card.is-editing {
-            border-color: rgba(37, 99, 235, 0.45);
-            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+            border-color: rgba(22, 163, 74, 0.5);
+            box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.12);
           }
           .goal-card-header {
             display: flex;

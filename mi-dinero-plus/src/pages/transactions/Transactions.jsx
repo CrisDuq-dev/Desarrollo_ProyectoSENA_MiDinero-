@@ -98,7 +98,10 @@ function Transactions() {
 
   const [form, setForm] = useState(formInicial)
   const [errors, setErrors] = useState({})
+  const [editForm, setEditForm] = useState(formInicial)
+  const [editErrors, setEditErrors] = useState({})
   const [editingId, setEditingId] = useState(null)
+  const [editSaving, setEditSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [toast, setToast] = useState({ message: '', visible: false })
   const [searchQuery, setSearchQuery] = useState('')
@@ -106,8 +109,15 @@ function Transactions() {
   const dateBounds = useMemo(() => getDateBounds(), [])
   const categorias =
     form.type === 'income' ? incomeCategories : expenseCategories
+  const editCategorias =
+    editForm.type === 'income' ? incomeCategories : expenseCategories
   const totals = useMemo(() => getTotals(), [transactions])
   const currencyLabel = currency || 'COP'
+
+  const editDateMin = useMemo(() => {
+    if (editForm.date && editForm.date < dateBounds.min) return editForm.date
+    return dateBounds.min
+  }, [editForm.date, dateBounds.min])
 
   const allTransactions = useMemo(
     () => (transactions || []).filter((tx) => tx && !tx.deletedAt),
@@ -175,27 +185,35 @@ function Transactions() {
         ? aiAdvice
         : 'Registra un movimiento y te daré un consejo personalizado.'
 
-  const validarFormulario = () => {
+  const showToast = (message) => {
+    setToast({ message, visible: true })
+    setTimeout(() => setToast({ message: '', visible: false }), 3000)
+  }
+
+  const validarFormulario = (data, forEdit = false) => {
     const nuevosErrores = {}
-    if (!form.type) nuevosErrores.type = 'Selecciona tipo'
-    if (!form.amount || Number(form.amount) <= 0) {
+    if (!data.type) nuevosErrores.type = 'Selecciona tipo'
+    if (!data.amount || Number(data.amount) <= 0) {
       nuevosErrores.amount = 'Monto debe ser mayor a cero'
     }
     if (currencyLabel !== 'COP' && !exchangeRates) {
       nuevosErrores.amount = 'No hay tasas disponibles; ingresa valores en COP'
     }
-    if (!form.date) {
+    if (!data.date) {
       nuevosErrores.date = 'Selecciona fecha'
+    } else if (forEdit) {
+      if (data.date > dateBounds.max) {
+        nuevosErrores.date = 'No se permiten fechas futuras'
+      }
     } else if (
-      !isDateInAllowedRange(form.date, dateBounds.min, dateBounds.max)
+      !isDateInAllowedRange(data.date, dateBounds.min, dateBounds.max)
     ) {
       nuevosErrores.date =
         'Solo se permiten hoy o hasta 5 días atrás. No fechas futuras ni más antiguas.'
     }
-    if (!form.description) nuevosErrores.description = 'Agrega descripción'
-    if (!form.category) nuevosErrores.category = 'Selecciona categoría'
-    setErrors(nuevosErrores)
-    return Object.keys(nuevosErrores).length === 0
+    if (!data.description) nuevosErrores.description = 'Agrega descripción'
+    if (!data.category) nuevosErrores.category = 'Selecciona categoría'
+    return nuevosErrores
   }
 
   const manejarCambio = (campo) => (event) => {
@@ -203,63 +221,73 @@ function Transactions() {
     setErrors((prev) => ({ ...prev, [campo]: undefined }))
   }
 
-  const empezarEdicion = (tx) => {
+  const manejarCambioEdit = (campo) => (event) => {
+    setEditForm((prev) => ({ ...prev, [campo]: event.target.value }))
+    setEditErrors((prev) => ({ ...prev, [campo]: undefined }))
+  }
+
+  const abrirEdicion = (tx) => {
     setEditingId(tx.id)
-    setForm({
+    setEditForm({
       type: tx.type === 'expense' ? 'expense' : 'income',
       amount: String(tx.amount ?? ''),
       date: tx.date || '',
       description: tx.description || '',
       category: tx.category || '',
     })
-    setErrors({})
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setEditErrors({})
   }
 
-  const cancelarEdicion = () => {
+  const cerrarEdicion = () => {
     setEditingId(null)
-    setForm(formInicial)
-    setErrors({})
+    setEditForm(formInicial)
+    setEditErrors({})
+    setEditSaving(false)
   }
 
   const manejarEnvio = async (event) => {
     event.preventDefault()
-    if (!validarFormulario()) return
+    const nuevosErrores = validarFormulario(form, false)
+    setErrors(nuevosErrores)
+    if (Object.keys(nuevosErrores).length > 0) return
+
     try {
-      if (editingId) {
-        await updateTransaction(editingId, {
-          type: form.type,
-          amount: Number(form.amount),
-          currency: currencyLabel,
-          date: form.date,
-          description: form.description,
-          category: form.category,
-        })
-        setEditingId(null)
-        setForm(formInicial)
-        setToast({ message: 'Transacción actualizada', visible: true })
-      } else {
-        await addTransaction({
-          type: form.type,
-          amount: Number(form.amount),
-          currency: currencyLabel,
-          date: form.date,
-          description: form.description,
-          category: form.category,
-        })
-        setForm(formInicial)
-        setToast({
-          message: 'Transacción guardada correctamente',
-          visible: true,
-        })
-      }
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
-    } catch (error) {
-      setToast({
-        message: error.message || 'No se pudo guardar la transacción',
-        visible: true,
+      await addTransaction({
+        type: form.type,
+        amount: Number(form.amount),
+        currency: currencyLabel,
+        date: form.date,
+        description: form.description,
+        category: form.category,
       })
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      setForm(formInicial)
+      showToast('Transacción guardada correctamente')
+    } catch (error) {
+      showToast(error.message || 'No se pudo guardar la transacción')
+    }
+  }
+
+  const guardarEdicion = async () => {
+    if (!editingId) return
+    const nuevosErrores = validarFormulario(editForm, true)
+    setEditErrors(nuevosErrores)
+    if (Object.keys(nuevosErrores).length > 0) return
+
+    setEditSaving(true)
+    try {
+      await updateTransaction(editingId, {
+        type: editForm.type,
+        amount: Number(editForm.amount),
+        currency: currencyLabel,
+        date: editForm.date,
+        description: editForm.description,
+        category: editForm.category,
+      })
+      cerrarEdicion()
+      showToast('Transacción actualizada')
+    } catch (error) {
+      showToast(error.message || 'No se pudo actualizar la transacción')
+      setEditSaving(false)
     }
   }
 
@@ -267,16 +295,11 @@ function Transactions() {
     if (!confirmDelete) return
     try {
       await deleteTransaction(confirmDelete)
-      if (editingId === confirmDelete) cancelarEdicion()
+      if (editingId === confirmDelete) cerrarEdicion()
       setConfirmDelete(null)
-      setToast({ message: 'Transacción eliminada', visible: true })
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      showToast('Transacción eliminada')
     } catch (error) {
-      setToast({
-        message: error.message || 'No se pudo eliminar la transacción',
-        visible: true,
-      })
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      showToast(error.message || 'No se pudo eliminar la transacción')
     }
   }
 
@@ -305,7 +328,7 @@ function Transactions() {
           <div className="tx-left">
             <section className="tx-form-card">
               <header className="tx-form-head">
-                <h1>{editingId ? 'Editar Transacción' : 'Nueva Transacción'}</h1>
+                <h1>Nueva Transacción</h1>
               </header>
 
               {transactionsError && (
@@ -410,26 +433,11 @@ function Transactions() {
                   )}
                 </label>
 
-                {editingId ? (
-                  <div className="tx-form-actions">
-                    <button type="submit" className="tx-submit">
-                      Guardar cambios
-                    </button>
-                    <button
-                      type="button"
-                      className="tx-cancel"
-                      onClick={cancelarEdicion}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <button type="submit" className="tx-submit">
-                    {form.type === 'income'
-                      ? 'Registrar Ingreso'
-                      : 'Registrar Gasto'}
-                  </button>
-                )}
+                <button type="submit" className="tx-submit">
+                  {form.type === 'income'
+                    ? 'Registrar Ingreso'
+                    : 'Registrar Gasto'}
+                </button>
               </form>
             </section>
 
@@ -566,7 +574,7 @@ function Transactions() {
                           type="button"
                           className="tx-row-edit"
                           aria-label="Editar"
-                          onClick={() => empezarEdicion(tx)}
+                          onClick={() => abrirEdicion(tx)}
                         >
                           <FiEdit2 size={16} />
                         </button>
@@ -586,6 +594,116 @@ function Transactions() {
             </section>
           </div>
         </div>
+
+        {editingId && (
+          <div className="tx-edit-modal-root">
+            <Modal
+              title="Editar transacción"
+              onCancel={cerrarEdicion}
+              onConfirm={guardarEdicion}
+              confirmLabel={editSaving ? 'Guardando…' : 'Guardar cambios'}
+              cancelLabel="Cancelar"
+            >
+              <div className="tx-edit-form">
+                <div className="tx-field">
+                  <span className="tx-label">Tipo</span>
+                  <div className="tx-segment">
+                    <button
+                      type="button"
+                      className={`tx-seg-btn expense${
+                        editForm.type === 'expense' ? ' is-on' : ''
+                      }`}
+                      onClick={() =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          type: 'expense',
+                          category: '',
+                        }))
+                      }
+                    >
+                      Gasto
+                    </button>
+                    <button
+                      type="button"
+                      className={`tx-seg-btn income${
+                        editForm.type === 'income' ? ' is-on' : ''
+                      }`}
+                      onClick={() =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          type: 'income',
+                          category: '',
+                        }))
+                      }
+                    >
+                      Ingreso
+                    </button>
+                  </div>
+                </div>
+
+                <label className="tx-field">
+                  <span className="tx-label">Monto ({currencyLabel})</span>
+                  <input
+                    type="number"
+                    value={editForm.amount}
+                    onChange={manejarCambioEdit('amount')}
+                    min="0"
+                    step="0.01"
+                    placeholder={currencyLabel === 'COP' ? '0' : '0.00'}
+                  />
+                  {editErrors.amount && (
+                    <span className="tx-err">{editErrors.amount}</span>
+                  )}
+                </label>
+
+                <label className="tx-field">
+                  <span className="tx-label">Fecha</span>
+                  <input
+                    type="date"
+                    value={editForm.date}
+                    onChange={manejarCambioEdit('date')}
+                    min={editDateMin}
+                    max={dateBounds.max}
+                  />
+                  {editErrors.date && (
+                    <span className="tx-err">{editErrors.date}</span>
+                  )}
+                </label>
+
+                <label className="tx-field">
+                  <span className="tx-label">Categoría</span>
+                  <select
+                    value={editForm.category}
+                    onChange={manejarCambioEdit('category')}
+                  >
+                    <option value="">Seleccionar...</option>
+                    {editCategorias.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  {editErrors.category && (
+                    <span className="tx-err">{editErrors.category}</span>
+                  )}
+                </label>
+
+                <label className="tx-field">
+                  <span className="tx-label">Descripción</span>
+                  <input
+                    type="text"
+                    value={editForm.description}
+                    onChange={manejarCambioEdit('description')}
+                    placeholder="Descripción del movimiento"
+                  />
+                  {editErrors.description && (
+                    <span className="tx-err">{editErrors.description}</span>
+                  )}
+                </label>
+              </div>
+            </Modal>
+          </div>
+        )}
 
         {confirmDelete && (
           <Modal
@@ -745,7 +863,9 @@ function Transactions() {
           }
 
           .tx-form input,
-          .tx-form select {
+          .tx-form select,
+          .tx-edit-form input,
+          .tx-edit-form select {
             width: 100%;
             padding: 0.76rem 0.9rem;
             border: 1px solid var(--border);
@@ -756,7 +876,8 @@ function Transactions() {
             box-sizing: border-box;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
           }
-          .tx-form select {
+          .tx-form select,
+          .tx-edit-form select {
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
@@ -767,28 +888,38 @@ function Transactions() {
             background-size: 16px;
           }
           .tx-form input:hover,
-          .tx-form select:hover {
+          .tx-form select:hover,
+          .tx-edit-form input:hover,
+          .tx-edit-form select:hover {
             border-color: rgba(37, 99, 235, 0.35);
           }
           .tx-form input:focus,
-          .tx-form select:focus {
+          .tx-form select:focus,
+          .tx-edit-form input:focus,
+          .tx-edit-form select:focus {
             outline: none;
             border-color: var(--tx-blue);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
           }
 
-          .tx-form input[type='date'] { color-scheme: dark; }
-          .tx-form input[type='date']::-webkit-calendar-picker-indicator {
+          .tx-form input[type='date'],
+          .tx-edit-form input[type='date'] { color-scheme: dark; }
+          .tx-form input[type='date']::-webkit-calendar-picker-indicator,
+          .tx-edit-form input[type='date']::-webkit-calendar-picker-indicator {
             cursor: pointer;
             opacity: 0.9;
             filter: invert(1);
           }
           :is(html.light, body.light, [data-theme='light'])
-            .tx-form input[type='date'] {
+            .tx-form input[type='date'],
+          :is(html.light, body.light, [data-theme='light'])
+            .tx-edit-form input[type='date'] {
             color-scheme: light;
           }
           :is(html.light, body.light, [data-theme='light'])
-            .tx-form input[type='date']::-webkit-calendar-picker-indicator {
+            .tx-form input[type='date']::-webkit-calendar-picker-indicator,
+          :is(html.light, body.light, [data-theme='light'])
+            .tx-edit-form input[type='date']::-webkit-calendar-picker-indicator {
             filter: none;
             opacity: 0.7;
           }
@@ -831,10 +962,6 @@ function Transactions() {
           }
           .tx-seg-btn:not(.is-on):hover { color: var(--text-primary); }
 
-          .tx-form-actions {
-            display: grid;
-            gap: 0.55rem;
-          }
           .tx-submit {
             width: 100%;
             margin-top: 0.3rem;
@@ -858,21 +985,38 @@ function Transactions() {
           .tx-submit:active {
             transform: translateY(0);
           }
-          .tx-cancel {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 0.8rem;
-            background: transparent;
-            color: var(--text-primary);
-            font-family: inherit;
-            font-weight: 750;
-            font-size: 0.95rem;
-            cursor: pointer;
+
+          .tx-edit-form {
+            display: grid;
+            gap: 0.9rem;
+            text-align: left;
+            min-width: min(100%, 22rem);
           }
-          .tx-cancel:hover {
-            border-color: var(--tx-blue);
-            color: var(--tx-blue);
+
+          /* Guardar cambios del modal → azul con resplandor */
+          .tx-edit-modal-root :is(
+            button.confirm,
+            button.modal-confirm,
+            .modal-actions button:last-child,
+            .modal-footer button:last-child,
+            [data-modal-confirm]
+          ) {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb) !important;
+            border-color: transparent !important;
+            color: #fff !important;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45),
+              0 0 0 1px rgba(37, 99, 235, 0.25);
+          }
+          .tx-edit-modal-root :is(
+            button.confirm,
+            button.modal-confirm,
+            .modal-actions button:last-child,
+            .modal-footer button:last-child,
+            [data-modal-confirm]
+          ):hover {
+            filter: brightness(1.06);
+            box-shadow: 0 8px 22px rgba(37, 99, 235, 0.55),
+              0 0 0 1px rgba(37, 99, 235, 0.3);
           }
 
           .tx-search-card {

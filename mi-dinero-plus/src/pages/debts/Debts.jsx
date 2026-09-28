@@ -24,7 +24,6 @@ function getTodayISO() {
   return `${y}-${m}-${day}`
 }
 
-/** Readable date: 5/09/2040 — calendar only, no time zone offset */
 function formatDebtDate(value) {
   if (value == null || value === '') return '—'
 
@@ -49,7 +48,6 @@ function formatDebtDate(value) {
   return `${day}/${month}/${year}`
 }
 
-/** Amortización francesa (cuota fija). rateMensual en % (ej. 1.5 = 1.5%). */
 function buildAmortizationSchedule(principal, rateMensualPct, periods) {
   const P = Number(principal) || 0
   const r = (Number(rateMensualPct) || 0) / 100
@@ -131,7 +129,10 @@ function Debts() {
 
   const [form, setForm] = useState(formInicial)
   const [errors, setErrors] = useState({})
+  const [editForm, setEditForm] = useState(formInicial)
+  const [editErrors, setEditErrors] = useState({})
   const [editingId, setEditingId] = useState(null)
+  const [editSaving, setEditSaving] = useState(false)
   const [actionError, setActionError] = useState('')
   const [paymentTarget, setPaymentTarget] = useState(null)
   const [paymentAmount, setPaymentAmount] = useState('')
@@ -210,22 +211,26 @@ function Debts() {
         ? aiAdvice
         : 'Registra o abona a una deuda y te daré un consejo personalizado.'
 
-  const validarFormulario = () => {
+  const showToast = (message) => {
+    setToast({ message, visible: true })
+    setTimeout(() => setToast({ message: '', visible: false }), 3000)
+  }
+
+  const validarFormulario = (data, forEdit = false) => {
     const nuevosErrores = {}
-    if (!form.name) nuevosErrores.name = 'Nombre o entidad es obligatorio'
-    if (!form.totalAmount || Number(form.totalAmount) <= 0) {
+    if (!data.name) nuevosErrores.name = 'Nombre o entidad es obligatorio'
+    if (!data.totalAmount || Number(data.totalAmount) <= 0) {
       nuevosErrores.totalAmount = 'Valor total debe ser mayor a cero'
     }
-    // Al editar se permite pendiente 0 (marcar saldada); al crear debe ser > 0
-    if (form.pendingBalance === '' || Number(form.pendingBalance) < 0) {
+    if (data.pendingBalance === '' || Number(data.pendingBalance) < 0) {
       nuevosErrores.pendingBalance = 'Saldo pendiente no es válido'
-    } else if (!editingId && Number(form.pendingBalance) <= 0) {
+    } else if (!forEdit && Number(data.pendingBalance) <= 0) {
       nuevosErrores.pendingBalance = 'Saldo pendiente debe ser mayor a cero'
     }
     if (
-      form.totalAmount &&
-      form.pendingBalance !== '' &&
-      Number(form.pendingBalance) > Number(form.totalAmount)
+      data.totalAmount &&
+      data.pendingBalance !== '' &&
+      Number(data.pendingBalance) > Number(data.totalAmount)
     ) {
       nuevosErrores.pendingBalance =
         'Saldo pendiente no puede ser mayor al valor total'
@@ -234,17 +239,16 @@ function Debts() {
       nuevosErrores.totalAmount =
         'No hay tasas disponibles; ingresa valores en COP'
     }
-    if (!form.dueDate) {
+    if (!data.dueDate) {
       nuevosErrores.dueDate = 'Fecha de vencimiento obligatoria'
-    } else if (!editingId && form.dueDate < todayISO) {
+    } else if (!forEdit && data.dueDate < todayISO) {
       nuevosErrores.dueDate =
         'La fecha de vencimiento no puede ser anterior a hoy'
     }
-    if (form.interestRate === '' || Number(form.interestRate) < 0) {
+    if (data.interestRate === '' || Number(data.interestRate) < 0) {
       nuevosErrores.interestRate = 'Tasa de interés válida es obligatoria'
     }
-    setErrors(nuevosErrores)
-    return Object.keys(nuevosErrores).length === 0
+    return nuevosErrores
   }
 
   const manejarCambio = (campo) => (event) => {
@@ -252,7 +256,6 @@ function Debts() {
     setForm((prev) => {
       const siguiente = { ...prev, [campo]: valor }
       if (
-        !editingId &&
         campo === 'totalAmount' &&
         (!prev.pendingBalance ||
           Number(prev.pendingBalance) === Number(prev.totalAmount))
@@ -264,55 +267,88 @@ function Debts() {
     setErrors((prev) => ({ ...prev, [campo]: undefined }))
   }
 
-  const empezarEdicion = (debt) => {
+  const manejarCambioEdit = (campo) => (event) => {
+    const valor = event.target.value
+    setEditForm((prev) => {
+      const siguiente = { ...prev, [campo]: valor }
+      if (
+        campo === 'totalAmount' &&
+        (!prev.pendingBalance ||
+          Number(prev.pendingBalance) === Number(prev.totalAmount))
+      ) {
+        siguiente.pendingBalance = valor
+      }
+      return siguiente
+    })
+    setEditErrors((prev) => ({ ...prev, [campo]: undefined }))
+  }
+
+  const abrirEdicion = (debt) => {
     setEditingId(debt.id)
-    setForm({
+    setEditForm({
       name: debt.name || '',
       totalAmount: String(debt.totalAmount ?? ''),
       pendingBalance: String(debt.pendingBalance ?? ''),
       dueDate: debt.dueDate || '',
       interestRate: String(debt.interestRate ?? ''),
     })
-    setErrors({})
+    setEditErrors({})
     setActionError('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const cancelarEdicion = () => {
+  const cerrarEdicion = () => {
     setEditingId(null)
-    setForm(formInicial)
-    setErrors({})
-    setActionError('')
+    setEditForm(formInicial)
+    setEditErrors({})
+    setEditSaving(false)
   }
 
   const manejarEnvio = async (event) => {
     event.preventDefault()
-    if (!validarFormulario()) return
+    const nuevosErrores = validarFormulario(form, false)
+    setErrors(nuevosErrores)
+    if (Object.keys(nuevosErrores).length > 0) return
     setActionError('')
 
-    const payload = {
-      name: form.name,
-      totalAmount: Number(form.totalAmount),
-      pendingBalance: Number(form.pendingBalance || form.totalAmount),
-      currency: currencyLabel,
-      dueDate: form.dueDate,
-      interestRate: Number(form.interestRate),
-    }
-
     try {
-      if (editingId) {
-        await updateDebt(editingId, payload)
-        setEditingId(null)
-        setForm(formInicial)
-        setToast({ message: 'Deuda actualizada', visible: true })
-      } else {
-        await addDebt(payload)
-        setForm(formInicial)
-        setToast({ message: 'Deuda registrada correctamente', visible: true })
-      }
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      await addDebt({
+        name: form.name,
+        totalAmount: Number(form.totalAmount),
+        pendingBalance: Number(form.pendingBalance || form.totalAmount),
+        currency: currencyLabel,
+        dueDate: form.dueDate,
+        interestRate: Number(form.interestRate),
+      })
+      setForm(formInicial)
+      showToast('Deuda registrada correctamente')
     } catch (error) {
       setActionError(error.message || 'No se pudo guardar la deuda')
+    }
+  }
+
+  const guardarEdicion = async () => {
+    if (!editingId) return
+    const nuevosErrores = validarFormulario(editForm, true)
+    setEditErrors(nuevosErrores)
+    if (Object.keys(nuevosErrores).length > 0) return
+
+    setEditSaving(true)
+    try {
+      await updateDebt(editingId, {
+        name: editForm.name,
+        totalAmount: Number(editForm.totalAmount),
+        pendingBalance: Number(editForm.pendingBalance || editForm.totalAmount),
+        currency: currencyLabel,
+        dueDate: editForm.dueDate,
+        interestRate: Number(editForm.interestRate),
+      })
+      cerrarEdicion()
+      showToast('Deuda actualizada')
+    } catch (error) {
+      setEditErrors({
+        form: error.message || 'No se pudo actualizar la deuda',
+      })
+      setEditSaving(false)
     }
   }
 
@@ -356,8 +392,7 @@ function Debts() {
     try {
       await addPayment(paymentTarget.id, Number(paymentAmount))
       setPaymentTarget(null)
-      setToast({ message: 'Pago registrado correctamente', visible: true })
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      showToast('Pago registrado correctamente')
     } catch (error) {
       setErrors({
         paymentAmount: error.message || 'No se pudo registrar el pago',
@@ -371,11 +406,10 @@ function Debts() {
     if (!deleteTarget) return
     try {
       await deleteDebt(deleteTarget.id)
-      if (editingId === deleteTarget.id) cancelarEdicion()
+      if (editingId === deleteTarget.id) cerrarEdicion()
       setDeleteTarget(null)
       if (simDebtId === deleteTarget.id) setSimDebtId(null)
-      setToast({ message: 'Deuda eliminada', visible: true })
-      setTimeout(() => setToast({ message: '', visible: false }), 3000)
+      showToast('Deuda eliminada')
     } catch (error) {
       setActionError(error.message || 'No se pudo eliminar la deuda')
     }
@@ -409,7 +443,7 @@ function Debts() {
         <div className="debts-layout">
           <div className="debts-left">
             <section className="debt-form-card">
-              <h1>{editingId ? 'Editar Deuda' : 'Registrar Deuda'}</h1>
+              <h1>Registrar Deuda</h1>
               <form onSubmit={manejarEnvio} noValidate>
                 <label>
                   Nombre / Entidad
@@ -459,7 +493,7 @@ function Debts() {
                       type="date"
                       value={form.dueDate}
                       onChange={manejarCambio('dueDate')}
-                      min={editingId ? undefined : todayISO}
+                      min={todayISO}
                     />
                     {errors.dueDate && (
                       <span className="error">{errors.dueDate}</span>
@@ -481,33 +515,13 @@ function Debts() {
                   </label>
                 </div>
 
-                {editingId ? (
-                  <div className="debt-form-actions">
-                    <button
-                      type="submit"
-                      className="primary-button"
-                      disabled={debtActionLoading}
-                    >
-                      {debtActionLoading ? 'Guardando...' : 'Guardar cambios'}
-                    </button>
-                    <button
-                      type="button"
-                      className="cancel-button"
-                      onClick={cancelarEdicion}
-                      disabled={debtActionLoading}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="submit"
-                    className="primary-button"
-                    disabled={debtActionLoading}
-                  >
-                    {debtActionLoading ? 'Guardando...' : 'Guardar Deuda'}
-                  </button>
-                )}
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={debtActionLoading}
+                >
+                  {debtActionLoading ? 'Guardando...' : 'Guardar Deuda'}
+                </button>
                 {(actionError || debtActionError) && (
                   <p className="form-error">{actionError || debtActionError}</p>
                 )}
@@ -606,7 +620,7 @@ function Debts() {
                               type="button"
                               className="icon-edit"
                               aria-label="Editar deuda"
-                              onClick={() => empezarEdicion(debt)}
+                              onClick={() => abrirEdicion(debt)}
                               disabled={debtActionLoading}
                             >
                               <FiEdit2 size={16} />
@@ -744,7 +758,7 @@ function Debts() {
                               type="button"
                               className="icon-edit"
                               aria-label="Editar deuda"
-                              onClick={() => empezarEdicion(debt)}
+                              onClick={() => abrirEdicion(debt)}
                               disabled={debtActionLoading}
                             >
                               <FiEdit2 size={16} />
@@ -791,6 +805,99 @@ function Debts() {
           </div>
         </div>
 
+        {editingId && (
+          <div className="debt-edit-modal-root">
+            <Modal
+              title="Editar deuda"
+              onCancel={cerrarEdicion}
+              onConfirm={guardarEdicion}
+              confirmLabel={
+                editSaving || debtActionLoading
+                  ? 'Guardando…'
+                  : 'Guardar cambios'
+              }
+              cancelLabel="Cancelar"
+            >
+              <div className="debt-edit-form">
+                <label>
+                  Nombre / Entidad
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={manejarCambioEdit('name')}
+                    placeholder="Ej. Préstamo personal"
+                  />
+                  {editErrors.name && (
+                    <span className="error">{editErrors.name}</span>
+                  )}
+                </label>
+
+                <label>
+                  Monto Total ({currencyLabel})
+                  <input
+                    type="number"
+                    value={editForm.totalAmount}
+                    onChange={manejarCambioEdit('totalAmount')}
+                    min="0"
+                    step="0.01"
+                    placeholder={currencyLabel === 'COP' ? '0' : '0.00'}
+                  />
+                  {editErrors.totalAmount && (
+                    <span className="error">{editErrors.totalAmount}</span>
+                  )}
+                </label>
+
+                <label>
+                  Saldo Pendiente ({currencyLabel})
+                  <input
+                    type="number"
+                    value={editForm.pendingBalance}
+                    onChange={manejarCambioEdit('pendingBalance')}
+                    min="0"
+                    step="0.01"
+                    placeholder={currencyLabel === 'COP' ? '0' : '0.00'}
+                  />
+                  {editErrors.pendingBalance && (
+                    <span className="error">{editErrors.pendingBalance}</span>
+                  )}
+                </label>
+
+                <div className="field-grid">
+                  <label>
+                    Vencimiento
+                    <input
+                      type="date"
+                      value={editForm.dueDate}
+                      onChange={manejarCambioEdit('dueDate')}
+                    />
+                    {editErrors.dueDate && (
+                      <span className="error">{editErrors.dueDate}</span>
+                    )}
+                  </label>
+                  <label>
+                    Tasa mensual (%)
+                    <input
+                      type="number"
+                      value={editForm.interestRate}
+                      onChange={manejarCambioEdit('interestRate')}
+                      min="0"
+                      step="0.01"
+                      placeholder="Ej. 1.5"
+                    />
+                    {editErrors.interestRate && (
+                      <span className="error">{editErrors.interestRate}</span>
+                    )}
+                  </label>
+                </div>
+
+                {editErrors.form && (
+                  <p className="form-error">{editErrors.form}</p>
+                )}
+              </div>
+            </Modal>
+          </div>
+        )}
+
         {paymentTarget && (
           <Modal
             title={`Pagar deuda: ${paymentTarget.name}`}
@@ -832,7 +939,6 @@ function Debts() {
         <Toast message={toast.message} visible={toast.visible} />
 
         <style>{`
-
           .debts-page {
             --debts-red: #dc2626;
             --debts-red-dark: #b91c1c;
@@ -948,14 +1054,17 @@ function Debts() {
             display: grid;
             gap: 0.95rem;
           }
-          .debt-form-card label {
+          .debt-form-card label,
+          .debt-edit-form label {
             display: grid;
             gap: 0.4rem;
             font-weight: 700;
             font-size: 0.9rem;
             color: var(--text-primary);
+            text-align: left;
           }
-          .debt-form-card input {
+          .debt-form-card input,
+          .debt-edit-form input {
             width: 100%;
             padding: 0.8rem 0.9rem;
             border: 1px solid var(--border);
@@ -968,7 +1077,8 @@ function Debts() {
             box-sizing: border-box;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
           }
-          .debt-form-card input:focus {
+          .debt-form-card input:focus,
+          .debt-edit-form input:focus {
             border-color: var(--debts-red);
             box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
           }
@@ -983,10 +1093,6 @@ function Debts() {
             min-width: 0;
           }
 
-          .debt-form-actions {
-            display: grid;
-            gap: 0.55rem;
-          }
           .primary-button {
             width: 100%;
             margin-top: 0.15rem;
@@ -1011,21 +1117,34 @@ function Debts() {
             cursor: not-allowed;
             transform: none;
           }
-          .cancel-button {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            background: transparent;
-            color: var(--text-primary);
-            font-family: inherit;
-            font-weight: 750;
-            font-size: 0.95rem;
-            cursor: pointer;
+
+          .debt-edit-form {
+            display: grid;
+            gap: 0.9rem;
+            min-width: min(100%, 22rem);
           }
-          .cancel-button:hover:not(:disabled) {
-            border-color: var(--debts-red);
-            color: var(--debts-red);
+
+          /* Guardar cambios del modal → rojo deudas */
+          .debt-edit-modal-root :is(
+            button.confirm,
+            button.modal-confirm,
+            .modal-actions button:last-child,
+            .modal-footer button:last-child,
+            [data-modal-confirm]
+          ) {
+            background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
+            border-color: transparent !important;
+            color: #fff !important;
+            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+          }
+          .debt-edit-modal-root :is(
+            button.confirm,
+            button.modal-confirm,
+            .modal-actions button:last-child,
+            .modal-footer button:last-child,
+            [data-modal-confirm]
+          ):hover {
+            filter: brightness(1.06);
           }
 
           .debt-search-card {
@@ -1147,7 +1266,6 @@ function Debts() {
             font-weight: 800;
           }
 
-          /* ===== Deudas saldadas (estilo logros / metas) ===== */
           .debts-paid-section {
             border-color: rgba(22, 163, 74, 0.4);
           }
@@ -1194,8 +1312,8 @@ function Debts() {
             box-shadow: 0 8px 20px rgba(22, 163, 74, 0.1);
           }
           .debt-card.is-editing {
-            border-color: rgba(37, 99, 235, 0.45);
-            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+            border-color: rgba(220, 38, 38, 0.5);
+            box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.12);
           }
           .debt-card-header {
             display: flex;
@@ -1266,9 +1384,6 @@ function Debts() {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 0.65rem;
-          }
-          .debt-stats-paid {
-            grid-template-columns: 1fr 1fr;
           }
           .debt-stats span {
             display: block;

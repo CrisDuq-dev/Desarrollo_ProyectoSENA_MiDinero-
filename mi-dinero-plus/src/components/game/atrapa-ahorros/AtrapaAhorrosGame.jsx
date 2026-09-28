@@ -1,30 +1,57 @@
 /**
- * Atrapa tus Ahorros — juego completo (canvas + DDA).
- * x2 intermedio (~6.5s); cada gema extra sube nivel (x3, x4…) y acelera un poco.
- * active=false detiene el bucle (al cerrar el modal).
+ * Atrapa tus Ahorros — orquestador.
+ * Canvas: fondo + cesta + popups.
+ * HTML: ítems (FallingItems), HUD, overlays, leyenda.
+ * Audio: lib/gameAudio (BGM + SFX + mute).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { FaHeart, FaTrophy, FaGamepad } from 'react-icons/fa'
-import { MdSavings } from 'react-icons/md'
 import { DifficultyManager } from './difficulty'
-import { STORAGE_BEST_KEY, THEME } from './constants'
+import { STORAGE_BEST_KEY } from './constants'
+import FallingItems from './lib/FallingItems'
+import GameLegend from './lib/GameLegend'
+import GameOverlays from './lib/GameOverlays'
+import GameHud from './lib/GameHud'
+import {
+  startBgm,
+  stopBgm,
+  playGood,
+  playBad,
+  playGem,
+  setMuted,
+  isMuted,
+  toggleMute,
+} from './lib/gameAudio'
 
 const ITEM_TYPES = [
-  { key: 'coin', label: '$', value: 10, radius: 18, weight: 48, kind: 'good', color: '#ffed2a' },
-  { key: 'bill', label: 'B', value: 40, radius: 20, weight: 24, kind: 'good', color: '#22c55e' },
-  { key: 'gem', label: '◆', value: 80, radius: 18, weight: 8, kind: 'gem', color: '#a78bfa' },
-  { key: 'factura', label: 'F', value: 0, radius: 18, weight: 13, kind: 'bad', color: '#f97316' },
-  { key: 'deuda', label: 'D', value: 0, radius: 18, weight: 7, kind: 'bad', color: '#ef4444' },
+  { key: 'coin', iconKey: 'coin', value: 10, radius: 18, weight: 32, kind: 'good', color: '#fbbf24' },
+  { key: 'bill', iconKey: 'bill', value: 40, radius: 20, weight: 14, kind: 'good', color: '#22c55e' },
+  { key: 'gem', iconKey: 'gem', value: 80, radius: 18, weight: 5, kind: 'gem', color: '#a855f7' },
+  { key: 'piggy', iconKey: 'piggy', value: 50, radius: 19, weight: 6, kind: 'good', color: '#f472b6' },
+  { key: 'factura', iconKey: 'factura', value: 0, radius: 18, weight: 11, kind: 'bad', color: '#f97316' },
+  { key: 'deuda', iconKey: 'deuda', value: 0, radius: 18, weight: 8, kind: 'bad', color: '#ef4444' },
+  { key: 'burger', iconKey: 'burger', value: 0, radius: 18, weight: 9, kind: 'bad', color: '#fb923c' },
+  { key: 'console', iconKey: 'console', value: 0, radius: 18, weight: 7, kind: 'bad', color: '#f87171' },
+  { key: 'phone', iconKey: 'phone', value: 0, radius: 18, weight: 7, kind: 'bad', color: '#f97316' },
+  { key: 'tv', iconKey: 'tv', value: 0, radius: 18, weight: 6, kind: 'bad', color: '#dc2626' },
 ]
 const TOTAL_WEIGHT = ITEM_TYPES.reduce((s, t) => s + t.weight, 0)
 const BASKET_W = 78
 const BASKET_H = 46
 
-const MULT_BASE_MS = 6500
-const MULT_EXTEND_MS = 4000
-const MULT_MAX_MS = 14000
+const MULT_BASE_MS = 8000
+const MULT_EXTEND_MS = 5000
+const MULT_MAX_MS = 16000
 const MULT_LEVEL_MAX = 5
-const SPEED_BOOST_PER_LEVEL = 0.12
+const SPEED_SLOW_PER_LEVEL = 0.06
+
+const BAD_LABELS = {
+  factura: '¡Factura!',
+  deuda: '¡Deuda!',
+  burger: '¡Antojo!',
+  console: '¡Gasto!',
+  phone: '¡Gasto!',
+  tv: '¡Gasto!',
+}
 
 function pickItemType() {
   let roll = Math.random() * TOTAL_WEIGHT
@@ -63,6 +90,18 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, r)
   ctx.arcTo(x, y, x + w, y, r)
   ctx.closePath()
+}
+
+function mapFallItems(items) {
+  return items.map((it) => ({
+    id: it.id,
+    x: it.x,
+    y: it.y,
+    radius: it.type.radius,
+    color: it.type.color,
+    iconKey: it.type.iconKey,
+    kind: it.type.kind,
+  }))
 }
 
 export default function AtrapaAhorrosGame({ active = true }) {
@@ -105,6 +144,17 @@ export default function AtrapaAhorrosGame({ active = true }) {
     finalScore: 0,
     best: readBest(),
   })
+
+  const [fallItems, setFallItems] = useState([])
+  const [muted, setMutedState] = useState(() => isMuted())
+
+  const handleToggleMute = useCallback(() => {
+    const next = toggleMute()
+    setMutedState(next)
+    if (!next && stateRef.current.phase === 'playing') {
+      startBgm()
+    }
+  }, [])
 
   const syncHud = useCallback(() => {
     const s = stateRef.current
@@ -175,6 +225,7 @@ export default function AtrapaAhorrosGame({ active = true }) {
     s.basketBumpUntil = 0
     s.toast = ''
     s.toastUntil = 0
+    setFallItems([])
     syncHud()
   }, [syncHud])
 
@@ -183,6 +234,9 @@ export default function AtrapaAhorrosGame({ active = true }) {
     s.phase = 'over'
     s.multiplierLevel = 1
     s.multiplierUntil = 0
+    s.items = []
+    setFallItems([])
+    stopBgm()
     saveBest(s.score)
     syncHud()
   }, [syncHud])
@@ -201,9 +255,7 @@ export default function AtrapaAhorrosGame({ active = true }) {
         s.multiplierLevel = Math.min(MULT_LEVEL_MAX, s.multiplierLevel + 1)
         const remaining = Math.max(0, s.multiplierUntil - now)
         s.multiplierUntil = now + Math.min(MULT_MAX_MS, remaining + MULT_EXTEND_MS)
-        if (fromGem) {
-          showToast(`¡Bono x${s.multiplierLevel}! Un poco más de velocidad`)
-        }
+        if (fromGem) showToast(`¡Bono x${s.multiplierLevel}!`)
       }
       s.hudDirty = true
       syncHud()
@@ -226,11 +278,14 @@ export default function AtrapaAhorrosGame({ active = true }) {
           x: item.x,
           y: item.y,
           text: `+${gained}`,
-          color: '#12b76a',
+          color: item.type.key === 'piggy' ? '#f472b6' : '#12b76a',
           life: 1,
         })
         if (item.type.kind === 'gem') {
+          playGem()
           activateMultiplier(true)
+        } else {
+          playGood()
         }
         s.basketBumpUntil = performance.now() + 140
         if (s.score >= s.goal) {
@@ -244,12 +299,13 @@ export default function AtrapaAhorrosGame({ active = true }) {
           }
         }
       } else {
+        playBad()
         s.lives -= 1
         s.difficulty.recordOutcome(false)
         s.popups.push({
           x: item.x,
           y: item.y,
-          text: item.type.key === 'deuda' ? '¡Deuda!' : '¡Factura!',
+          text: BAD_LABELS[item.type.key] || '¡Cuidado!',
           color: '#ef4444',
           life: 1,
         })
@@ -270,7 +326,7 @@ export default function AtrapaAhorrosGame({ active = true }) {
     const now = Date.now()
     if (now >= s.multiplierUntil || s.multiplierLevel < 2) return 1
     const extraLevels = s.multiplierLevel - 2
-    return 1 + extraLevels * SPEED_BOOST_PER_LEVEL
+    return Math.max(0.75, 1 - extraLevels * SPEED_SLOW_PER_LEVEL)
   }
 
   const draw = useCallback(() => {
@@ -287,22 +343,6 @@ export default function AtrapaAhorrosGame({ active = true }) {
     grad.addColorStop(1, '#111834')
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, w, h)
-
-    for (const item of s.items) {
-      const t = item.type
-      ctx.beginPath()
-      ctx.arc(item.x, item.y, t.radius, 0, Math.PI * 2)
-      ctx.fillStyle = t.color
-      ctx.fill()
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)'
-      ctx.lineWidth = 2
-      ctx.stroke()
-      ctx.fillStyle = '#0b1220'
-      ctx.font = `bold ${Math.round(t.radius * 0.95)}px Nunito, system-ui, sans-serif`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(t.label, item.x, item.y + 1)
-    }
 
     const basketY = h - 52
     const now = performance.now()
@@ -358,6 +398,7 @@ export default function AtrapaAhorrosGame({ active = true }) {
         s.spawnAcc = 0
         const type = pickItemType()
         s.items.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           type,
           x: type.radius + Math.random() * (s.width - type.radius * 2),
           y: -type.radius,
@@ -366,8 +407,8 @@ export default function AtrapaAhorrosGame({ active = true }) {
 
       const speedBoost = currentSpeedBoost()
       const fall = s.difficulty.fallSpeed * speedBoost
-
       const basketY = s.height - 52
+
       for (let i = s.items.length - 1; i >= 0; i--) {
         const item = s.items[i]
         item.y += fall * dt
@@ -379,7 +420,10 @@ export default function AtrapaAhorrosGame({ active = true }) {
         if (hit) {
           handleCatch(item)
           s.items.splice(i, 1)
-          if (s.phase !== 'playing') return
+          if (s.phase !== 'playing') {
+            setFallItems([])
+            return
+          }
         } else if (item.y - item.type.radius > s.height) {
           s.items.splice(i, 1)
         }
@@ -397,6 +441,8 @@ export default function AtrapaAhorrosGame({ active = true }) {
       if (s.keys.ArrowRight || s.keys.d || s.keys.D) {
         s.basketX = Math.min(s.width - BASKET_W / 2, s.basketX + 280 * dt)
       }
+
+      setFallItems(mapFallItems(s.items))
     },
     [handleCatch, syncHud]
   )
@@ -423,6 +469,7 @@ export default function AtrapaAhorrosGame({ active = true }) {
     syncHud()
     cancelAnimationFrame(s.raf)
     s.raf = requestAnimationFrame(loop)
+    startBgm()
   }, [loop, resetGame, resize, syncHud])
 
   useEffect(() => {
@@ -444,9 +491,18 @@ export default function AtrapaAhorrosGame({ active = true }) {
       s.items = []
       s.multiplierLevel = 1
       s.multiplierUntil = 0
+      setFallItems([])
+      stopBgm()
       syncHud()
     }
   }, [active, syncHud])
+
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(stateRef.current.raf)
+      stopBgm()
+    }
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -488,95 +544,35 @@ export default function AtrapaAhorrosGame({ active = true }) {
     }
   }, [])
 
-  const lives = Math.max(0, hud.lives)
-
   return (
     <div className="atrapa-game">
-      <header className="atrapa-hud">
-        <div className="atrapa-hud-block">
-          <span className="atrapa-hud-label">
-            <MdSavings size={14} aria-hidden /> Ahorro
-          </span>
-          <strong className="atrapa-hud-value">{formatMoney(hud.score)}</strong>
-        </div>
-        <div className="atrapa-hud-center">
-          {hud.multiplier && (
-            <span className="atrapa-mult">x{hud.multiplierLevel}</span>
-          )}
-        </div>
-        <div className="atrapa-hud-lives">
-          {Array.from({ length: lives }).map((_, i) => (
-            <FaHeart key={i} size={14} className="atrapa-heart" aria-hidden />
-          ))}
-        </div>
-      </header>
-
-      <div className="atrapa-goal">
-        <div className="atrapa-goal-row">
-          <span>
-            <FaTrophy size={12} aria-hidden /> Meta
-          </span>
-          <span>{formatMoney(hud.goal)}</span>
-        </div>
-        <div className="atrapa-goal-track">
-          <div className="atrapa-goal-fill" style={{ width: `${hud.progress}%` }} />
-        </div>
-      </div>
+      <GameHud
+        score={hud.score}
+        lives={hud.lives}
+        goal={hud.goal}
+        progress={hud.progress}
+        multiplier={hud.multiplier}
+        multiplierLevel={hud.multiplierLevel}
+        muted={muted}
+        onToggleMute={handleToggleMute}
+      />
 
       <div className="atrapa-stage" ref={wrapRef}>
         <canvas ref={canvasRef} className="atrapa-canvas" />
 
+        <FallingItems items={fallItems} visible={hud.phase === 'playing'} />
+
         {hud.toast && <div className="atrapa-toast">{hud.toast}</div>}
 
-        {hud.phase === 'idle' && (
-          <div className="atrapa-overlay">
-            <FaGamepad size={24} className="atrapa-overlay-icon" />
-            <h2>
-              Atrapa tus <span>Ahorros</span>
-            </h2>
-            <p>
-              Recoge monedas y billetes. Esquiva facturas y deudas.
-              <br />
-              Diamante = bono x2 (se puede apilar).
-            </p>
-            <button type="button" className="atrapa-btn" onClick={startGame}>
-              Jugar
-            </button>
-            <p className="atrapa-hint">Mouse, o Teclas ← →</p>
-          </div>
-        )}
-
-        {hud.phase === 'over' && (
-          <div className="atrapa-overlay">
-            <h2>Fin del juego</h2>
-            <p className="atrapa-final">
-              Ahorro final: <strong>{formatMoney(hud.finalScore)}</strong>
-            </p>
-            <p className="atrapa-best">Mejor marca: {formatMoney(hud.best)}</p>
-            <button type="button" className="atrapa-btn" onClick={startGame}>
-              Jugar de nuevo
-            </button>
-          </div>
-        )}
+        <GameOverlays
+          phase={hud.phase}
+          finalScore={hud.finalScore}
+          best={hud.best}
+          onStart={startGame}
+        />
       </div>
 
-      <div className="atrapa-legend">
-        <span>
-          <i style={{ background: '#ffed2a' }} /> Moneda
-        </span>
-        <span>
-          <i style={{ background: '#22c55e' }} /> Billete
-        </span>
-        <span>
-          <i style={{ background: '#a78bfa' }} /> Gema
-        </span>
-        <span>
-          <i style={{ background: '#f97316' }} /> Factura
-        </span>
-        <span>
-          <i style={{ background: '#ef4444' }} /> Deuda
-        </span>
-      </div>
+      <GameLegend />
 
       <style>{`
         .atrapa-game {
@@ -588,74 +584,6 @@ export default function AtrapaAhorrosGame({ active = true }) {
           max-height: 100%;
           font-family: 'Nunito', system-ui, sans-serif;
           color: var(--text-primary, #0f172a);
-        }
-        .atrapa-hud {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.45rem 0.65rem;
-          border-radius: 0.75rem;
-          border: 1px solid var(--border, #e2e8f0);
-          background: var(--bg-surface, #ffffff);
-          flex-shrink: 0;
-        }
-        .atrapa-hud-block { display: flex; flex-direction: column; gap: 0.05rem; }
-        .atrapa-hud-label {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.3rem;
-          font-size: 0.62rem;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: var(--text-muted, #64748b);
-        }
-        .atrapa-hud-value {
-          font-size: 1.05rem;
-          font-weight: 800;
-          color: ${THEME.good};
-        }
-        .atrapa-hud-center { min-width: 2.5rem; text-align: center; }
-        .atrapa-mult {
-          display: inline-block;
-          padding: 0.15rem 0.45rem;
-          border-radius: 999px;
-          font-size: 0.72rem;
-          font-weight: 900;
-          background: #ffed2a;
-          color: #111;
-        }
-        .atrapa-hud-lives {
-          display: flex;
-          gap: 0.25rem;
-          align-items: center;
-        }
-        .atrapa-heart { color: #f43f5e; }
-        .atrapa-goal { display: grid; gap: 0.25rem; flex-shrink: 0; }
-        .atrapa-goal-row {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.7rem;
-          font-weight: 700;
-          color: var(--text-muted, #64748b);
-        }
-        .atrapa-goal-row span:first-child {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.3rem;
-        }
-        .atrapa-goal-track {
-          height: 0.32rem;
-          border-radius: 999px;
-          background: var(--border, #e2e8f0);
-          overflow: hidden;
-        }
-        .atrapa-goal-fill {
-          height: 100%;
-          border-radius: 999px;
-          background: linear-gradient(90deg, ${THEME.accent}, ${THEME.good});
-          transition: width 0.2s ease;
         }
         .atrapa-stage {
           position: relative;
@@ -690,80 +618,6 @@ export default function AtrapaAhorrosGame({ active = true }) {
           max-width: 90%;
           overflow: hidden;
           text-overflow: ellipsis;
-        }
-        .atrapa-overlay {
-          position: absolute;
-          inset: 0;
-          z-index: 4;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 0.25rem;
-          padding: 0.65rem;
-          text-align: center;
-          background: rgba(11, 15, 31, 0.92);
-          backdrop-filter: blur(4px);
-          color: #e2e8f0;
-        }
-        .atrapa-overlay-icon { color: #2dd4bf; }
-        .atrapa-overlay h2 {
-          margin: 0;
-          font-size: 1.1rem;
-          font-weight: 800;
-          color: #f8fafc;
-        }
-        .atrapa-overlay h2 span { color: #2dd4bf; }
-        .atrapa-overlay p {
-          margin: 0;
-          font-size: 0.78rem;
-          color: #cbd5e1;
-          line-height: 1.4;
-          max-width: 20rem;
-        }
-        .atrapa-final strong { color: #4ade80; }
-        .atrapa-best {
-          font-size: 0.75rem !important;
-          color: #94a3b8 !important;
-        }
-        .atrapa-btn {
-          margin-top: 0.35rem;
-          border: none;
-          border-radius: 0.7rem;
-          padding: 0.55rem 1.2rem;
-          font: inherit;
-          font-weight: 800;
-          color: #fff;
-          cursor: pointer;
-          background: linear-gradient(135deg, #14b8a6, #0d9488);
-          box-shadow: 0 8px 20px rgba(13, 148, 136, 0.35);
-        }
-        .atrapa-btn:hover { filter: brightness(1.08); }
-        .atrapa-hint {
-          margin-top: 0.2rem !important;
-          font-size: 0.68rem !important;
-          color: #94a3b8 !important;
-        }
-        .atrapa-legend {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.3rem 0.5rem;
-          justify-content: center;
-          font-size: 0.6rem;
-          font-weight: 700;
-          color: var(--text-muted, #64748b);
-          flex-shrink: 0;
-        }
-        .atrapa-legend span {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-        .atrapa-legend i {
-          width: 0.55rem;
-          height: 0.55rem;
-          border-radius: 999px;
-          display: inline-block;
         }
       `}</style>
     </div>
