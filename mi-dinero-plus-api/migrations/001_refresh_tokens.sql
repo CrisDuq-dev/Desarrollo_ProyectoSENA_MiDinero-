@@ -1,4 +1,4 @@
--- Ejecutar una sola vez en la BD existente (XAMPP / MySQL Workbench)
+feat(env): update .env.example for clarity and add SSL configuration for TiDB
 -- user_id = BIGINT UNSIGNED para coincidir con users.id
 USE mi_dinero_plus;
 

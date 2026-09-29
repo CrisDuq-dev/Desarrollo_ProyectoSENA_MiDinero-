@@ -19,6 +19,8 @@ const aiRoutes = require('./routes/aiRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
+app.set('trust proxy', 1);
+app.use(cookieParser());
 
 // =====================
 // Seguridad HTTP (headers)
@@ -70,7 +72,6 @@ app.use(
 // =====================
 app.use(express.json({ limit: '32kb' }));
 app.use(express.urlencoded({ extended: true, limit: '32kb' }));
-app.use(cookieParser());
 
 // =====================
 // Passport (Google OAuth)

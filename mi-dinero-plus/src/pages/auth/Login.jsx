@@ -94,7 +94,7 @@ function Login() {
 
   const manejarGoogle = () => {
     const apiBase = (
-      import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+      import.meta.env.VITE_API_URL || '/api'
     ).replace(/\/$/, '')
     window.location.href = `${apiBase}/auth/google`
   }

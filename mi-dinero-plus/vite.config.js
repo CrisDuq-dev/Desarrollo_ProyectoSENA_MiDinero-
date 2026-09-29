@@ -1,13 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-/**
- * Proxy /api → backend.
- * cookieDomainRewrite asegura que Set-Cookie del API (puerto 4000)
- * quede asociado al host del frontend (localhost) y el navegador las envíe.
- */
 const apiProxy = {
-  target: 'http://localhost:4000',
+  target: 'http://localhost:5000',
   changeOrigin: true,
   secure: false,
   cookieDomainRewrite: 'localhost',
