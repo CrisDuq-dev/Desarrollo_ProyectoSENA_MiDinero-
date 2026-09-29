@@ -35,30 +35,37 @@ app.use(
 // =====================
 // CORS — allowlist (no origen reflejado abierto)
 // =====================
+// =====================
+// CORS — allowlist
+// =====================
 const defaultOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:4173',
   'http://127.0.0.1:4173',
+  'https://mi-dinero-plus.vercel.app',
 ];
 
 const envOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
-  .map((s) => s.trim())
+  .map((s) => s.trim().replace(/\/$/, ''))
   .filter(Boolean);
 
-const allowedOrigins = envOrigins.length > 0 ? envOrigins : defaultOrigins;
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+
+console.log('[CORS] Orígenes permitidos:', allowedOrigins);
 
 app.use(
   cors({
     origin(origin, callback) {
-      // Requests sin Origin (curl, Postman, same-origin server-side)
       if (!origin) {
         return callback(null, true);
       }
-      if (allowedOrigins.includes(origin)) {
+      const normalized = String(origin).replace(/\/$/, '');
+      if (allowedOrigins.includes(normalized)) {
         return callback(null, true);
       }
+      console.warn('[CORS] Rechazado:', origin);
       return callback(new Error('Origen no permitido por CORS'));
     },
     credentials: true,
