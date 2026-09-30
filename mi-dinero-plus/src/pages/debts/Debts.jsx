@@ -451,7 +451,7 @@ function Debts() {
                     type="text"
                     value={form.name}
                     onChange={manejarCambio('name')}
-                    placeholder="Ej. Préstamo personal"
+                    placeholder="Nombre de la deuda o entidad"
                   />
                   {errors.name && <span className="error">{errors.name}</span>}
                 </label>
@@ -825,7 +825,7 @@ function Debts() {
                     type="text"
                     value={editForm.name}
                     onChange={manejarCambioEdit('name')}
-                    placeholder="Ej. Préstamo personal"
+                    placeholder="Nombre de la deuda o entidad"
                   />
                   {editErrors.name && (
                     <span className="error">{editErrors.name}</span>
