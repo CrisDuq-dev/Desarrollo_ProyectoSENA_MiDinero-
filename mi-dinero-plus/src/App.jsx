@@ -30,7 +30,7 @@ function RequireAuth({ children }) {
     return (
       <div
         style={{
-          minHeight: '100vh',
+          minHeight: '100dvh',
           display: 'grid',
           placeItems: 'center',
           background: 'var(--bg-page, #0b1220)',

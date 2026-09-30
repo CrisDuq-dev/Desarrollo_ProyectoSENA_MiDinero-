@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+feat(dashboard): improve transaction visualization with table and responsive cards
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useFinance } from '../../contexts/FinanceContext'
@@ -442,71 +442,127 @@ function Dashboard() {
         {recentTransactions.length === 0 ? (
           <p className="empty-state">Aún no tienes transacciones recientes.</p>
         ) : (
-          <div className="table-wrapper">
-            <table className="transactions-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Descripción</th>
-                  <th>Tipo</th>
-                  <th>Monto</th>
-                  <th>Conversión</th>
-                  <th>Tasa del día</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentTransactions.map((transaction) => {
-                  const isIncome = transaction.type === 'income'
-                  const { conversion, unitRates } = splitHistoricalFx(
-                    transaction.amount,
-                    transaction.rateUsdAtCreate,
-                    transaction.rateEurAtCreate
-                  )
-                  return (
-                    <tr key={transaction.id}>
-                      <td>{formatTxDate(getTxDateValue(transaction))}</td>
-                      <td>{transaction.description || '-'}</td>
-                      <td>
-                        <span
-                          className={`type-badge ${
-                            isIncome ? 'is-income' : 'is-expense'
-                          }`}
-                        >
-                          {isIncome ? 'Ingreso' : 'Gasto'}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`dash-tx-main ${
-                            isIncome ? 'is-income' : 'is-expense'
-                          }`}
-                        >
-                          {isIncome ? '+' : '-'}
-                          {formatMoney(transaction.amount)}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className="dash-tx-fx"
-                          title="Equivalencia en USD/EUR al momento del registro"
-                        >
-                          {conversion || '—'}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className="dash-tx-fx"
-                          title="Precio de 1 USD y 1 EUR en COP el día del registro"
-                        >
-                          {unitRates || '—'}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Tabla: desktop / tablet ancha */}
+            <div className="table-wrapper dash-tx-table-view">
+              <table className="transactions-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
+                    <th>Conversión</th>
+                    <th>Tasa del día</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentTransactions.map((transaction) => {
+                    const isIncome = transaction.type === 'income'
+                    const { conversion, unitRates } = splitHistoricalFx(
+                      transaction.amount,
+                      transaction.rateUsdAtCreate,
+                      transaction.rateEurAtCreate
+                    )
+                    return (
+                      <tr key={transaction.id}>
+                        <td>{formatTxDate(getTxDateValue(transaction))}</td>
+                        <td>{transaction.description || '-'}</td>
+                        <td>
+                          <span
+                            className={`type-badge ${
+                              isIncome ? 'is-income' : 'is-expense'
+                            }`}
+                          >
+                            {isIncome ? 'Ingreso' : 'Gasto'}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`dash-tx-main ${
+                              isIncome ? 'is-income' : 'is-expense'
+                            }`}
+                          >
+                            {isIncome ? '+' : '-'}
+                            {formatMoney(transaction.amount)}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className="dash-tx-fx"
+                            title="Equivalencia en USD/EUR al momento del registro"
+                          >
+                            {conversion || '—'}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className="dash-tx-fx"
+                            title="Precio de 1 USD y 1 EUR en COP el día del registro"
+                          >
+                            {unitRates || '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Tarjetas: ≤ 640 px */}
+            <ul className="dash-tx-cards" aria-label="Transacciones recientes">
+              {recentTransactions.map((transaction) => {
+                const isIncome = transaction.type === 'income'
+                const { conversion, unitRates } = splitHistoricalFx(
+                  transaction.amount,
+                  transaction.rateUsdAtCreate,
+                  transaction.rateEurAtCreate
+                )
+                return (
+                  <li key={transaction.id} className="dash-tx-card">
+                    <div className="dash-tx-card-top">
+                      <span
+                        className={`type-badge ${
+                          isIncome ? 'is-income' : 'is-expense'
+                        }`}
+                      >
+                        {isIncome ? 'Ingreso' : 'Gasto'}
+                      </span>
+                      <span
+                        className={`dash-tx-main ${
+                          isIncome ? 'is-income' : 'is-expense'
+                        }`}
+                      >
+                        {isIncome ? '+' : '-'}
+                        {formatMoney(transaction.amount)}
+                      </span>
+                    </div>
+                    <p className="dash-tx-card-desc">
+                      {transaction.description || '-'}
+                    </p>
+                    <p className="dash-tx-card-date">
+                      {formatTxDate(getTxDateValue(transaction))}
+                    </p>
+                    {(conversion || unitRates) && (
+                      <div className="dash-tx-card-fx">
+                        {conversion ? (
+                          <span title="Equivalencia en USD/EUR al momento del registro">
+                            {conversion}
+                          </span>
+                        ) : null}
+                        {unitRates ? (
+                          <span title="Precio de 1 USD y 1 EUR en COP el día del registro">
+                            {unitRates}
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </>
         )}
       </section>
 
@@ -1066,6 +1122,15 @@ function Dashboard() {
           min-width: 720px;
         }
 
+        /* Tarjetas ocultas en escritorio */
+        .dash-tx-cards {
+          display: none;
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          gap: 0.65rem;
+        }
+
         .transactions-table th,
         .transactions-table td {
           text-align: left;
@@ -1352,6 +1417,58 @@ function Dashboard() {
         @media (max-width: 640px) {
           .dashboard-summary-grid { grid-template-columns: 1fr; }
           .rates-grid-equal { grid-template-columns: 1fr; }
+
+          /* Sin tabla rígida en móvil */
+          .dash-tx-table-view {
+            display: none;
+          }
+
+          .transactions-table {
+            min-width: 0;
+          }
+
+          .dash-tx-cards {
+            display: flex;
+            flex-direction: column;
+          }
+
+          .dash-tx-card {
+            padding: 0.85rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            background: var(--bg-surface);
+          }
+
+          .dash-tx-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.35rem;
+          }
+
+          .dash-tx-card-desc {
+            margin: 0 0 0.25rem;
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: var(--text-primary);
+            word-break: break-word;
+          }
+
+          .dash-tx-card-date {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+          }
+
+          .dash-tx-card-fx {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            margin-top: 0.45rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+          }
         }
       `}</style>
     </main>

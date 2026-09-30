@@ -801,6 +801,62 @@ function Navbar() {
           }
         }
 
+        /* Touch targets ≥ 44×44 px en tablet/móvil */
+        @media (max-width: 768px) {
+          .currency-badge {
+            min-width: 44px;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.35rem 0.5rem;
+            box-sizing: border-box;
+          }
+
+          .notification-button {
+            min-width: 44px;
+            min-height: 44px;
+            width: 44px;
+            height: 44px;
+          }
+
+          .theme-toggle {
+            min-width: 44px;
+            min-height: 44px;
+            width: auto;
+            padding: 0 0.65rem;
+            justify-content: center;
+          }
+
+          .menu-toggle {
+            min-width: 44px;
+            min-height: 44px;
+            width: 44px;
+            height: 44px;
+          }
+
+          .logout-button.desktop-logout {
+            min-height: 44px;
+            padding: 0 0.75rem;
+          }
+
+          .mobile-nav-link {
+            min-height: 44px;
+          }
+
+          .mobile-logout {
+            min-height: 44px;
+          }
+
+          .navbar-alert button {
+            min-width: 44px;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+        }
+
         @media (max-width: 480px) {
           .navbar-alert {
             font-size: 0.72rem;
@@ -821,14 +877,10 @@ function Navbar() {
             font-size: 1.2rem;
           }
           .currency-badge {
-            min-width: 2.15rem;
-            padding: 0.26rem 0.38rem;
-            font-size: 0.66rem;
+            font-size: 0.72rem;
           }
-          .theme-toggle {
-            width: 2.05rem;
-            padding: 0;
-            justify-content: center;
+          .theme-toggle .theme-label-full {
+            display: none;
           }
         }
       `}</style>

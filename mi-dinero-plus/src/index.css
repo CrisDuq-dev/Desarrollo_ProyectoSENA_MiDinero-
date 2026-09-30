@@ -26,19 +26,40 @@
   --scrollbar-thumb-hover: rgba(148, 163, 184, 0.65);
 }
 
-html,
+html {
+  /* Evita scroll horizontal global en móvil */
+  overflow-x: hidden;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100%;
+}
+
 body,
 #root {
   background: var(--bg-page);
   color: var(--text-primary);
   min-height: 100%;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .main-layout,
 .main-layout main {
   background: var(--bg-page);
   color: var(--text-primary);
+  /* 100vh como respaldo; 100dvh evita saltos con la barra del navegador móvil */
   min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 100%;
+}
+
+/* iOS: font-size < 16px en inputs provoca zoom automático */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 /* —— Scrollbar fina —— */
