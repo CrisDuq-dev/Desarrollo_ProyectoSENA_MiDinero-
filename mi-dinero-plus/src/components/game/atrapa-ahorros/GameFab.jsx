@@ -13,9 +13,10 @@ export default function GameFab({ onClick, style }) {
       <FaGamepad size={22} aria-hidden />
       <style>{`
         .atrapa-game-fab {
-          position: fixed;
-          right: 1rem;
-          bottom: 5.75rem;
+          position: fixed !important;
+          right: 1rem !important;
+          left: auto !important;
+          bottom: 5.75rem !important;
           z-index: 40;
           width: 3.25rem;
           height: 3.25rem;
@@ -36,12 +37,6 @@ export default function GameFab({ onClick, style }) {
         .atrapa-game-fab:focus-visible {
           outline: 2px solid #5eead4;
           outline-offset: 3px;
-        }
-        @media (max-width: 900px) {
-          .atrapa-game-fab {
-            right: 1rem;
-            bottom: 5.75rem;
-          }
         }
       `}</style>
     </button>
