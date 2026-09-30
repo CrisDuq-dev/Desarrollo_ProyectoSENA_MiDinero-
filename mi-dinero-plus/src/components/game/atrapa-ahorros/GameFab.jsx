@@ -14,8 +14,8 @@ export default function GameFab({ onClick, style }) {
       <style>{`
         .atrapa-game-fab {
           position: fixed;
-          right: 1.25rem;
-          bottom: 5.6rem;
+          right: 1rem;
+          bottom: 5.75rem;
           z-index: 40;
           width: 3.25rem;
           height: 3.25rem;
@@ -36,6 +36,12 @@ export default function GameFab({ onClick, style }) {
         .atrapa-game-fab:focus-visible {
           outline: 2px solid #5eead4;
           outline-offset: 3px;
+        }
+        @media (max-width: 900px) {
+          .atrapa-game-fab {
+            right: 1rem;
+            bottom: 5.75rem;
+          }
         }
       `}</style>
     </button>
