@@ -1,6 +1,7 @@
 const passport = require('passport')
 const GoogleStrategy = require('passport-google-oauth20').Strategy
 const pool = require('./db')
+const { revokeAllUserRefreshTokens } = require('../services/tokenService')
 
 function configurePassportGoogle() {
   const clientID = process.env.GOOGLE_CLIENT_ID
@@ -26,13 +27,13 @@ function configurePassportGoogle() {
       async (accessToken, refreshToken, profile, done) => {
         try {
           const googleId = profile.id
-          const email = (
-            profile.emails &&
-            profile.emails[0] &&
-            profile.emails[0].value
-          )
-            ? profile.emails[0].value.toLowerCase().trim()
-            : null
+          const emailEntry =
+            profile.emails && profile.emails[0] ? profile.emails[0] : null
+          const email =
+            emailEntry && emailEntry.value
+              ? String(emailEntry.value).toLowerCase().trim()
+              : null
+          const emailVerifiedByGoogle = !!(emailEntry && emailEntry.verified)
           const fullName =
             profile.displayName ||
             [profile.name?.givenName, profile.name?.familyName]
@@ -42,6 +43,12 @@ function configurePassportGoogle() {
 
           if (!email) {
             return done(new Error('Google no entregó un correo'), null)
+          }
+          if (!emailVerifiedByGoogle) {
+            return done(
+              new Error('Google no entregó un correo verificado'),
+              null
+            )
           }
 
           // 1) ¿Ya existe por google_id?
@@ -55,19 +62,42 @@ function configurePassportGoogle() {
 
           // 2) ¿Existe el mismo email? → vincular
           const [byEmail] = await pool.query(
-            'SELECT id, full_name, email FROM users WHERE email = ? LIMIT 1',
+            `SELECT id, full_name, email, email_verified, password_hash
+             FROM users WHERE email = ? LIMIT 1`,
             [email]
           )
           if (byEmail.length > 0) {
-            await pool.query(
-              `UPDATE users
-               SET google_id = ?,
-                   auth_provider = 'google',
-                   email_verified = 1
-               WHERE id = ?`,
-              [googleId, byEmail[0].id]
-            )
-            return done(null, byEmail[0])
+            const local = byEmail[0]
+            if (!local.email_verified) {
+              // Local sin verificar: Google pasa a ser la fuente de verdad
+              await pool.query(
+                `UPDATE users
+                 SET google_id = ?,
+                     auth_provider = 'google',
+                     email_verified = 1,
+                     password_hash = NULL,
+                     email_verify_token = NULL,
+                     email_verify_expires = NULL
+                 WHERE id = ?`,
+                [googleId, local.id]
+              )
+              await revokeAllUserRefreshTokens(local.id)
+            } else {
+              // Ya verificado: vincular como hasta ahora
+              await pool.query(
+                `UPDATE users
+                 SET google_id = ?,
+                     auth_provider = 'google',
+                     email_verified = 1
+                 WHERE id = ?`,
+                [googleId, local.id]
+              )
+            }
+            return done(null, {
+              id: local.id,
+              full_name: local.full_name,
+              email: local.email,
+            })
           }
 
           // 3) Usuario nuevo

@@ -10,7 +10,9 @@ const {
   issueTokenPair,
   rotateRefreshToken,
   revokeRefreshToken,
+  revokeAllUserRefreshTokens,
   clearAuthCookies,
+  hashToken,
   REFRESH_COOKIE,
 } = require('../services/tokenService')
 
@@ -103,13 +105,14 @@ const register = async (req, res) => {
 
     const password_hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
     const verifyToken = makeToken()
+    const verifyTokenHash = hashToken(verifyToken)
     const verifyExpires = hoursFromNow(24)
 
     const [result] = await conn.query(
       `INSERT INTO users
         (full_name, email, password_hash, email_verified, email_verify_token, email_verify_expires, auth_provider)
        VALUES (?, ?, ?, 0, ?, ?, 'local')`,
-      [full_name, email, password_hash, verifyToken, verifyExpires]
+      [full_name, email, password_hash, verifyTokenHash, verifyExpires]
     )
 
     const userId = result.insertId
@@ -204,7 +207,6 @@ const login = async (req, res) => {
       })
     }
 
-    // Access 15m + refresh 30d en cookies httpOnly (no se expone el refresh)
     await issueTokenPair(res, {
       id: user.id,
       email: user.email,
@@ -243,12 +245,13 @@ const verifyEmail = async (req, res) => {
   }
 
   try {
+    const tokenHash = hashToken(token)
     const [rows] = await pool.query(
       `SELECT id, email_verify_expires, email_verified
        FROM users
        WHERE email_verify_token = ?
        LIMIT 1`,
-      [token]
+      [tokenHash]
     )
 
     if (rows.length === 0) {
@@ -303,7 +306,6 @@ const resendVerification = async (req, res) => {
       [email]
     )
 
-    // Respuesta uniforme (no revelar si existe)
     if (rows.length === 0) {
       return res.json({
         message:
@@ -317,13 +319,14 @@ const resendVerification = async (req, res) => {
     }
 
     const token = makeToken()
+    const tokenHash = hashToken(token)
     const expires = hoursFromNow(24)
 
     await pool.query(
       `UPDATE users
        SET email_verify_token = ?, email_verify_expires = ?
        WHERE id = ?`,
-      [token, expires, user.id]
+      [tokenHash, expires, user.id]
     )
 
     await sendVerificationEmail(email, token)
@@ -354,7 +357,6 @@ const forgotPassword = async (req, res) => {
       [email]
     )
 
-    // Siempre misma respuesta
     if (rows.length === 0) {
       return res.json({
         message:
@@ -363,13 +365,14 @@ const forgotPassword = async (req, res) => {
     }
 
     const token = makeToken()
+    const tokenHash = hashToken(token)
     const expires = hoursFromNow(1)
 
     await pool.query(
       `UPDATE users
        SET reset_password_token = ?, reset_password_expires = ?
        WHERE id = ?`,
-      [token, expires, rows[0].id]
+      [tokenHash, expires, rows[0].id]
     )
 
     await sendPasswordResetEmail(email, token)
@@ -401,12 +404,13 @@ const resetPassword = async (req, res) => {
   }
 
   try {
+    const tokenHash = hashToken(token)
     const [rows] = await pool.query(
       `SELECT id, reset_password_expires
        FROM users
        WHERE reset_password_token = ?
        LIMIT 1`,
-      [token]
+      [tokenHash]
     )
 
     if (rows.length === 0) {
@@ -435,13 +439,14 @@ const resetPassword = async (req, res) => {
       [password_hash, user.id]
     )
 
+    await revokeAllUserRefreshTokens(user.id)
+
     res.json({ message: 'Contraseña actualizada. Ya puedes iniciar sesión.' })
   } catch (error) {
     console.error('Error en resetPassword:', error)
     res.status(500).json({ message: 'Error interno del servidor' })
   }
 }
-
 
 // =====================
 // REFRESH TOKEN (rotación)

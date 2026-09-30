@@ -19,7 +19,9 @@ const aiRoutes = require('./routes/aiRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
-app.set('trust proxy', 1);
+// TRUST_PROXY_HOPS: proxies delante de Node (Render ≈ 1).
+// Si está mal, express-rate-limit puede confiar IP de proxy o fallar.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS) || 1);
 app.use(cookieParser());
 
 // =====================
@@ -32,9 +34,6 @@ app.use(
   })
 );
 
-// =====================
-// CORS — allowlist (no origen reflejado abierto)
-// =====================
 // =====================
 // CORS — allowlist
 // =====================
@@ -118,6 +117,28 @@ const apiLimiter = rateLimit({
   },
 });
 
+// forgot-password / resend-verification: más restrictivo (abuso de correo)
+const sensitiveAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: 'Demasiadas solicitudes. Intenta de nuevo más tarde.',
+  },
+});
+
+// reset-password / verify-email / logout
+const authActionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: 'Demasiados intentos. Intenta de nuevo más tarde.',
+  },
+});
+
 // =====================
 // Ruta de salud
 // =====================
@@ -136,6 +157,11 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/google/exchange', authLimiter);
 app.use('/api/auth/refresh', authLimiter);
+app.use('/api/auth/forgot-password', sensitiveAuthLimiter);
+app.use('/api/auth/resend-verification', sensitiveAuthLimiter);
+app.use('/api/auth/reset-password', authActionLimiter);
+app.use('/api/auth/verify-email', authActionLimiter);
+app.use('/api/auth/logout', authActionLimiter);
 app.use('/api/auth', authRoutes);
 
 app.use('/api/ai', aiLimiter);

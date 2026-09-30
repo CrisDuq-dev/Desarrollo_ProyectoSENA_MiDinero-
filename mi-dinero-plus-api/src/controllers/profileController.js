@@ -1,5 +1,21 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
+const {
+  revokeAllUserRefreshTokens,
+  issueTokenPair,
+} = require('../services/tokenService');
+
+const BCRYPT_ROUNDS = 12;
+
+function validatePassword(password) {
+  if (typeof password !== 'string' || password.length < 8) {
+    return 'La contraseña debe tener al menos 8 caracteres';
+  }
+  if (password.length > 128) {
+    return 'La contraseña es demasiado larga';
+  }
+  return null;
+}
 
 // =====================
 // OBTENER PERFIL + CONFIGURACIÓN
@@ -182,14 +198,13 @@ const changePassword = async (req, res) => {
       });
     }
 
-    if (String(newPassword).length < 8) {
-      return res.status(400).json({
-        message: 'La nueva contraseña debe tener al menos 8 caracteres',
-      });
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      return res.status(400).json({ message: passwordError });
     }
 
     const [rows] = await pool.query(
-      `SELECT id, password_hash FROM users WHERE id = ?`,
+      `SELECT id, email, full_name, password_hash FROM users WHERE id = ?`,
       [userId]
     );
 
@@ -211,13 +226,20 @@ const changePassword = async (req, res) => {
       return res.status(401).json({ message: 'La contraseña actual es incorrecta' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(String(newPassword), salt);
+    const hash = await bcrypt.hash(String(newPassword), BCRYPT_ROUNDS);
 
     await pool.query(`UPDATE users SET password_hash = ? WHERE id = ?`, [
       hash,
       userId,
     ]);
+
+    // Cierra todas las sesiones y emite un par nuevo para este dispositivo
+    await revokeAllUserRefreshTokens(userId);
+    await issueTokenPair(res, {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+    });
 
     return res.json({ message: 'Contraseña actualizada correctamente' });
   } catch (error) {
