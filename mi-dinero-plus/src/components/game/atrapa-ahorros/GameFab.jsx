@@ -1,7 +1,7 @@
 import { FaGamepad } from 'react-icons/fa'
 
 export default function GameFab({ onClick, style }) {
-  // Prevents an external style from moving the FAB
+  // Evita que un style externo mueva el FAB
   const safeStyle =
     style && typeof style === 'object'
       ? Object.fromEntries(
