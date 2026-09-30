@@ -6,7 +6,7 @@ const CLOSING_MESSAGES = [
   '¿Cuál es tu siguiente movimiento?',
   '¿Qué meta quieres avanzar ahora?',
   'Sigue registrando. Cada paso cuenta.',
-  '¿Listo para tu próximo registro?'
+  '¿Listo para tu próximo registro?',
 ]
 
 const ALLOWED_PATHS = ['/transactions', '/goals', '/debts']
@@ -24,7 +24,7 @@ function FinancialAssistant() {
     aiError,
     animationsEnabled,
     assistantState,
-    setAssistantState
+    setAssistantState,
   } = useFinance()
 
   const [closingMessage, setClosingMessage] = useState('')
@@ -91,7 +91,6 @@ function FinancialAssistant() {
     return null
   }
 
-  // Pestañita minimizada
   if (assistantState === 'minimized') {
     return (
       <button
@@ -99,31 +98,44 @@ function FinancialAssistant() {
         className="assistant-tab"
         onClick={handleOpenTab}
         title="Abrir Asistente Financiero"
+        aria-label="Abrir Asistente Financiero"
       >
-        💡 Asistente
+        <span aria-hidden="true">💡</span>
         <style>{`
           .assistant-tab {
             position: fixed;
             right: 1rem;
             bottom: 1.25rem;
-            z-index: 60;
+            z-index: 50;
+            width: 3.25rem;
+            height: 3.25rem;
+            padding: 0;
             border: none;
             border-radius: 999px;
-            padding: 0.65rem 1rem;
+            display: grid;
+            place-items: center;
             background: linear-gradient(135deg, #7c3aed, #6d28d9);
             color: #fff;
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 1.25rem;
+            line-height: 1;
             box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
             cursor: pointer;
+            transition: transform 0.15s ease, filter 0.15s ease;
           }
           .assistant-tab:hover {
             filter: brightness(1.06);
+            transform: translateY(-2px);
           }
-          @media (max-width: 900px) {
+          .assistant-tab:focus-visible {
+            outline: 2px solid #c4b5fd;
+            outline-offset: 3px;
+          }
+          @media (max-width: 480px) {
             .assistant-tab {
               right: 1rem;
               bottom: 1.25rem;
+              width: 3.1rem;
+              height: 3.1rem;
             }
           }
         `}</style>
@@ -135,7 +147,9 @@ function FinancialAssistant() {
   const showAdvice = !showClosing
 
   return (
-    <aside className={`financial-assistant ${animationsEnabled ? 'with-anim' : ''}`}>
+    <aside
+      className={`financial-assistant${animationsEnabled ? ' with-anim' : ''}`}
+    >
       <div className={`card ${showClosing ? 'closing' : 'advice'}`}>
         <header>
           <strong>Asistente Financiero</strong>
@@ -151,14 +165,19 @@ function FinancialAssistant() {
               </p>
 
               {aiStatus !== 'analyzing' && (
-                <button type="button" className="action-btn" onClick={handleHide}>
+                <button
+                  type="button"
+                  className="action-btn"
+                  onClick={handleHide}
+                >
                   Ocultar
                 </button>
               )}
 
               {aiError && (
                 <small className="hint">
-                  No se pudo obtener el consejo de IA, pero tu movimiento quedó registrado.
+                  No se pudo obtener el consejo de IA, pero tu movimiento quedó
+                  registrado.
                 </small>
               )}
             </>
@@ -167,7 +186,11 @@ function FinancialAssistant() {
           {showClosing && (
             <>
               <p className="message">{closingMessage}</p>
-              <button type="button" className="action-btn" onClick={handleClose}>
+              <button
+                type="button"
+                className="action-btn"
+                onClick={handleClose}
+              >
                 Cerrar
               </button>
             </>
@@ -176,13 +199,14 @@ function FinancialAssistant() {
       </div>
 
       <style>{`
-                .financial-assistant {
+        .financial-assistant {
           position: fixed;
           right: 1rem;
-          bottom: 5.75rem;
+          bottom: 1.25rem;
+          z-index: 50;
           width: min(300px, calc(100vw - 2rem));
-          z-index: 60;
         }
+
         .card {
           background: color-mix(in srgb, #7c3aed 14%, var(--bg-surface, #fff));
           border: 1px solid color-mix(in srgb, #7c3aed 35%, var(--border, #e5e7eb));
@@ -191,25 +215,30 @@ function FinancialAssistant() {
           padding: 0.85rem;
           backdrop-filter: blur(8px);
         }
+
         [data-theme='dark'] .card {
           background: color-mix(in srgb, #7c3aed 22%, var(--bg-surface, #1e293b));
           border-color: color-mix(in srgb, #a78bfa 40%, var(--border, #334155));
           box-shadow: 0 8px 30px rgba(124, 58, 237, 0.2);
         }
+
         .card header {
           margin-bottom: 0.25rem;
           color: var(--text-primary, #0f172a);
         }
+
         .card .message {
           margin: 0.6rem 0;
           color: var(--text-primary, #0f172a);
           line-height: 1.4;
         }
+
         .card .hint {
           color: var(--text-muted, #64748b);
           display: block;
           margin-top: 0.4rem;
         }
+
         .card .action-btn {
           display: inline-flex;
           margin-top: 0.75rem;
@@ -220,14 +249,16 @@ function FinancialAssistant() {
           color: var(--text-primary, #0f172a);
           cursor: pointer;
         }
+
         .with-anim .card {
           transition: transform 0.22s ease, opacity 0.22s ease;
         }
+
         @media (max-width: 900px) {
           .financial-assistant {
             position: fixed;
             right: 1rem;
-            bottom: 5.75rem;
+            bottom: 1.25rem;
             width: min(300px, calc(100vw - 2rem));
             margin: 0;
           }
