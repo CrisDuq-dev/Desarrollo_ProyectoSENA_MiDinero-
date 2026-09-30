@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useFinance } from '../../contexts/FinanceContext'
+import { FiCpu } from 'react-icons/fi'
 
 const CLOSING_MESSAGES = [
   '¿Cuál es tu siguiente movimiento?',
@@ -91,7 +92,7 @@ function FinancialAssistant() {
     return null
   }
 
-  if (assistantState === 'minimized') {
+   if (assistantState === 'minimized') {
     return (
       <button
         type="button"
@@ -100,7 +101,7 @@ function FinancialAssistant() {
         title="Abrir Asistente Financiero"
         aria-label="Abrir Asistente Financiero"
       >
-        <span aria-hidden="true">💡</span>
+        <FiCpu size={20} aria-hidden="true" />
         <style>{`
           .assistant-tab {
             position: fixed !important;
