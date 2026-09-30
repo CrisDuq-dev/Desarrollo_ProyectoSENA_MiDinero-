@@ -1,4 +1,4 @@
-feat(dashboard): improve transaction visualization with table and responsive cards
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useFinance } from '../../contexts/FinanceContext'
