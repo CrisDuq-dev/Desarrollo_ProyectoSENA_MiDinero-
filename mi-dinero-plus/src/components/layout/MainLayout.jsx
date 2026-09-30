@@ -26,11 +26,19 @@ function MainLayout() {
           width: 100%;
           box-sizing: border-box;
           min-width: 0;
+          padding-top: 5.5rem;
         }
 
         @media (max-width: 900px) {
           .main-content {
             padding-bottom: 1rem;
+            padding-top: 5.25rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .main-content {
+            padding-top: 4.85rem;
           }
         }
       `}</style>

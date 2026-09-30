@@ -326,9 +326,12 @@ function Navbar() {
 
       <style>{`
         .navbar {
-          position: sticky;
+          position: fixed;
           top: 0;
-          z-index: 40;
+          left: 0;
+          right: 0;
+          width: 100%;
+          z-index: 100;
           background: linear-gradient(
             180deg,
             rgba(30, 58, 138, 0.22) 0%,
@@ -731,11 +734,13 @@ function Navbar() {
             display: block;
             position: fixed;
             inset: 0;
-            z-index: 45;
+            z-index: 105;
             border: none;
             padding: 0;
             margin: 0;
-            background: rgba(2, 6, 23, 0.55);
+            background: rgba(2, 6, 23, 0.4);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
             cursor: pointer;
           }
 
@@ -746,15 +751,18 @@ function Navbar() {
             position: fixed;
             top: 0;
             right: 0;
-            z-index: 50;
+            z-index: 110;
             width: min(300px, 86vw);
             height: 100vh;
             height: 100dvh;
             box-sizing: border-box;
             padding: 1.15rem 0.9rem 1.5rem;
-            background: var(--bg-surface);
-            border-left: 1px solid var(--border);
-            box-shadow: -12px 0 40px rgba(2, 6, 23, 0.35);
+            /* Misma idea de cristal que la navbar */
+            background: color-mix(in srgb, var(--bg-surface) 78%, transparent);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+            box-shadow: -12px 0 40px rgba(2, 6, 23, 0.28);
             overflow-y: auto;
           }
 

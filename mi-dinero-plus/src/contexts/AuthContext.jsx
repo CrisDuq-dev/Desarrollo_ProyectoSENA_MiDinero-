@@ -92,7 +92,6 @@ export function AuthProvider({ children }) {
           clearSession()
         }
       } catch {
-        // 401/403 real → no hay sesión usable
         if (!cancelled) clearSession()
       } finally {
         if (!cancelled) setLoading(false)
@@ -144,10 +143,6 @@ export function AuthProvider({ children }) {
     }
   }
 
-  /**
-   * Registro NO activa loading global (evita desmontar el formulario
-   * y perder la pantalla de “Registro exitoso”).
-   */
   const register = async (full_name, email, password) => {
     return await registerUser({ full_name, email, password })
   }
@@ -173,8 +168,6 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
-        // Señal de sesión para el resto de la app.
-        // El JWT real vive en cookie httpOnly; api.js usa credentials, no este valor.
         token: isAuthenticated ? 'cookie' : null,
         isAuthenticated,
         loading,
