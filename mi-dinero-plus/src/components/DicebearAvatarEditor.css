@@ -1,0 +1,244 @@
+/* DicebearAvatarEditor */
+
+.db-editor {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.1rem 1.25rem 1.25rem;
+  width: 100%;
+  max-width: 560px;
+  margin-top: 1rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  min-width: 0;
+}
+
+.db-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.db-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.db-link {
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+.db-top {
+  text-align: center;
+  margin-bottom: 0.85rem;
+}
+
+.db-preview-ring {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  padding: 3px;
+  margin: 0 auto 0.55rem;
+  background: linear-gradient(145deg, #60a5fa, #2563eb);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.db-preview-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 15%;
+  background: #2a3441;
+  display: block;
+}
+
+.db-random {
+  border: 1px solid var(--border);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  cursor: pointer;
+  min-height: 40px;
+}
+
+.db-hint {
+  margin: 0.45rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  padding: 0 0.25rem;
+}
+
+/* Pestañas: 4 columnas (escritorio y móvil) */
+.db-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.db-tab {
+  border: 1px solid var(--border);
+  background: var(--bg-page);
+  color: var(--text-muted);
+  border-radius: 0.65rem;
+  padding: 0.5rem 0.25rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  min-width: 0;
+  min-height: 40px;
+}
+
+.db-tab.is-on {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.db-panel {
+  display: grid;
+  gap: 0.9rem;
+  min-height: 180px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.db-block {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.db-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+/* Swatches: siempre wrap */
+.db-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  max-width: 100%;
+}
+
+.db-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.db-swatch.is-on {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+}
+
+/* Chips: SIEMPRE wrap (antes en móvil era nowrap y se cortaban) */
+.db-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.db-chip {
+  border: 1px solid var(--border);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  border-radius: 999px;
+  padding: 0.32rem 0.65rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.db-chip.is-on {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.db-save {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.7rem;
+  background: #2563eb;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  min-height: 44px;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+}
+
+.db-save:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.db-save:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+@media (max-width: 480px) {
+  .db-editor {
+    padding: 1rem 0.9rem 1.15rem;
+    margin-top: 0.75rem;
+    max-width: 100%;
+  }
+
+  .db-preview-ring {
+    width: 120px;
+    height: 120px;
+  }
+
+  .db-tab {
+    font-size: 0.75rem;
+    padding: 0.45rem 0.15rem;
+  }
+
+  /* Chips envuelven; no se cortan */
+  .db-chips {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .db-chip {
+    font-size: 0.76rem;
+    padding: 0.3rem 0.55rem;
+  }
+}

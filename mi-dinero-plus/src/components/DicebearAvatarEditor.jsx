@@ -3,6 +3,7 @@ import {
   buildDicebearUrl,
   DEFAULT_AVATAR_OPTIONS,
 } from '../utils/dicebearAvatar'
+import './DicebearAvatarEditor.css'
 
 const SKIN = [
   { id: 'ffdbb4', hex: '#FFDBB4' },
@@ -149,21 +150,15 @@ const ACC_COLOR = [
   { id: 'ff5c5c', hex: '#ff5c5c' },
 ]
 
-/**
- * Paleta de fondos "silenciosa": misma familia de saturación/luminosidad
- * (S ~15%, L ~22-24%) para que ningún color destaque más que otro, pero
- * sin caer en negros muertos. id === hex (sin '#') a propósito: así el
- * swatch que ve el usuario SIEMPRE coincide con lo que se envía a la API.
- */
 const BG = [
-  { id: '2a3441', hex: '#2a3441' }, // slate azulado
-  { id: '2f3b3a', hex: '#2f3b3a' }, // slate verdoso
-  { id: '332f3b', hex: '#332f3b' }, // slate violeta
-  { id: '3b332f', hex: '#3b332f' }, // slate cálido
-  { id: '2d2d33', hex: '#2d2d33' }, // gris neutro frío
-  { id: '333230', hex: '#333230' }, // gris neutro cálido
-  { id: '283847', hex: '#283847' }, // azul petróleo
-  { id: '38302f', hex: '#38302f' }, // marrón apagado
+  { id: '2a3441', hex: '#2a3441' },
+  { id: '2f3b3a', hex: '#2f3b3a' },
+  { id: '332f3b', hex: '#332f3b' },
+  { id: '3b332f', hex: '#3b332f' },
+  { id: '2d2d33', hex: '#2d2d33' },
+  { id: '333230', hex: '#333230' },
+  { id: '283847', hex: '#283847' },
+  { id: '38302f', hex: '#38302f' },
 ]
 
 const TABS = [
@@ -172,8 +167,6 @@ const TABS = [
   { id: 'outfit', label: 'Ropa' },
   { id: 'extra', label: 'Extra' },
 ]
-
-/* ───────────────────────── Helpers ───────────────────────── */
 
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)]
@@ -206,13 +199,12 @@ function Swatches({ items, value, onChange }) {
           className={`db-swatch ${value === s.id ? 'is-on' : ''}`}
           style={{ background: s.hex }}
           onClick={() => onChange(s.id)}
+          aria-label={s.id}
         />
       ))}
     </div>
   )
 }
-
-/* ───────────────────────── Editor ───────────────────────── */
 
 export function DicebearAvatarEditor({
   seed: initialSeed = 'usuario',
@@ -325,7 +317,9 @@ export function DicebearAvatarEditor({
       clothing: [clothing],
       clothesColor: [pick(CLOTH_COLOR).id],
       clothingGraphic:
-        clothing === 'graphicShirt' ? [pick(GRAPHICS).id] : prev.clothingGraphic,
+        clothing === 'graphicShirt'
+          ? [pick(GRAPHICS).id]
+          : prev.clothingGraphic,
       backgroundColor: [pick(BG).id],
       facialHair: facial ? [facial] : [],
       facialHairProbability: facial ? 100 : 0,
@@ -458,7 +452,6 @@ export function DicebearAvatarEditor({
                 onChange={(v) => setOpt('top', v)}
               />
             </div>
-
             <div className="db-block">
               <span className="db-label">Color de pelo</span>
               <Swatches
@@ -467,7 +460,6 @@ export function DicebearAvatarEditor({
                 onChange={(v) => setOpt('hairColor', v)}
               />
             </div>
-
             {isHat && (
               <div className="db-block">
                 <span className="db-label">Color del gorro</span>
@@ -570,181 +562,9 @@ export function DicebearAvatarEditor({
       >
         {saving ? 'Guardando…' : 'Guardar avatar'}
       </button>
-
-      <style>{`
-        .db-editor {
-          background: var(--bg-surface);
-          border: 1px solid var(--border);
-          border-radius: 1rem;
-          padding: 1.1rem 1.25rem 1.25rem;
-          max-width: 560px;
-          margin-top: 1rem;
-        }
-        .db-head {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.85rem;
-        }
-        .db-head h2 {
-          margin: 0;
-          font-size: 1.05rem;
-          font-weight: 800;
-          color: var(--text-primary);
-        }
-        .db-link {
-          border: none;
-          background: transparent;
-          color: #2563eb;
-          font: inherit;
-          font-weight: 800;
-          cursor: pointer;
-        }
-        .db-top { text-align: center; margin-bottom: 0.85rem; }
-        .db-preview-ring {
-          width: 140px;
-          height: 140px;
-          border-radius: 50%;
-          padding: 3px;
-          margin: 0 auto 0.55rem;
-          background: linear-gradient(145deg, #60a5fa, #2563eb);
-          box-shadow: 0 0 0 4px rgba(37,99,235,0.18);
-          overflow: hidden;
-        }
-        .db-preview-img {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          object-fit: cover;
-          object-position: center 15%;
-          background: #2a3441;
-          display: block;
-          image-rendering: auto;
-        }
-        .db-random {
-          border: 1px solid var(--border);
-          background: var(--bg-page);
-          color: var(--text-primary);
-          border-radius: 999px;
-          padding: 0.4rem 0.9rem;
-          font: inherit;
-          font-size: 0.85rem;
-          font-weight: 800;
-          cursor: pointer;
-        }
-        .db-hint {
-          margin: 0.45rem 0 0;
-          font-size: 0.75rem;
-          color: var(--text-muted);
-          line-height: 1.35;
-        }
-        .db-tabs {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 0.35rem;
-          margin-bottom: 0.85rem;
-        }
-        .db-tab {
-          border: 1px solid var(--border);
-          background: var(--bg-page);
-          color: var(--text-muted);
-          border-radius: 0.65rem;
-          padding: 0.45rem 0.35rem;
-          font: inherit;
-          font-size: 0.8rem;
-          font-weight: 800;
-          cursor: pointer;
-        }
-        .db-tab.is-on {
-          border-color: #2563eb;
-          background: rgba(37,99,235,0.12);
-          color: #2563eb;
-        }
-        .db-panel {
-          display: grid;
-          gap: 0.9rem;
-          min-height: 180px;
-        }
-        .db-label {
-          display: block;
-          font-size: 0.75rem;
-          font-weight: 800;
-          color: var(--text-muted);
-          margin-bottom: 0.35rem;
-        }
-        .db-swatches {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.4rem;
-        }
-        .db-swatch {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          border: 2px solid transparent;
-          cursor: pointer;
-          padding: 0;
-        }
-        .db-swatch.is-on {
-          border-color: #2563eb;
-          box-shadow: 0 0 0 2px rgba(37,99,235,0.3);
-        }
-        .db-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.35rem;
-        }
-        .db-chip {
-          border: 1px solid var(--border);
-          background: var(--bg-page);
-          color: var(--text-primary);
-          border-radius: 999px;
-          padding: 0.28rem 0.65rem;
-          font: inherit;
-          font-size: 0.78rem;
-          font-weight: 700;
-          cursor: pointer;
-          white-space: nowrap;
-        }
-        .db-chip.is-on {
-          border-color: #2563eb;
-          background: rgba(37,99,235,0.12);
-          color: #2563eb;
-        }
-        .db-save {
-          margin-top: 1rem;
-          padding: 0.75rem 1rem;
-          border: none;
-          border-radius: 0.7rem;
-          background: #2563eb;
-          color: #fff;
-          font: inherit;
-          font-weight: 800;
-          cursor: pointer;
-          width: 100%;
-        }
-        .db-save:disabled {
-          opacity: 0.7;
-          cursor: wait;
-        }
-
-        @media (max-width: 480px) {
-          .db-chips {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            padding-bottom: 4px;
-            scrollbar-width: thin;
-          }
-          .db-chip {
-            flex-shrink: 0;
-          }
-        }
-      `}</style>
     </div>
   )
 }
-
-/* ───────────────────────── Solo imagen (perfil / header) ───────────────────────── */
 
 export function DicebearAvatarImg({
   seed,
@@ -765,7 +585,7 @@ export function DicebearAvatarImg({
       alt=""
       width={size}
       height={size}
-      className={className}
+      className={`db-avatar-img ${className}`.trim()}
       style={{
         width: size,
         height: size,
