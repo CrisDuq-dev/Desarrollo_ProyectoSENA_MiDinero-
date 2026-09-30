@@ -483,15 +483,19 @@ function Navbar() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          min-width: 2.45rem;
-          padding: 0.3rem 0.5rem;
-          border-radius: 999px;
-          font-size: 0.7rem;
+          width: 2.35rem;
+          height: 2.35rem;
+          min-width: 2.35rem;
+          padding: 0;
+          border-radius: 50%;
+          font-size: 0.68rem;
           font-weight: 800;
-          letter-spacing: 0.04em;
+          letter-spacing: 0.03em;
           background: #2563eb;
           color: #fff;
           user-select: none;
+          box-sizing: border-box;
+          line-height: 1;
         }
 
         .notification-wrapper {
@@ -757,13 +761,17 @@ function Navbar() {
             height: 100dvh;
             box-sizing: border-box;
             padding: 1.15rem 0.9rem 1.5rem;
-            /* Misma idea de cristal que la navbar */
-            background: color-mix(in srgb, var(--bg-surface) 78%, transparent);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border-left: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-            box-shadow: -12px 0 40px rgba(2, 6, 23, 0.28);
+            background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+            backdrop-filter: saturate(180%) blur(22px);
+            -webkit-backdrop-filter: saturate(180%) blur(22px);
+            border-left: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+            box-shadow: -16px 0 48px rgba(2, 6, 23, 0.4);
             overflow-y: auto;
+          }
+
+          .navbar.light ~ .mobile-nav-backdrop + .mobile-nav-panel,
+          .navbar.light .mobile-nav-panel {
+            background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
           }
 
           .mobile-nav-link {
@@ -811,13 +819,16 @@ function Navbar() {
 
         /* Touch targets ≥ 44×44 px en tablet/móvil */
         @media (max-width: 768px) {
-          .currency-badge {
+            .currency-badge {
+            width: 44px;
+            height: 44px;
             min-width: 44px;
             min-height: 44px;
+            padding: 0;
+            border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 0.35rem 0.5rem;
             box-sizing: border-box;
           }
 
