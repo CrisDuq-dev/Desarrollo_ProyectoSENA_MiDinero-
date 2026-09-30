@@ -38,10 +38,13 @@ function Navbar() {
   const dropdownRef = useRef(null)
   const navigate = useNavigate()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setMenuOpen(false)
-    logout()
-    navigate('/login')
+    try {
+      await logout()
+    } finally {
+      navigate('/', { replace: true })
+    }
   }
 
   const handleClear = async () => {

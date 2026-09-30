@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useTheme } from '../../contexts/ThemeContext'
-import { useAuth } from '../../contexts/AuthContext'
 import {
   FiBarChart2,
   FiDollarSign,
@@ -71,15 +70,10 @@ const INSTITUTIONAL = [
 
 function Welcome() {
   const { theme } = useTheme()
-  const { isAuthenticated, user, loading } = useAuth()
-  const navigate = useNavigate()
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   }, [])
-
-  const displayName =
-    (user && (user.full_name || user.email)) || 'usuario'
 
   return (
     <div className={`welcome-page ${theme}`}>
@@ -159,31 +153,13 @@ function Welcome() {
               className="hero-cta anim-in"
               style={{ animationDelay: '0.22s' }}
             >
-              {!loading && isAuthenticated ? (
-                <>
-                  <button
-                    type="button"
-                    className="cta-primary"
-                    onClick={() => navigate('/dashboard')}
-                  >
-                    Continuar como {displayName}
-                    <FiArrowRight size={18} className="cta-arrow" aria-hidden="true" />
-                  </button>
-                  <Link to="/login" className="cta-secondary">
-                    Usar otra cuenta
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link to="/crear-cuenta" className="cta-primary">
-                    Registrarme
-                    <FiArrowRight size={18} className="cta-arrow" aria-hidden="true" />
-                  </Link>
-                  <Link to="/login" className="cta-secondary">
-                    Ya tengo cuenta · Iniciar sesión
-                  </Link>
-                </>
-              )}
+              <Link to="/crear-cuenta" className="cta-primary">
+                Registrarme
+                <FiArrowRight size={18} className="cta-arrow" aria-hidden="true" />
+              </Link>
+              <Link to="/login" className="cta-secondary">
+                Ya tengo cuenta · Iniciar sesión
+              </Link>
             </div>
           </div>
         </section>
