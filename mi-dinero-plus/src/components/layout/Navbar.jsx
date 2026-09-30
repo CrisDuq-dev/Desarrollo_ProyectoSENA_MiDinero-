@@ -324,7 +324,7 @@ function Navbar() {
         </>
       )}
 
-      <style>{`
+       <style>{`
         .navbar {
           position: fixed;
           top: 0;
@@ -340,7 +340,8 @@ function Navbar() {
           color: var(--text-primary);
           border-bottom: none;
           box-shadow: 0 2px 0 0 #2563eb;
-          backdrop-filter: blur(10px);
+          backdrop-filter: saturate(160%) blur(14px);
+          -webkit-backdrop-filter: saturate(160%) blur(14px);
           font-family: 'Nunito', 'Comic Neue', system-ui, sans-serif;
         }
 
@@ -681,7 +682,7 @@ function Navbar() {
           cursor: pointer;
         }
 
-        /* —— Panel móvil —— */
+        /* —— Panel móvil (oculto en desktop) —— */
         .mobile-nav-backdrop {
           display: none;
         }
@@ -734,6 +735,7 @@ function Navbar() {
             right: -0.5rem;
           }
 
+          /* Fondo difuminado detrás del panel */
           .mobile-nav-backdrop {
             display: block;
             position: fixed;
@@ -742,12 +744,17 @@ function Navbar() {
             border: none;
             padding: 0;
             margin: 0;
-            background: rgba(2, 6, 23, 0.4);
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
+            background: rgba(2, 6, 23, 0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             cursor: pointer;
           }
 
+          /*
+            Panel tipo iOS / igual espíritu que la navbar:
+            superficie semitransparente + saturate + blur fuerte
+            → lo de atrás se ve borroso, no legible
+          */
           .mobile-nav-panel {
             display: flex;
             flex-direction: column;
@@ -761,17 +768,32 @@ function Navbar() {
             height: 100dvh;
             box-sizing: border-box;
             padding: 1.15rem 0.9rem 1.5rem;
-            background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
-            backdrop-filter: saturate(180%) blur(22px);
-            -webkit-backdrop-filter: saturate(180%) blur(22px);
+            background: linear-gradient(
+              180deg,
+              color-mix(in srgb, var(--bg-surface) 88%, rgba(30, 58, 138, 0.28)) 0%,
+              color-mix(in srgb, var(--bg-surface) 94%, transparent) 100%
+            );
+            backdrop-filter: saturate(180%) blur(28px);
+            -webkit-backdrop-filter: saturate(180%) blur(28px);
             border-left: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-            box-shadow: -16px 0 48px rgba(2, 6, 23, 0.4);
+            box-shadow: -18px 0 50px rgba(2, 6, 23, 0.42);
             overflow-y: auto;
           }
 
-          .navbar.light ~ .mobile-nav-backdrop + .mobile-nav-panel,
           .navbar.light .mobile-nav-panel {
-            background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
+            background: linear-gradient(
+              180deg,
+              color-mix(in srgb, var(--bg-surface) 90%, rgba(37, 99, 235, 0.1)) 0%,
+              color-mix(in srgb, var(--bg-surface) 96%, transparent) 100%
+            );
+          }
+
+          @supports not (
+            (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+          ) {
+            .mobile-nav-panel {
+              background: var(--bg-surface);
+            }
           }
 
           .mobile-nav-link {
@@ -794,7 +816,7 @@ function Navbar() {
 
           .mobile-nav-link:hover,
           .mobile-nav-link.active {
-            background: rgba(37, 99, 235, 0.12);
+            background: rgba(37, 99, 235, 0.14);
             color: #60a5fa;
           }
 
@@ -817,9 +839,8 @@ function Navbar() {
           }
         }
 
-        /* Touch targets ≥ 44×44 px en tablet/móvil */
         @media (max-width: 768px) {
-            .currency-badge {
+          .currency-badge {
             width: 44px;
             height: 44px;
             min-width: 44px;
