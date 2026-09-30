@@ -4,6 +4,7 @@ import {
   registerUser,
   getProfile,
   logoutUser,
+  refreshSession,
 } from '../services/api'
 
 const AuthContext = createContext(null)
@@ -69,7 +70,15 @@ export function AuthProvider({ children }) {
 
     const bootstrap = async () => {
       try {
-        // Si hay cookie de sesión válida, getProfile responde 200
+        // 1) Si el access expiró pero hay refresh válido, renueva cookies
+        try {
+          await refreshSession()
+        } catch {
+          // Sin refresh / sesión previa: seguimos y getProfile dirá si hay sesión
+        }
+        if (cancelled) return
+
+        // 2) Perfil con access (recién renovado o aún válido)
         const profileData = await getProfile()
         if (cancelled) return
 
@@ -83,7 +92,7 @@ export function AuthProvider({ children }) {
           clearSession()
         }
       } catch {
-        // 401/403 → no hay sesión
+        // 401/403 real → no hay sesión usable
         if (!cancelled) clearSession()
       } finally {
         if (!cancelled) setLoading(false)
