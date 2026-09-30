@@ -97,10 +97,7 @@ function Transactions() {
     clearAIAdvice,
   } = useFinance()
 
-  const [form, setForm] = useState(() => ({
-    ...formInicial,
-    date: getDateBounds().max,
-  }))
+  const [form, setForm] = useState(formInicial)
   const [errors, setErrors] = useState({})
   const [editForm, setEditForm] = useState(formInicial)
   const [editErrors, setEditErrors] = useState({})
@@ -115,7 +112,7 @@ function Transactions() {
     form.type === 'income' ? incomeCategories : expenseCategories
   const editCategorias =
     editForm.type === 'income' ? incomeCategories : expenseCategories
-  const totals = useMemo(() => getTotals(), [transactions])
+  const totals = useMemo(() => getTotals(), [transactions, getTotals])
   const currencyLabel = currency || 'COP'
 
   const editDateMin = useMemo(() => {
@@ -264,10 +261,8 @@ function Transactions() {
         description: form.description,
         category: form.category,
       })
-      setForm({
-        ...formInicial,
-        date: getDateBounds().max,
-      })
+      setForm(formInicial)
+      setErrors({})
       showToast('Transacción guardada correctamente')
     } catch (error) {
       showToast(error.message || 'No se pudo guardar la transacción')
@@ -396,13 +391,15 @@ function Transactions() {
 
                 <label className="tx-field">
                   <span className="tx-label">Fecha</span>
-                  <input
-                    type="date"
-                    value={form.date}
-                    onChange={manejarCambio('date')}
-                    min={dateBounds.min}
-                    max={dateBounds.max}
-                  />
+                  <div className="tx-date-wrap">
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={manejarCambio('date')}
+                      min={dateBounds.min}
+                      max={dateBounds.max}
+                    />
+                  </div>
                   <span className="tx-hint">
                     Solo hoy o hasta 5 días atrás (sin fechas futuras).
                   </span>
@@ -665,13 +662,15 @@ function Transactions() {
 
                 <label className="tx-field">
                   <span className="tx-label">Fecha</span>
-                  <input
-                    type="date"
-                    value={editForm.date}
-                    onChange={manejarCambioEdit('date')}
-                    min={editDateMin}
-                    max={dateBounds.max}
-                  />
+                  <div className="tx-date-wrap">
+                    <input
+                      type="date"
+                      value={editForm.date}
+                      onChange={manejarCambioEdit('date')}
+                      min={editDateMin}
+                      max={dateBounds.max}
+                    />
+                  </div>
                   {editErrors.date && (
                     <span className="tx-err">{editErrors.date}</span>
                   )}
