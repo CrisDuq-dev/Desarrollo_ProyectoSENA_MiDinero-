@@ -27,6 +27,7 @@ import {
   resetSimulationApi,
   changePassword,
 } from '../../services/api'
+import './Profile.css'
 
 const JOB_ROLES = [
   { value: 'Asesor', label: 'Asesor' },
@@ -38,11 +39,6 @@ const JOB_ROLES = [
   { value: 'otro', label: 'Otro' },
 ]
 
-/**
- * Fechas:
- * - "2026-09-01" (solo día) → 1 sept local (sin UTC fantasma)
- * - "2026-09-06T04:00:00.000Z" → día local real (en CO puede ser 5 sept)
- */
 function parseLocalDate(value) {
   if (value == null || value === '') return null
 
@@ -114,7 +110,11 @@ function MomentumChart({ transactions = [], goals = [], debts = [] }) {
 
         if (g.status === 'completed') {
           const d = parseLocalDate(
-            g.completedAt || g.completed_at || g.updatedAt || g.updated_at || g.createdAt
+            g.completedAt ||
+              g.completed_at ||
+              g.updatedAt ||
+              g.updated_at ||
+              g.createdAt
           )
           if (!d) return
           const boost = Math.max(Number(g.targetAmount) || 0, 50_000) * 0.25
@@ -204,7 +204,8 @@ function MomentumChart({ transactions = [], goals = [], debts = [] }) {
     return { data: sliced, trend: tr }
   }, [transactions, goals, debts])
 
-  const stroke = trend === 'up' ? '#16a34a' : trend === 'down' ? '#dc2626' : '#2563eb'
+  const stroke =
+    trend === 'up' ? '#16a34a' : trend === 'down' ? '#dc2626' : '#2563eb'
   const fillId = 'momentumFill'
 
   const tip =
@@ -222,7 +223,11 @@ function MomentumChart({ transactions = [], goals = [], debts = [] }) {
           <p className="momentum-tip">{tip}</p>
         </div>
         <div className={`momentum-badge is-${trend}`}>
-          {trend === 'up' ? '▲ Subiendo' : trend === 'down' ? '▼ Bajando' : '● Estable'}
+          {trend === 'up'
+            ? '▲ Subiendo'
+            : trend === 'down'
+              ? '▼ Bajando'
+              : '● Estable'}
         </div>
       </div>
 
@@ -235,7 +240,11 @@ function MomentumChart({ transactions = [], goals = [], debts = [] }) {
                 <stop offset="100%" stopColor={stroke} stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="var(--border)"
+              vertical={false}
+            />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
@@ -261,7 +270,10 @@ function MomentumChart({ transactions = [], goals = [], debts = [] }) {
                 fontSize: 12,
                 color: 'var(--text-primary)',
               }}
-              formatter={(value) => [Number(value).toLocaleString('es-CO'), 'Impulso']}
+              formatter={(value) => [
+                Number(value).toLocaleString('es-CO'),
+                'Impulso',
+              ]}
               labelFormatter={(label) => `Fecha: ${label}`}
             />
             <Area
@@ -333,14 +345,21 @@ function Profile() {
   const goalsScore = goals.length ? (completedGoals / goals.length) * 100 : 0
   const debtsScore = debts.length ? (paidDebts / debts.length) * 100 : 0
   const txScore = (Math.min(transactions.length, 20) / 20) * 100
-  const progress = Math.round(goalsScore * 0.45 + debtsScore * 0.45 + txScore * 0.1 || 0)
+  const progress = Math.round(
+    goalsScore * 0.45 + debtsScore * 0.45 + txScore * 0.1 || 0
+  )
 
   const rawName = user?.full_name ?? user?.nombre ?? 'Usuario'
   const displayName = rawName
   const roleLabel =
-    JOB_ROLES.find((r) => r.value === jobRole)?.label || (jobRole ? jobRole : 'Sin cargo')
+    JOB_ROLES.find((r) => r.value === jobRole)?.label ||
+    (jobRole ? jobRole : 'Sin cargo')
   const levelLabel =
-    progress >= 70 ? 'Planificador Avanzado' : progress >= 35 ? 'Organizador Financiero' : 'Aprendiz Financiero'
+    progress >= 70
+      ? 'Planificador Avanzado'
+      : progress >= 35
+        ? 'Organizador Financiero'
+        : 'Aprendiz Financiero'
   const moduleLabel =
     educationLevel === 'advanced'
       ? 'Módulo Avanzado'
@@ -348,7 +367,6 @@ function Profile() {
         ? 'Módulo Intermedio'
         : 'Módulo Básico'
 
-  // Baja solo al panel / editor cuando se abre
   useEffect(() => {
     if (!panel && !avatarOpen) return
     const t = setTimeout(() => {
@@ -373,7 +391,10 @@ function Profile() {
       updateUser(data.user ?? { email: emailInput })
       setToast({ message: 'Correo actualizado', visible: true })
     } catch (err) {
-      setToast({ message: err.message || 'Error actualizando correo', visible: true })
+      setToast({
+        message: err.message || 'Error actualizando correo',
+        visible: true,
+      })
     } finally {
       setSavingProfile(false)
       setTimeout(() => setToast({ message: '', visible: false }), 3000)
@@ -382,8 +403,10 @@ function Profile() {
 
   const validatePassword = (pwd) => {
     const errs = {}
-    if (!pwd || pwd.length < 8) errs.length = 'La contraseña debe tener al menos 8 caracteres'
-    if (!/\d/.test(pwd)) errs.number = 'La contraseña debe incluir al menos un número'
+    if (!pwd || pwd.length < 8)
+      errs.length = 'La contraseña debe tener al menos 8 caracteres'
+    if (!/\d/.test(pwd))
+      errs.number = 'La contraseña debe incluir al menos un número'
     if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pwd)) {
       errs.symbol = 'La contraseña debe incluir un símbolo'
     }
@@ -441,7 +464,10 @@ function Profile() {
       updateUser({ ...(user || {}), job_role: value || null })
       setToast({ message: 'Cargo actualizado', visible: true })
     } catch (err) {
-      setToast({ message: err.message || 'No se pudo guardar el cargo', visible: true })
+      setToast({
+        message: err.message || 'No se pudo guardar el cargo',
+        visible: true,
+      })
     } finally {
       setSavingProfile(false)
       setTimeout(() => setToast({ message: '', visible: false }), 3000)
@@ -490,7 +516,10 @@ function Profile() {
         const anim = settings.animations_enabled ?? settings.animationsEnabled
         if (typeof anim === 'boolean') setAnimationsEnabled(anim)
       } catch (err) {
-        setToast({ message: err.message || 'No se pudo cargar perfil', visible: true })
+        setToast({
+          message: err.message || 'No se pudo cargar perfil',
+          visible: true,
+        })
         setTimeout(() => setToast({ message: '', visible: false }), 3000)
       } finally {
         setLoadingProfile(false)
@@ -529,9 +558,12 @@ function Profile() {
     const merged = {
       currency: next.currency ?? currency,
       educationLevel: next.educationLevel ?? educationLevel,
-      aiEnabled: typeof next.aiEnabled === 'boolean' ? next.aiEnabled : aiEnabled,
+      aiEnabled:
+        typeof next.aiEnabled === 'boolean' ? next.aiEnabled : aiEnabled,
       animationsEnabled:
-        typeof next.animationsEnabled === 'boolean' ? next.animationsEnabled : animationsEnabled,
+        typeof next.animationsEnabled === 'boolean'
+          ? next.animationsEnabled
+          : animationsEnabled,
       ...next,
     }
     const apiPayload = {
@@ -548,10 +580,14 @@ function Profile() {
       if (merged.currency) await setCurrency(merged.currency)
       if (merged.educationLevel) setEducationLevel(merged.educationLevel)
       if (typeof merged.aiEnabled === 'boolean') setAiEnabled(merged.aiEnabled)
-      if (typeof merged.animationsEnabled === 'boolean') setAnimationsEnabled(merged.animationsEnabled)
+      if (typeof merged.animationsEnabled === 'boolean')
+        setAnimationsEnabled(merged.animationsEnabled)
       setToast({ message: 'Configuración guardada', visible: true })
     } catch (err) {
-      setToast({ message: err.message || 'Error guardando configuración', visible: true })
+      setToast({
+        message: err.message || 'Error guardando configuración',
+        visible: true,
+      })
     } finally {
       setSavingSettings(false)
       setTimeout(() => setToast({ message: '', visible: false }), 3000)
@@ -564,13 +600,22 @@ function Profile() {
     try {
       if (type === 'weekly') {
         await sendWeeklyReport(token)
-        setToast({ message: 'Reporte semanal enviado a tu correo', visible: true })
+        setToast({
+          message: 'Reporte semanal enviado a tu correo',
+          visible: true,
+        })
       } else {
         await sendMonthlyReport(token)
-        setToast({ message: 'Reporte mensual enviado (con Excel)', visible: true })
+        setToast({
+          message: 'Reporte mensual enviado (con Excel)',
+          visible: true,
+        })
       }
     } catch (err) {
-      setToast({ message: err.message || 'No se pudo enviar el reporte', visible: true })
+      setToast({
+        message: err.message || 'No se pudo enviar el reporte',
+        visible: true,
+      })
     } finally {
       setSendingReport(null)
       setTimeout(() => setToast({ message: '', visible: false }), 3500)
@@ -590,13 +635,19 @@ function Profile() {
             }}
             title="Personalizar avatar"
           >
-            <DicebearAvatarImg seed={avatarSeed} options={avatarOptions} size={100} />
+            <DicebearAvatarImg
+              seed={avatarSeed}
+              options={avatarOptions}
+              size={100}
+            />
             <span className="avatar-edit-badge">Editar</span>
           </button>
           <div className="identity-text">
             <h1 className="profile-name">{displayName}</h1>
             <p className="profile-email">{user?.email ?? 'sin correo'}</p>
-            <p className="profile-role">{roleLabel} · Meta Autos Medellín</p>
+            <p className="profile-role">
+              {roleLabel} · Meta Autos Medellín
+            </p>
             <p className="profile-level">{levelLabel}</p>
             <div className="status-chips">
               <span className="chip">{currency || 'COP'}</span>
@@ -610,14 +661,24 @@ function Profile() {
         </article>
 
         <article className="momentum-card">
-          <MomentumChart transactions={transactions} goals={goals} debts={debts} />
+          <MomentumChart
+            transactions={transactions}
+            goals={goals}
+            debts={debts}
+          />
         </article>
       </div>
 
       <div className="profile-mid">
         <nav className="profile-menu" aria-label="Módulos de perfil">
-          <button type="button" className="menu-row" onClick={() => navigate('/activity')}>
-            <span className="menu-row-label">Notificaciones / Centro de actividad</span>
+          <button
+            type="button"
+            className="menu-row"
+            onClick={() => navigate('/activity')}
+          >
+            <span className="menu-row-label">
+              Notificaciones / Centro de actividad
+            </span>
             <span className="chevron" aria-hidden>
               ›
             </span>
@@ -650,7 +711,9 @@ function Profile() {
           </button>
         </nav>
 
-        <div className="stats-row">
+        <div
+          className={`stats-row${animationsEnabled ? ' with-anim' : ''}`}
+        >
           <div className="stat-box is-tx">
             <span>Transacciones</span>
             <strong>{transactions.length}</strong>
@@ -678,11 +741,18 @@ function Profile() {
         <article className="profile-panel" ref={panelRef}>
           <header className="panel-header">
             <h2>Seguridad y Privacidad</h2>
-            <button type="button" className="link-btn" onClick={() => setPanel(null)}>
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => setPanel(null)}
+            >
               Cerrar
             </button>
           </header>
-          <form onSubmit={submitPasswordChange} className="panel-form is-compact">
+          <form
+            onSubmit={submitPasswordChange}
+            className="panel-form is-compact"
+          >
             <label>
               Contraseña actual
               <input
@@ -692,7 +762,9 @@ function Profile() {
                 autoComplete="current-password"
                 disabled={savingPassword}
               />
-              {errors.current && <span className="error">{errors.current}</span>}
+              {errors.current && (
+                <span className="error">{errors.current}</span>
+              )}
             </label>
             <label>
               Nueva contraseña
@@ -713,12 +785,18 @@ function Profile() {
                 autoComplete="new-password"
                 disabled={savingPassword}
               />
-              {errors.confirm && <span className="error">{errors.confirm}</span>}
+              {errors.confirm && (
+                <span className="error">{errors.confirm}</span>
+              )}
             </label>
             {errors.length && <div className="error">{errors.length}</div>}
             {errors.number && <div className="error">{errors.number}</div>}
             {errors.symbol && <div className="error">{errors.symbol}</div>}
-            <button type="submit" className="primary-button" disabled={savingPassword}>
+            <button
+              type="submit"
+              className="primary-button"
+              disabled={savingPassword}
+            >
               {savingPassword ? 'Guardando…' : 'Cambiar contraseña'}
             </button>
           </form>
@@ -726,13 +804,26 @@ function Profile() {
           <hr className="divider" />
 
           <h3 className="subhead">Cambiar correo</h3>
-          <form onSubmit={submitEmailChange} className="panel-form is-compact">
+          <form
+            onSubmit={submitEmailChange}
+            className="panel-form is-compact"
+          >
             <label>
               Nuevo correo
-              <input type="email" value={emailInput} onChange={handleChangeEmail} />
-              {errors.email && <span className="error">{errors.email}</span>}
+              <input
+                type="email"
+                value={emailInput}
+                onChange={handleChangeEmail}
+              />
+              {errors.email && (
+                <span className="error">{errors.email}</span>
+              )}
             </label>
-            <button type="submit" className="secondary-button" disabled={savingProfile}>
+            <button
+              type="submit"
+              className="secondary-button"
+              disabled={savingProfile}
+            >
               {savingProfile ? 'Guardando…' : 'Actualizar correo'}
             </button>
           </form>
@@ -743,7 +834,11 @@ function Profile() {
         <article className="profile-panel" ref={panelRef}>
           <header className="panel-header">
             <h2>Configuración de Simulación</h2>
-            <button type="button" className="link-btn" onClick={() => setPanel(null)}>
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => setPanel(null)}
+            >
               Cerrar
             </button>
           </header>
@@ -767,7 +862,9 @@ function Profile() {
               Moneda
               <select
                 value={currency}
-                onChange={(e) => handleSettingsSave({ currency: e.target.value })}
+                onChange={(e) =>
+                  handleSettingsSave({ currency: e.target.value })
+                }
                 disabled={savingSettings}
               >
                 <option value="COP">COP</option>
@@ -779,7 +876,9 @@ function Profile() {
               Nivel educativo
               <select
                 value={educationLevel}
-                onChange={(e) => handleSettingsSave({ educationLevel: e.target.value })}
+                onChange={(e) =>
+                  handleSettingsSave({ educationLevel: e.target.value })
+                }
                 disabled={savingSettings}
               >
                 <option value="basic">Básico</option>
@@ -791,7 +890,9 @@ function Profile() {
               <input
                 type="checkbox"
                 checked={aiEnabled}
-                onChange={(e) => handleSettingsSave({ aiEnabled: e.target.checked })}
+                onChange={(e) =>
+                  handleSettingsSave({ aiEnabled: e.target.checked })
+                }
                 disabled={savingSettings}
               />
               Activar Asistente Financiero IA
@@ -800,7 +901,9 @@ function Profile() {
               <input
                 type="checkbox"
                 checked={animationsEnabled}
-                onChange={(e) => handleSettingsSave({ animationsEnabled: e.target.checked })}
+                onChange={(e) =>
+                  handleSettingsSave({ animationsEnabled: e.target.checked })
+                }
                 disabled={savingSettings}
               />
               Activar animaciones
@@ -809,8 +912,9 @@ function Profile() {
             <div className="reports-box">
               <h3 className="subhead">Reportes por correo</h3>
               <p className="reports-hint">
-                Te enviamos un resumen a <strong>{user?.email || 'tu correo'}</strong>.
-                El mensual incluye Excel.
+                Te enviamos un resumen a{' '}
+                <strong>{user?.email || 'tu correo'}</strong>. El mensual
+                incluye Excel.
               </p>
               <div className="reports-actions">
                 <button
@@ -819,7 +923,9 @@ function Profile() {
                   disabled={!!sendingReport}
                   onClick={() => handleSendReport('weekly')}
                 >
-                  {sendingReport === 'weekly' ? 'Enviando…' : 'Enviar resumen semanal'}
+                  {sendingReport === 'weekly'
+                    ? 'Enviando…'
+                    : 'Enviar resumen semanal'}
                 </button>
                 <button
                   type="button"
@@ -827,7 +933,9 @@ function Profile() {
                   disabled={!!sendingReport}
                   onClick={() => handleSendReport('monthly')}
                 >
-                  {sendingReport === 'monthly' ? 'Enviando…' : 'Enviar resumen mensual'}
+                  {sendingReport === 'monthly'
+                    ? 'Enviando…'
+                    : 'Enviar resumen mensual'}
                 </button>
               </div>
             </div>
@@ -869,14 +977,19 @@ function Profile() {
                 })
               } finally {
                 setSavingProfile(false)
-                setTimeout(() => setToast({ message: '', visible: false }), 3000)
+                setTimeout(
+                  () => setToast({ message: '', visible: false }),
+                  3000
+                )
               }
             }}
           />
         </div>
       )}
 
-      <p className="profile-footnote">Perfil del entorno educativo (Datos seguros)</p>
+      <p className="profile-footnote">
+        Perfil del entorno educativo (Datos seguros)
+      </p>
 
       {confirmReset && (
         <Modal
@@ -891,343 +1004,13 @@ function Profile() {
             <strong>deudas</strong> y el <strong>historial de actividad</strong>.
             Esta acción no se puede deshacer.
           </p>
-          <p style={{ marginTop: '0.5rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <p className="reset-modal-note">
             Tu cuenta, correo y configuración se mantienen.
           </p>
         </Modal>
       )}
 
       <Toast message={toast.message} visible={toast.visible} />
-
-      <style>{`
-        .profile-page {
-          width: 100%;
-          max-width: 1200px;
-          margin: 0 auto;
-          box-sizing: border-box;
-          padding: 1.35rem 1.35rem 1.75rem;
-          color: var(--text-primary);
-          font-family: 'Nunito', 'Inter', 'Segoe UI', system-ui, sans-serif;
-        }
-
-        .profile-hero {
-          display: grid;
-          grid-template-columns: 1fr 1.05fr;
-          gap: 1.25rem;
-          margin-bottom: 1.25rem;
-        }
-        .identity-card,
-        .momentum-card,
-        .profile-panel {
-          background: var(--bg-surface);
-          border: 1px solid var(--border);
-          border-radius: 1.05rem;
-          padding: 1.25rem 1.35rem;
-          box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
-        }
-        .identity-card {
-          display: flex;
-          gap: 1.15rem;
-          align-items: center;
-        }
-        .avatar-btn {
-          position: relative;
-          border: none;
-          background: transparent;
-          padding: 0;
-          cursor: pointer;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-        .avatar-edit-badge {
-          position: absolute;
-          left: 50%;
-          bottom: -2px;
-          transform: translateX(-50%);
-          font-size: 0.68rem;
-          font-weight: 800;
-          background: #2563eb;
-          color: #fff;
-          padding: 0.14rem 0.5rem;
-          border-radius: 999px;
-        }
-        .identity-text { min-width: 0; }
-        .profile-name {
-          margin: 0;
-          font-size: 1.4rem;
-          font-weight: 800;
-          text-transform: capitalize;
-          letter-spacing: -0.02em;
-        }
-        .profile-email, .profile-role, .hint {
-          margin: 0.2rem 0 0;
-          color: var(--text-muted);
-          font-size: 0.92rem;
-        }
-        .profile-level {
-          margin: 0.3rem 0 0;
-          font-weight: 800;
-          font-size: 1rem;
-        }
-        .status-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.4rem;
-          margin-top: 0.65rem;
-        }
-        .chip {
-          font-size: 0.75rem;
-          font-weight: 800;
-          padding: 0.22rem 0.6rem;
-          border-radius: 999px;
-          border: 1px solid var(--border);
-          background: var(--bg-page);
-          color: var(--text-muted);
-        }
-        .chip.is-on {
-          border-color: rgba(124, 58, 237, 0.45);
-          color: #7c3aed;
-          background: rgba(124, 58, 237, 0.08);
-        }
-
-        .momentum-head {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 0.85rem;
-          margin-bottom: 0.45rem;
-        }
-        .momentum-head h2 {
-          margin: 0;
-          font-size: 1.02rem;
-          font-weight: 800;
-        }
-        .momentum-tip {
-          margin: 0.25rem 0 0;
-          font-size: 0.82rem;
-          color: var(--text-muted);
-          line-height: 1.4;
-        }
-        .momentum-badge {
-          flex-shrink: 0;
-          font-size: 0.75rem;
-          font-weight: 800;
-          padding: 0.28rem 0.6rem;
-          border-radius: 999px;
-        }
-        .momentum-badge.is-up { background: rgba(22,163,74,0.12); color: #16a34a; }
-        .momentum-badge.is-down { background: rgba(220,38,38,0.12); color: #dc2626; }
-        .momentum-badge.is-flat { background: rgba(37,99,235,0.1); color: #2563eb; }
-        .momentum-chart-wrap {
-          width: 100%;
-          height: 150px;
-        }
-        .momentum-foot {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.55rem 1.1rem;
-          margin-top: 0.45rem;
-          font-size: 0.74rem;
-          font-weight: 700;
-          color: var(--text-muted);
-        }
-
-        .profile-mid {
-          display: grid;
-          grid-template-columns: 1.2fr 0.9fr;
-          gap: 1.25rem;
-          align-items: stretch;
-        }
-        .profile-menu { display: grid; gap: 0.65rem; }
-        .menu-row {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          gap: 0.85rem;
-          padding: 1rem 1rem 1rem 1.15rem;
-          border-radius: 0.95rem;
-          border: 1px solid var(--border);
-          background: var(--bg-surface);
-          color: var(--text-primary);
-          cursor: pointer;
-          font: inherit;
-          font-weight: 700;
-          font-size: 0.95rem;
-          text-align: left;
-          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
-          transition: border-color 0.15s ease, transform 0.15s ease;
-        }
-        .menu-row:hover {
-          border-color: rgba(37, 99, 235, 0.35);
-          transform: translateY(-1px);
-        }
-        .menu-row-label {
-          flex: 1;
-          min-width: 0;
-        }
-        .menu-row.active { border-color: #2563eb; }
-        .chevron {
-          color: var(--text-muted);
-          font-size: 1.2rem;
-          line-height: 1;
-          flex-shrink: 0;
-          margin-right: 0.15rem;
-        }
-
-        .stats-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.7rem;
-        }
-        .stat-box {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-          min-height: 5.8rem;
-          background: var(--bg-surface);
-          border: 1px solid var(--border);
-          border-radius: 0.95rem;
-          padding: 0.9rem 0.85rem;
-        }
-        .stat-box span {
-          display: block;
-          font-size: 0.76rem;
-          font-weight: 700;
-          margin-bottom: 0.3rem;
-          color: var(--text-muted);
-        }
-        .stat-box strong {
-          font-size: 1.35rem;
-          font-weight: 800;
-          line-height: 1.1;
-        }
-        .stat-box small {
-          font-weight: 600;
-          opacity: 0.85;
-        }
-        .stat-box.is-tx { border-top: 3px solid #2563eb; }
-        .stat-box.is-tx strong { color: #2563eb; }
-        .stat-box.is-goals { border-top: 3px solid #16a34a; }
-        .stat-box.is-goals strong { color: #16a34a; }
-        .stat-box.is-debts { border-top: 3px solid #dc2626; }
-        .stat-box.is-debts strong { color: #dc2626; }
-        .stat-box.is-progress { border-top: 3px solid #7c3aed; }
-        .stat-box.is-progress strong { color: #7c3aed; }
-
-        .profile-panel {
-          margin-top: 1.25rem;
-          max-width: 560px;
-          scroll-margin-top: 88px;
-        }
-        .avatar-editor-anchor {
-          margin-top: 1.25rem;
-          scroll-margin-top: 88px;
-        }
-        .panel-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.95rem;
-        }
-        .panel-header h2 { margin: 0; font-size: 1.1rem; font-weight: 800; }
-        .subhead {
-          margin: 0 0 0.55rem;
-          font-size: 0.98rem;
-          font-weight: 800;
-        }
-        .link-btn {
-          border: none;
-          background: transparent;
-          color: #2563eb;
-          cursor: pointer;
-          font: inherit;
-          font-weight: 800;
-        }
-        .panel-form { display: grid; gap: 0.8rem; }
-        .panel-form label {
-          display: block;
-          font-weight: 700;
-          font-size: 0.9rem;
-        }
-        .panel-form input,
-        .panel-form select {
-          display: block;
-          width: 100%;
-          margin-top: 0.35rem;
-          padding: 0.72rem 0.85rem;
-          border-radius: 0.7rem;
-          border: 1px solid var(--border);
-          background: var(--bg-page);
-          color: var(--text-primary);
-          font: inherit;
-          box-sizing: border-box;
-        }
-        .check-row {
-          display: flex !important;
-          align-items: center;
-          gap: 0.55rem;
-          font-weight: 600 !important;
-        }
-        .check-row input { width: auto !important; margin: 0 !important; }
-        .divider {
-          border: none;
-          border-top: 1px solid var(--border);
-          margin: 1rem 0;
-        }
-        .primary-button, .secondary-button, .danger-button {
-          padding: 0.8rem 1rem;
-          border: none;
-          border-radius: 0.75rem;
-          cursor: pointer;
-          font-weight: 800;
-          font: inherit;
-          width: 100%;
-        }
-        .primary-button { background: #2563eb; color: #fff; }
-        .primary-button:disabled,
-        .secondary-button:disabled,
-        .danger-button:disabled {
-          opacity: 0.65;
-          cursor: not-allowed;
-        }
-        .secondary-button { background: var(--border); color: var(--text-primary); }
-        .danger-button { background: #ef4444; color: #fff; }
-        .error { color: #dc2626; margin-top: 0.3rem; font-size: 0.86rem; display: block; }
-
-        .reports-box {
-          padding: 0.95rem 1rem;
-          border-radius: 0.9rem;
-          border: 1px solid var(--border);
-          background: var(--bg-page);
-        }
-        .reports-hint {
-          margin: 0 0 0.8rem;
-          font-size: 0.84rem;
-          color: var(--text-muted);
-          line-height: 1.45;
-          font-weight: 600;
-        }
-        .reports-actions { display: grid; gap: 0.55rem; }
-
-        .profile-footnote {
-          margin: 1.15rem 0 0;
-          color: var(--text-muted);
-          font-size: 0.8rem;
-          text-align: center;
-        }
-
-        @media (max-width: 960px) {
-          .profile-page {
-            padding: 1.1rem 1rem 1.5rem;
-          }
-          .profile-hero,
-          .profile-mid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </section>
   )
 }
