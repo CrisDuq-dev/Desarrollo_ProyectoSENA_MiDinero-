@@ -267,31 +267,38 @@
   box-sizing: border-box;
 }
 
+/* Animation stats cards */
 .profile-page .stats-row.with-anim .stat-box {
-  animation: profileStatPop 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: profileStatPop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .profile-page .stats-row.with-anim .stat-box:nth-child(1) {
-  animation-delay: 0.04s;
+  animation-delay: 0.05s;
 }
 .profile-page .stats-row.with-anim .stat-box:nth-child(2) {
-  animation-delay: 0.1s;
+  animation-delay: 0.12s;
 }
 .profile-page .stats-row.with-anim .stat-box:nth-child(3) {
-  animation-delay: 0.16s;
+  animation-delay: 0.19s;
 }
 .profile-page .stats-row.with-anim .stat-box:nth-child(4) {
-  animation-delay: 0.22s;
+  animation-delay: 0.26s;
 }
 
 @keyframes profileStatPop {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(14px) scale(0.94);
+    transform: translateY(18px) scale(0.92);
   }
-  to {
+  100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-page .stats-row.with-anim .stat-box {
+    animation: none;
   }
 }
 

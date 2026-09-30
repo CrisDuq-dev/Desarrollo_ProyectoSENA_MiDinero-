@@ -712,6 +712,7 @@ function Profile() {
         </nav>
 
         <div
+          key={animationsEnabled ? 'stats-anim-on' : 'stats-anim-off'}
           className={`stats-row${animationsEnabled ? ' with-anim' : ''}`}
         >
           <div className="stat-box is-tx">
