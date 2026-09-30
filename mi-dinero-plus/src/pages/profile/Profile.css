@@ -244,7 +244,7 @@
   margin-right: 0.15rem;
 }
 
-/* Stats + animación de entrada */
+/* Stats */
 .profile-page .stats-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -267,7 +267,6 @@
   box-sizing: border-box;
 }
 
-/* Animation stats cards */
 .profile-page .stats-row.with-anim .stat-box {
   animation: profileStatPop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -293,12 +292,6 @@
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .profile-page .stats-row.with-anim .stat-box {
-    animation: none;
   }
 }
 
@@ -357,16 +350,17 @@
   scroll-margin-top: 88px;
 }
 
+/* Editor avatar: cuadro a la izquierda en desktop */
 .profile-page .avatar-editor-anchor {
   margin-top: 1.25rem;
   scroll-margin-top: 88px;
-  max-width: 100%;
+  max-width: 520px;
+  width: 100%;
   min-width: 0;
   overflow-x: hidden;
   box-sizing: border-box;
 }
 
-/* Contenedor del editor: evita chips/opciones fuera de margen en móvil */
 .profile-page .avatar-editor-anchor > * {
   max-width: 100%;
   box-sizing: border-box;
@@ -458,7 +452,7 @@
   margin: 1rem 0;
 }
 
-/* Botones scoped — sin sombra roja de Deudas */
+/* Botones scoped (no hereda sombra roja de Deudas) */
 .profile-page .primary-button,
 .profile-page .secondary-button,
 .profile-page .danger-button {
@@ -470,7 +464,10 @@
   font: inherit;
   width: 100%;
   box-sizing: border-box;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease,
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease,
     filter 0.15s ease;
 }
 
@@ -557,6 +554,7 @@
   font-size: 0.9rem;
 }
 
+/* —— Responsive —— */
 @media (prefers-reduced-motion: reduce) {
   .profile-page .stats-row.with-anim .stat-box {
     animation: none;
@@ -572,9 +570,15 @@
   .profile-page {
     padding: 1.1rem 1rem 1.5rem;
   }
+
   .profile-page .profile-hero,
   .profile-page .profile-mid {
     grid-template-columns: 1fr;
+  }
+
+  .profile-page .profile-panel,
+  .profile-page .avatar-editor-anchor {
+    max-width: 100%;
   }
 }
 
@@ -604,6 +608,11 @@
 
   .profile-page .identity-text {
     width: 100%;
+  }
+
+  .profile-page .momentum-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
@@ -636,8 +645,12 @@
     font-size: 0.9rem;
   }
 
-  /* Editor de avatar: forzar wrap y sin desborde */
   .profile-page .avatar-editor-anchor {
+    max-width: 100%;
     padding: 0;
+  }
+
+  .profile-page .momentum-chart-wrap {
+    height: 140px;
   }
 }

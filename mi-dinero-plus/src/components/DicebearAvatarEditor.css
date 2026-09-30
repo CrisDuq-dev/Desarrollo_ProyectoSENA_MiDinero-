@@ -1,4 +1,8 @@
-/* DicebearAvatarEditor */
+/* =========================
+   DicebearAvatarEditor
+   Escritorio: cuadro ~520px a la izquierda
+   Móvil: ancho completo, chips con wrap
+   ========================= */
 
 .db-editor {
   background: var(--bg-surface);
@@ -6,8 +10,10 @@
   border-radius: 1rem;
   padding: 1.1rem 1.25rem 1.25rem;
   width: 100%;
-  max-width: 560px;
+  max-width: 520px;
   margin-top: 1rem;
+  margin-left: 0;
+  margin-right: auto;
   box-sizing: border-box;
   overflow-x: hidden;
   min-width: 0;
@@ -26,6 +32,7 @@
   font-size: 1.05rem;
   font-weight: 800;
   color: var(--text-primary);
+  min-width: 0;
 }
 
 .db-link {
@@ -37,6 +44,7 @@
   cursor: pointer;
   flex-shrink: 0;
   min-height: 44px;
+  padding: 0.25rem 0.15rem;
 }
 
 .db-top {
@@ -71,7 +79,7 @@
   background: var(--bg-page);
   color: var(--text-primary);
   border-radius: 999px;
-  padding: 0.4rem 0.9rem;
+  padding: 0.45rem 0.95rem;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 800;
@@ -83,11 +91,11 @@
   margin: 0.45rem 0 0;
   font-size: 0.75rem;
   color: var(--text-muted);
-  line-height: 1.35;
-  padding: 0 0.25rem;
+  line-height: 1.4;
+  padding: 0 0.35rem;
 }
 
-/* Pestañas: 4 columnas (escritorio y móvil) */
+/* Pestañas: 4 columnas en todas las pantallas */
 .db-tabs {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -109,6 +117,7 @@
   cursor: pointer;
   min-width: 0;
   min-height: 40px;
+  line-height: 1.2;
 }
 
 .db-tab.is-on {
@@ -120,7 +129,7 @@
 .db-panel {
   display: grid;
   gap: 0.9rem;
-  min-height: 180px;
+  min-height: 160px;
   min-width: 0;
   max-width: 100%;
 }
@@ -138,7 +147,7 @@
   margin-bottom: 0.35rem;
 }
 
-/* Swatches: siempre wrap */
+/* Colores: siempre wrap */
 .db-swatches {
   display: flex;
   flex-wrap: wrap;
@@ -161,7 +170,7 @@
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
 }
 
-/* Chips: SIEMPRE wrap (antes en móvil era nowrap y se cortaban) */
+/* Chips: siempre wrap (nunca nowrap) */
 .db-chips {
   display: flex;
   flex-wrap: wrap;
@@ -182,6 +191,7 @@
   cursor: pointer;
   white-space: nowrap;
   max-width: 100%;
+  box-sizing: border-box;
 }
 
 .db-chip.is-on {
@@ -203,6 +213,7 @@
   width: 100%;
   min-height: 44px;
   box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
+  box-sizing: border-box;
 }
 
 .db-save:disabled {
@@ -214,31 +225,102 @@
   filter: brightness(1.05);
 }
 
-@media (max-width: 480px) {
+/* —— Tablet / móvil ancho —— */
+@media (max-width: 640px) {
   .db-editor {
-    padding: 1rem 0.9rem 1.15rem;
-    margin-top: 0.75rem;
     max-width: 100%;
+    margin-right: 0;
+    padding: 1rem 1rem 1.15rem;
   }
 
   .db-preview-ring {
-    width: 120px;
-    height: 120px;
+    width: 128px;
+    height: 128px;
   }
 
-  .db-tab {
-    font-size: 0.75rem;
-    padding: 0.45rem 0.15rem;
-  }
-
-  /* Chips envuelven; no se cortan */
-  .db-chips {
-    flex-wrap: wrap;
-    overflow-x: visible;
+  .db-chip,
+  .db-tab,
+  .db-random,
+  .db-link {
+    min-height: 44px;
   }
 
   .db-chip {
-    font-size: 0.76rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.7rem;
+  }
+}
+
+/* —— Celular estrecho (360–480) —— */
+@media (max-width: 480px) {
+  .db-editor {
+    padding: 0.95rem 0.85rem 1.1rem;
+    margin-top: 0.75rem;
+    border-radius: 0.9rem;
+  }
+
+  .db-head h2 {
+    font-size: 0.98rem;
+  }
+
+  .db-preview-ring {
+    width: 112px;
+    height: 112px;
+  }
+
+  .db-hint {
+    font-size: 0.72rem;
+  }
+
+  .db-tabs {
+    gap: 0.3rem;
+  }
+
+  .db-tab {
+    font-size: 0.72rem;
+    padding: 0.45rem 0.1rem;
+    min-height: 42px;
+  }
+
+  .db-panel {
+    gap: 0.75rem;
+    min-height: 0;
+  }
+
+  .db-chips {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    overflow: visible;
+  }
+
+  .db-chip {
+    font-size: 0.74rem;
     padding: 0.3rem 0.55rem;
+  }
+
+  .db-swatch {
+    width: 30px;
+    height: 30px;
+  }
+
+  .db-save {
+    margin-top: 0.85rem;
+  }
+}
+
+/* —— Muy estrecho (~360px) —— */
+@media (max-width: 360px) {
+  .db-editor {
+    padding: 0.85rem 0.7rem 1rem;
+  }
+
+  .db-tab {
+    font-size: 0.68rem;
+  }
+
+  .db-chip {
+    font-size: 0.72rem;
+    padding: 0.28rem 0.48rem;
   }
 }
