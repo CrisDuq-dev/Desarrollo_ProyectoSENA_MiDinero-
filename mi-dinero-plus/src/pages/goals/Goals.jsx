@@ -727,36 +727,54 @@ function Goals() {
         )}
 
         {contributionTarget && (
-          <Modal
-            title={`Aportar a ${contributionTarget.name}`}
-            onCancel={() => setContributionTarget(null)}
-            onConfirm={manejarAporte}
-            confirmLabel="Aportar"
-            cancelLabel="Cancelar"
-          >
-            <label>
-              Monto del aporte ({currencyLabel})
-              <input
-                type="number"
-                value={contributionAmount}
-                onChange={(e) => setContributionAmount(e.target.value)}
-                min="0"
-                step="0.01"
-                placeholder={currencyLabel === 'COP' ? '0' : '0.00'}
-              />
-            </label>
-            <p>
-              Faltan{' '}
-              {formatMoney(
-                Number(contributionTarget.targetAmount) -
-                  Number(contributionTarget.currentAmount)
-              )}{' '}
-              para completar la meta.
-            </p>
-            {errors.contributionAmount && (
-              <span className="error">{errors.contributionAmount}</span>
-            )}
-          </Modal>
+          <div className="goal-contribute-modal-root">
+            <Modal
+              title={`Aportar a ${contributionTarget.name}`}
+              onCancel={() => {
+                setContributionTarget(null)
+                setContributionAmount('')
+                setErrors((prev) => ({ ...prev, contributionAmount: undefined }))
+              }}
+              onConfirm={manejarAporte}
+              confirmLabel={goalActionLoading ? 'Procesando…' : 'Aportar'}
+              cancelLabel="Cancelar"
+            >
+              <div className="goal-contribute-form">
+                <div className="goal-contribute-balance">
+                  <span>Falta para completar</span>
+                  <strong>
+                    {formatMoney(
+                      Number(contributionTarget.targetAmount) -
+                        Number(contributionTarget.currentAmount)
+                    )}
+                  </strong>
+                </div>
+                <label>
+                  Monto del aporte ({currencyLabel})
+                  <input
+                    type="number"
+                    value={contributionAmount}
+                    onChange={(e) => {
+                      setContributionAmount(e.target.value)
+                      setErrors((prev) => ({
+                        ...prev,
+                        contributionAmount: undefined,
+                      }))
+                    }}
+                    min="0"
+                    step="0.01"
+                    placeholder={currencyLabel === 'COP' ? '0' : '0.00'}
+                  />
+                  {errors.contributionAmount && (
+                    <span className="error">{errors.contributionAmount}</span>
+                  )}
+                </label>
+                <p className="goal-contribute-hint">
+                  El aporte no puede superar lo que falta para completar la meta.
+                </p>
+              </div>
+            </Modal>
+          </div>
         )}
 
         {deleteTarget && (
