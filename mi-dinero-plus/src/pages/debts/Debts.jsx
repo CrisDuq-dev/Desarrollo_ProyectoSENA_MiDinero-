@@ -451,7 +451,7 @@ function Debts() {
                     type="text"
                     value={form.name}
                     onChange={manejarCambio('name')}
-                    placeholder="Nombre de la deuda o entidad"
+                    placeholder="Name of the debt or entity"
                   />
                   {errors.name && <span className="error">{errors.name}</span>}
                 </label>
