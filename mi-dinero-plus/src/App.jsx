@@ -16,6 +16,7 @@ import Debts from './pages/debts/Debts'
 import Profile from './pages/profile/Profile'
 import ActivityCenter from './pages/profile/ActivityCenter'
 import MainLayout from './components/layout/MainLayout'
+import LogoutScreen from './components/common/LogoutScreen'
 import MundoPlusHome from './pages/mundo-plus/MundoPlusHome'
 import MundoPlusArticle from './pages/mundo-plus/MundoPlusArticle'
 
@@ -60,6 +61,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
+        <LogoutScreen />
         <FinanceProvider>
           <BrowserRouter>
             <Routes>

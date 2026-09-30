@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import {
   loginUser,
   registerUser,
@@ -6,6 +6,13 @@ import {
   logoutUser,
   refreshSession,
 } from '../services/api'
+import {
+  LOGOUT_MIN_MS,
+  LOGOUT_LEAVE_MS,
+  pickLogoutPhrase,
+} from '../data/logoutPhrases'
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const AuthContext = createContext(null)
 
@@ -56,6 +63,10 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
+  // Pantalla de despedida: null | 'active' | 'leaving'
+  const [logoutState, setLogoutState] = useState(null)
+  const [logoutPhrase, setLogoutPhrase] = useState('')
+  const logoutRunning = useRef(false)
 
   const clearSession = useCallback(() => {
     clearLegacyTokens()
@@ -148,12 +159,24 @@ export function AuthProvider({ children }) {
   }
 
   const logout = async () => {
+    if (logoutRunning.current) return
+    logoutRunning.current = true
+
+    setLogoutPhrase(pickLogoutPhrase())
+    setLogoutState('active')
+
     try {
-      await logoutUser()
-    } catch {
-      // Aunque falle la red, limpiamos estado local
+      // Espera al servidor Y un mínimo de tiempo para que se lea la frase.
+      // Aunque falle la red, limpiamos estado local.
+      await Promise.all([logoutUser().catch(() => {}), wait(LOGOUT_MIN_MS)])
+    } finally {
+      clearSession()
+      setLogoutState('leaving')
+      window.setTimeout(() => {
+        setLogoutState(null)
+        logoutRunning.current = false
+      }, LOGOUT_LEAVE_MS)
     }
-    clearSession()
   }
 
   const updateUser = (data) => {
@@ -174,6 +197,8 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        logoutState,
+        logoutPhrase,
         updateUser,
       }}
     >
