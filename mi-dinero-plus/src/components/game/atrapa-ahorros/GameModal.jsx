@@ -1,10 +1,13 @@
+import { createPortal } from 'react-dom'
 import { FiX } from 'react-icons/fi'
 import { FaGamepad } from 'react-icons/fa'
 
 export default function GameModal({ open, onClose, children }) {
   if (!open) return null
 
-  return (
+  // Portal a <body>: el modal queda fuera de cualquier contenedor de la página
+  // (navbar sticky, layouts, stacking contexts) y siempre se centra en la ventana.
+  return createPortal(
     <div className="atrapa-modal-root" role="dialog" aria-modal="true" aria-label="Atrapa tus Ahorros">
       <div className="atrapa-modal-backdrop" onClick={onClose} />
       <div className="atrapa-modal-panel">
@@ -32,7 +35,7 @@ export default function GameModal({ open, onClose, children }) {
         .atrapa-modal-root {
           position: fixed;
           inset: 0;
-          z-index: 80;
+          z-index: 1000;
           display: grid;
           place-items: center;
           padding: 0.75rem;
@@ -47,6 +50,7 @@ export default function GameModal({ open, onClose, children }) {
           position: relative;
           width: min(100%, 26rem);
           max-height: min(88vh, 34rem);
+          max-height: min(88dvh, 34rem);
           display: flex;
           flex-direction: column;
           border-radius: 1rem;
@@ -114,6 +118,7 @@ export default function GameModal({ open, onClose, children }) {
           flex-shrink: 0;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   )
 }
