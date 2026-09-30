@@ -39,7 +39,10 @@ body,
   background: var(--bg-page);
   color: var(--text-primary);
   min-height: 100%;
+  /* 'clip' recorta sin convertir body en un contenedor de scroll propio
+     (con 'hidden' en html y body a la vez, los elementos fixed se corren en móvil) */
   overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100%;
 }
 

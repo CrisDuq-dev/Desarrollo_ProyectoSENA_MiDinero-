@@ -250,16 +250,18 @@ function MundoPlusHome() {
         </div>
       )}
 
-      <button
-        type="button"
-        className={`mp-fab${chatOpen ? ' is-open' : ''}`}
-        onClick={() => (chatOpen ? closeChat() : setChatOpen(true))}
-        aria-label={chatOpen ? 'Cerrar asistente' : 'Abrir asistente IA'}
-      >
-        {chatOpen ? <FiX size={22} /> : <FiCpu size={22} />}
-      </button>
+      <div className="mp-fab-stack">
+        <GameFab onClick={() => setGameOpen(true)} />
+        <button
+          type="button"
+          className={`mp-fab${chatOpen ? ' is-open' : ''}`}
+          onClick={() => (chatOpen ? closeChat() : setChatOpen(true))}
+          aria-label={chatOpen ? 'Cerrar asistente' : 'Abrir asistente IA'}
+        >
+          {chatOpen ? <FiX size={22} /> : <FiCpu size={22} />}
+        </button>
+      </div>
 
-<GameFab onClick={() => setGameOpen(true)} />
 <GameModal open={gameOpen} onClose={() => setGameOpen(false)}>
   <AtrapaAhorrosGame active={gameOpen} />
 </GameModal>
@@ -274,6 +276,11 @@ function MundoPlusHome() {
           --mp-accent-soft: rgba(124, 58, 237, 0.14);
           --mp-radius: 1.05rem;
           --mp-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+          /* Posición compartida de los botones flotantes (morado + verde) */
+          --fab-size: 3.25rem;
+          --fab-right: 1.25rem;
+          --fab-bottom: 1.25rem;
+          --fab-gap: 1rem;
 
           max-width: 1100px;
           margin: 0 auto;
@@ -482,13 +489,24 @@ function MundoPlusHome() {
           text-align: left;
         }
 
-        .mp-fab {
+        /* Contenedor fijo: los dos botones comparten el mismo eje vertical */
+        .mp-fab-stack {
           position: fixed;
-          right: 1.25rem;
-          bottom: 1.25rem;
+          right: max(var(--fab-right), env(safe-area-inset-right, 0px));
+          bottom: max(var(--fab-bottom), env(safe-area-inset-bottom, 0px));
           z-index: 40;
-          width: 3.25rem;
-          height: 3.25rem;
+          width: var(--fab-size);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--fab-gap);
+        }
+        .mp-fab {
+          position: relative;
+          flex: 0 0 auto;
+          padding: 0;
+          width: var(--fab-size);
+          height: var(--fab-size);
           border: none;
           border-radius: 999px;
           background: linear-gradient(145deg, #8b5cf6, var(--mp-accent));
@@ -665,9 +683,9 @@ function MundoPlusHome() {
             width: auto;
             bottom: 4.75rem;
           }
-          .mp-fab {
-            right: 0.9rem;
-            bottom: 0.9rem;
+          .mundo-plus-home {
+            --fab-right: 0.9rem;
+            --fab-bottom: 0.9rem;
           }
         }
       `}</style>
