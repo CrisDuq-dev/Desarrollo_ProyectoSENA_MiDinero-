@@ -5,6 +5,7 @@ import { useFinance } from '../../contexts/FinanceContext'
 import { convertToCOP } from '../../utils/currency'
 import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
+import './Debts.css'
 
 const formInicial = {
   name: '',
@@ -145,12 +146,12 @@ function Debts() {
   const todayISO = useMemo(() => getTodayISO(), [])
 
   const activeDebtsAll = useMemo(
-    () => debts.filter((d) => d.status === 'active' && !d.deletedAt),
+    () => (debts || []).filter((d) => d.status === 'active' && !d.deletedAt),
     [debts]
   )
 
   const paidDebts = useMemo(
-    () => debts.filter((d) => d.status === 'paid' && !d.deletedAt),
+    () => (debts || []).filter((d) => d.status === 'paid' && !d.deletedAt),
     [debts]
   )
 
@@ -187,19 +188,13 @@ function Debts() {
 
   useEffect(() => {
     if (!adviceForThisPage || aiStatus !== 'ready' || !aiAdvice) return undefined
-
-    const timer = window.setTimeout(() => {
-      clearAIAdvice()
-    }, readingMs)
-
+    const timer = window.setTimeout(() => clearAIAdvice(), readingMs)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adviceForThisPage, aiStatus, aiAdvice, readingMs])
 
   useEffect(() => {
-    return () => {
-      clearAIAdvice()
-    }
+    return () => clearAIAdvice()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
@@ -320,6 +315,7 @@ function Debts() {
         interestRate: Number(form.interestRate),
       })
       setForm(formInicial)
+      setErrors({})
       showToast('Deuda registrada correctamente')
     } catch (error) {
       setActionError(error.message || 'No se pudo guardar la deuda')
@@ -451,7 +447,7 @@ function Debts() {
                     type="text"
                     value={form.name}
                     onChange={manejarCambio('name')}
-                    placeholder="Name of the debt or entity"
+                    placeholder="Nombre de la deuda o entidad"
                   />
                   {errors.name && <span className="error">{errors.name}</span>}
                 </label>
@@ -489,12 +485,14 @@ function Debts() {
                 <div className="field-grid">
                   <label>
                     Vencimiento
-                    <input
-                      type="date"
-                      value={form.dueDate}
-                      onChange={manejarCambio('dueDate')}
-                      min={todayISO}
-                    />
+                    <div className="debt-date-wrap">
+                      <input
+                        type="date"
+                        value={form.dueDate}
+                        onChange={manejarCambio('dueDate')}
+                        min={todayISO}
+                      />
+                    </div>
                     {errors.dueDate && (
                       <span className="error">{errors.dueDate}</span>
                     )}
@@ -691,7 +689,10 @@ function Debts() {
 
                         {showSim && (
                           <div className="amort-wrap">
-                            <div className="table-scroll">
+                            <p className="amort-scroll-hint">
+                              Desliza horizontalmente para ver todas las columnas
+                            </p>
+                            <div className="table-scroll" role="region" aria-label="Tabla de amortización">
                               <table className="amort-table">
                                 <thead>
                                   <tr>
@@ -865,11 +866,13 @@ function Debts() {
                 <div className="field-grid">
                   <label>
                     Vencimiento
-                    <input
-                      type="date"
-                      value={editForm.dueDate}
-                      onChange={manejarCambioEdit('dueDate')}
-                    />
+                    <div className="debt-date-wrap">
+                      <input
+                        type="date"
+                        value={editForm.dueDate}
+                        onChange={manejarCambioEdit('dueDate')}
+                      />
+                    </div>
                     {editErrors.dueDate && (
                       <span className="error">{editErrors.dueDate}</span>
                     )}
@@ -899,29 +902,45 @@ function Debts() {
         )}
 
         {paymentTarget && (
-          <Modal
-            title={`Pagar deuda: ${paymentTarget.name}`}
-            onCancel={() => setPaymentTarget(null)}
-            onConfirm={manejarPago}
-            confirmLabel="Pagar"
-            cancelLabel="Cancelar"
-          >
-            <label>
-              Monto a pagar ({currencyLabel})
-              <input
-                type="number"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                min="0"
-                step="0.01"
-                placeholder={currencyLabel === 'COP' ? '0' : '0.00'}
-              />
-              {errors.paymentAmount && (
-                <span className="error">{errors.paymentAmount}</span>
-              )}
-            </label>
-            <p>Saldo pendiente: {formatMoney(paymentTarget.pendingBalance)}</p>
-          </Modal>
+          <div className="debt-pay-modal-root">
+            <Modal
+              title={`Pagar deuda: ${paymentTarget.name}`}
+              onCancel={() => setPaymentTarget(null)}
+              onConfirm={manejarPago}
+              confirmLabel={debtActionLoading ? 'Procesando…' : 'Pagar'}
+              cancelLabel="Cancelar"
+            >
+              <div className="debt-pay-form">
+                <div className="debt-pay-balance">
+                  <span>Saldo pendiente</span>
+                  <strong>{formatMoney(paymentTarget.pendingBalance)}</strong>
+                </div>
+                <label>
+                  Monto a pagar ({currencyLabel})
+                  <input
+                    type="number"
+                    value={paymentAmount}
+                    onChange={(e) => {
+                      setPaymentAmount(e.target.value)
+                      setErrors((prev) => ({
+                        ...prev,
+                        paymentAmount: undefined,
+                      }))
+                    }}
+                    min="0"
+                    step="0.01"
+                    placeholder={currencyLabel === 'COP' ? '0' : '0.00'}
+                  />
+                  {errors.paymentAmount && (
+                    <span className="error">{errors.paymentAmount}</span>
+                  )}
+                </label>
+                <p className="debt-pay-hint">
+                  El abono no puede superar el saldo pendiente.
+                </p>
+              </div>
+            </Modal>
+          </div>
         )}
 
         {deleteTarget && (
@@ -937,633 +956,6 @@ function Debts() {
         )}
 
         <Toast message={toast.message} visible={toast.visible} />
-
-        <style>{`
-          .debts-page {
-            --debts-red: #dc2626;
-            --debts-red-dark: #b91c1c;
-            --debts-purple: #7c3aed;
-            --debts-purple-border: rgba(124, 58, 237, 0.38);
-            --debts-purple-glow: rgba(124, 58, 237, 0.14);
-            --debts-radius: 1.05rem;
-            --debts-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
-
-            display: grid;
-            gap: 1.3rem;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            box-sizing: border-box;
-            padding: 1.35rem 1.35rem 1.75rem;
-            color: var(--text-primary);
-            font-family: 'Nunito', 'Inter', 'Segoe UI', system-ui, sans-serif;
-          }
-
-          .debts-ai {
-            display: flex;
-            gap: 0.9rem;
-            align-items: flex-start;
-            padding: 1.05rem 1.25rem;
-            border-radius: var(--debts-radius);
-            border: 1px solid var(--border);
-            background: var(--bg-surface);
-            transition: border-color 0.25s ease, box-shadow 0.25s ease;
-          }
-          .debts-ai.is-active {
-            border-color: var(--debts-purple-border);
-            box-shadow: 0 0 0 1px var(--debts-purple-glow), 0 10px 26px var(--debts-purple-glow);
-          }
-          .debts-ai.is-idle {
-            border-color: rgba(124, 58, 237, 0.22);
-          }
-          .debts-ai.is-off {
-            opacity: 0.9;
-          }
-          .debts-ai-icon {
-            width: 2.4rem;
-            height: 2.4rem;
-            border-radius: 0.75rem;
-            display: grid;
-            place-items: center;
-            background: linear-gradient(145deg, #8b5cf6, var(--debts-purple));
-            color: #fff;
-            flex-shrink: 0;
-            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.32);
-          }
-          .debts-ai.is-off .debts-ai-icon {
-            background: var(--border);
-            color: var(--text-muted);
-            box-shadow: none;
-          }
-          .debts-ai-body strong {
-            display: block;
-            margin-bottom: 0.22rem;
-            font-size: 0.93rem;
-            font-weight: 750;
-            color: var(--text-primary);
-          }
-          .debts-ai.is-active .debts-ai-body strong {
-            color: var(--debts-purple);
-          }
-          .debts-ai-body p {
-            margin: 0;
-            color: var(--text-muted);
-            line-height: 1.48;
-            font-size: 0.9rem;
-            font-weight: 500;
-          }
-
-          .debts-layout {
-            display: grid;
-            grid-template-columns: minmax(300px, 360px) 1fr;
-            gap: 1.4rem;
-            align-items: start;
-          }
-
-          .debts-left {
-            display: grid;
-            gap: 0.9rem;
-          }
-
-          .debt-form-card,
-          .debt-search-card,
-          .summary-panel,
-          .debts-list {
-            background: var(--bg-surface);
-            border: 1px solid var(--border);
-            border-radius: var(--debts-radius);
-            box-shadow: var(--debts-shadow);
-          }
-
-          .debt-form-card {
-            overflow: hidden;
-            padding: 0;
-          }
-          .debt-form-card h1 {
-            margin: 0;
-            padding: 1rem 1.25rem;
-            background: linear-gradient(135deg, #b91c1c 0%, var(--debts-red) 55%, #ef4444 100%);
-            color: #fff;
-            font-size: 1.15rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            text-align: center;
-          }
-          .debt-form-card form {
-            padding: 1.25rem 1.3rem 1.4rem;
-            display: grid;
-            gap: 0.95rem;
-          }
-          .debt-form-card label,
-          .debt-edit-form label {
-            display: grid;
-            gap: 0.4rem;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--text-primary);
-            text-align: left;
-          }
-          .debt-form-card input,
-          .debt-edit-form input {
-            width: 100%;
-            padding: 0.8rem 0.9rem;
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            background-color: var(--bg-page);
-            color: var(--text-primary);
-            font-family: inherit;
-            font-size: 0.95rem;
-            outline: none;
-            box-sizing: border-box;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-          }
-          .debt-form-card input:focus,
-          .debt-edit-form input:focus {
-            border-color: var(--debts-red);
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
-          }
-
-          .field-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            align-items: start;
-          }
-          .field-grid label {
-            min-width: 0;
-          }
-
-          .primary-button {
-            width: 100%;
-            margin-top: 0.15rem;
-            padding: 0.9rem 1rem;
-            border: none;
-            border-radius: 0.75rem;
-            background: linear-gradient(135deg, #b91c1c, var(--debts-red));
-            color: #fff;
-            font-family: inherit;
-            font-weight: 800;
-            font-size: 0.98rem;
-            cursor: pointer;
-            transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-            box-shadow: 0 8px 18px rgba(220, 38, 38, 0.28);
-          }
-          .primary-button:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 10px 22px rgba(220, 38, 38, 0.35);
-          }
-          .primary-button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-          }
-
-          .debt-edit-form {
-            display: grid;
-            gap: 0.9rem;
-            min-width: min(100%, 22rem);
-          }
-
-          /* Guardar cambios del modal → rojo deudas */
-          .debt-edit-modal-root :is(
-            button.confirm,
-            button.modal-confirm,
-            .modal-actions button:last-child,
-            .modal-footer button:last-child,
-            [data-modal-confirm]
-          ) {
-            background: linear-gradient(135deg, #b91c1c, #dc2626) !important;
-            border-color: transparent !important;
-            color: #fff !important;
-            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
-          }
-          .debt-edit-modal-root :is(
-            button.confirm,
-            button.modal-confirm,
-            .modal-actions button:last-child,
-            .modal-footer button:last-child,
-            [data-modal-confirm]
-          ):hover {
-            filter: brightness(1.06);
-          }
-
-          .debt-search-card {
-            padding: 0.95rem 1.1rem 1rem;
-          }
-          .debt-search-label {
-            display: block;
-            margin-bottom: 0.4rem;
-            font-size: 0.85rem;
-            font-weight: 750;
-            color: var(--text-primary);
-          }
-          .debt-search-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-          }
-          .debt-search-icon {
-            position: absolute;
-            left: 0.85rem;
-            color: var(--text-muted);
-            pointer-events: none;
-          }
-          .debt-search-wrap input {
-            width: 100%;
-            padding: 0.75rem 2.4rem 0.75rem 2.4rem;
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            background: var(--bg-page);
-            color: var(--text-primary);
-            font: inherit;
-            font-size: 0.92rem;
-            outline: none;
-            box-sizing: border-box;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-          }
-          .debt-search-wrap input:focus {
-            border-color: var(--debts-red);
-            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
-          }
-          .debt-search-wrap input[type='search']::-webkit-search-cancel-button,
-          .debt-search-wrap input[type='search']::-webkit-search-decoration {
-            -webkit-appearance: none;
-            appearance: none;
-            display: none;
-          }
-          .debt-search-clear {
-            position: absolute;
-            right: 0.45rem;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 0.35rem;
-            display: grid;
-            place-items: center;
-            border-radius: 0.4rem;
-          }
-          .debt-search-clear:hover {
-            color: var(--debts-red);
-            background: rgba(220, 38, 38, 0.08);
-          }
-          .debt-search-hint {
-            margin: 0.45rem 0 0;
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            font-weight: 600;
-          }
-
-          .debts-right {
-            display: grid;
-            gap: 1rem;
-          }
-
-          .summary-panel {
-            padding: 1.15rem 1.25rem;
-          }
-          .summary-panel-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: flex-start;
-          }
-          .summary-panel h2 {
-            margin: 0 0 0.25rem;
-            font-size: 1.08rem;
-            font-weight: 800;
-          }
-          .summary-panel p {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            font-weight: 500;
-          }
-          .total-debt {
-            text-align: right;
-          }
-          .total-debt span {
-            display: block;
-            color: var(--text-muted);
-            font-size: 0.82rem;
-            font-weight: 600;
-            margin-bottom: 0.2rem;
-          }
-          .total-debt strong {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--debts-red);
-            letter-spacing: -0.02em;
-          }
-
-          .debts-list {
-            padding: 1rem 1.1rem 1.15rem;
-          }
-          .debts-list h2 {
-            margin: 0 0 0.85rem;
-            font-size: 1.05rem;
-            font-weight: 800;
-          }
-
-          .debts-paid-section {
-            border-color: rgba(22, 163, 74, 0.4);
-          }
-          .paid-section-title {
-            margin: 0 0 0.35rem;
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: #16a34a;
-          }
-          .paid-intro {
-            margin: 0 0 0.85rem;
-            color: var(--text-muted);
-            font-size: 0.88rem;
-            font-weight: 600;
-          }
-
-          .debt-cards {
-            display: grid;
-            gap: 0.9rem;
-          }
-          .debt-card {
-            border: 1px solid var(--border);
-            border-radius: var(--debts-radius);
-            padding: 1.05rem 1.15rem;
-            background: var(--bg-page);
-            display: grid;
-            gap: 0.75rem;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-          }
-          .debt-card:hover {
-            border-color: rgba(220, 38, 38, 0.35);
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-          }
-          .debt-card.paid {
-            border-color: rgba(22, 163, 74, 0.55);
-            background: linear-gradient(
-              180deg,
-              rgba(22, 163, 74, 0.06),
-              var(--bg-page)
-            );
-          }
-          .debt-card.paid:hover {
-            border-color: rgba(22, 163, 74, 0.65);
-            box-shadow: 0 8px 20px rgba(22, 163, 74, 0.1);
-          }
-          .debt-card.is-editing {
-            border-color: rgba(220, 38, 38, 0.5);
-            box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.12);
-          }
-          .debt-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 0.75rem;
-          }
-          .debt-card-header h3 {
-            margin: 0;
-            font-size: 1.05rem;
-            font-weight: 800;
-            letter-spacing: -0.01em;
-          }
-          .debt-card-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-          }
-
-          .debt-title-block {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            align-items: center;
-          }
-          .debt-badge {
-            padding: 0.22rem 0.6rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 800;
-          }
-          .debt-badge.paid {
-            background: #dcfce7;
-            color: #166534;
-          }
-
-          .debt-header-right {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.4rem;
-          }
-          .debt-amount-block {
-            text-align: right;
-            display: grid;
-            gap: 0.12rem;
-            justify-items: end;
-            margin-right: 0.2rem;
-          }
-          .debt-amount-block strong {
-            font-size: 1.12rem;
-            font-weight: 800;
-            color: #16a34a;
-          }
-          .debt-amount-block span {
-            color: var(--text-muted);
-            font-size: 0.84rem;
-            font-weight: 600;
-          }
-
-          .debt-deadline-line {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: 0.88rem;
-            font-weight: 500;
-          }
-
-          .debt-stats {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0.65rem;
-          }
-          .debt-stats span {
-            display: block;
-            color: var(--text-muted);
-            font-size: 0.78rem;
-            font-weight: 600;
-            margin-bottom: 0.2rem;
-          }
-          .debt-stats strong {
-            font-size: 0.95rem;
-            font-weight: 800;
-          }
-          .debt-stats .pending strong {
-            color: var(--debts-red);
-          }
-
-          .progress-row {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: 0.65rem;
-            align-items: center;
-            font-size: 0.88rem;
-            color: var(--text-muted);
-            font-weight: 600;
-          }
-          .progress-bar {
-            height: 0.58rem;
-            background: var(--border);
-            border-radius: 999px;
-            overflow: hidden;
-          }
-          .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #b91c1c, #ef4444);
-            border-radius: 999px;
-          }
-          .progress-fill.paid-fill {
-            background: linear-gradient(90deg, #15803d, #22c55e);
-          }
-          .progress-pct {
-            min-width: 2.6rem;
-            text-align: right;
-            color: var(--text-primary);
-            font-weight: 800;
-          }
-
-          .debt-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.55rem;
-          }
-          .secondary-button,
-          .ghost-button {
-            padding: 0.55rem 0.9rem;
-            border-radius: 0.7rem;
-            cursor: pointer;
-            font: inherit;
-            font-weight: 700;
-            font-size: 0.9rem;
-            transition: transform 0.15s ease, background 0.15s ease;
-          }
-          .secondary-button {
-            border: 1px solid var(--border);
-            background: var(--bg-surface);
-            color: var(--text-primary);
-          }
-          .secondary-button:hover:not(:disabled) {
-            transform: translateY(-1px);
-          }
-          .ghost-button {
-            border: 1px solid rgba(220, 38, 38, 0.45);
-            background: transparent;
-            color: var(--debts-red);
-          }
-          .ghost-button:hover {
-            background: rgba(220, 38, 38, 0.08);
-          }
-
-          .amort-wrap {
-            margin-top: 0.2rem;
-          }
-          .table-scroll {
-            overflow-x: auto;
-          }
-          .amort-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 520px;
-            font-size: 0.9rem;
-          }
-          .amort-table th,
-          .amort-table td {
-            padding: 0.55rem 0.5rem;
-            border-bottom: 1px solid var(--border);
-            text-align: right;
-          }
-          .amort-table th:first-child,
-          .amort-table td:first-child {
-            text-align: left;
-          }
-          .amort-table th {
-            color: var(--text-muted);
-            font-weight: 700;
-          }
-          .amort-table .interest {
-            color: var(--debts-red);
-          }
-          .amort-table .capital {
-            color: #16a34a;
-          }
-          .amort-note {
-            margin: 0.6rem 0 0;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 500;
-          }
-
-          .icon-edit,
-          .icon-delete {
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            color: var(--text-muted);
-            padding: 0.25rem;
-            display: grid;
-            place-items: center;
-            border-radius: 0.45rem;
-            transition: color 0.15s ease, background 0.15s ease;
-          }
-          .icon-edit:hover {
-            color: #2563eb;
-            background: rgba(37, 99, 235, 0.1);
-          }
-          .icon-delete:hover {
-            color: #dc2626;
-            background: rgba(220, 38, 38, 0.1);
-          }
-          .paid-label {
-            margin: 0;
-            color: #16a34a;
-            font-weight: 800;
-            font-size: 0.95rem;
-          }
-          .error {
-            display: block;
-            margin-top: 0.25rem;
-            color: #dc2626;
-            font-size: 0.86rem;
-            font-weight: 600;
-          }
-          .form-error {
-            margin: 0;
-            color: #b91c1c;
-            font-weight: 700;
-            font-size: 0.9rem;
-          }
-          .empty-state {
-            padding: 1.1rem 0.25rem;
-            color: var(--text-muted);
-            font-weight: 600;
-          }
-          .empty-state.error {
-            color: #dc2626;
-          }
-
-          @media (max-width: 960px) {
-            .debts-layout {
-              grid-template-columns: 1fr;
-            }
-            .debt-stats {
-              grid-template-columns: 1fr 1fr;
-            }
-            .field-grid {
-              grid-template-columns: 1fr;
-            }
-            .debts-page {
-              padding: 1rem 1rem 1.4rem;
-            }
-          }
-        `}</style>
       </div>
     </>
   )
