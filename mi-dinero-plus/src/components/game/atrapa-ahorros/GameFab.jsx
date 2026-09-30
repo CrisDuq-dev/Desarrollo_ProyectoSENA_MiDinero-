@@ -1,19 +1,6 @@
 import { FaGamepad } from 'react-icons/fa'
 
-export default function GameFab({ onClick, style }) {
-  // Evita que un style externo mueva el FAB
-  const safeStyle =
-    style && typeof style === 'object'
-      ? Object.fromEntries(
-          Object.entries(style).filter(
-            ([key]) =>
-              !['right', 'left', 'top', 'bottom', 'position', 'inset'].includes(
-                key
-              )
-          )
-        )
-      : undefined
-
+export default function GameFab({ onClick }) {
   return (
     <button
       type="button"
@@ -21,20 +8,22 @@ export default function GameFab({ onClick, style }) {
       onClick={onClick}
       aria-label="Abrir minijuego Atrapa tus Ahorros"
       title="Atrapa tus Ahorros"
-      style={safeStyle}
     >
       <FaGamepad size={20} aria-hidden />
       <style>{`
         .atrapa-game-fab {
-          position: fixed;
-          right: 1rem;
-          bottom: 5.25rem;
+          position: fixed !important;
+          right: 1rem !important;
+          left: auto !important;
+          bottom: 5.25rem !important;
+          top: auto !important;
+          margin: 0 !important;
           z-index: 40;
           width: 3.25rem;
           height: 3.25rem;
           padding: 0;
           border: none;
-          border-radius: 999px;
+          border-radius: 50%;
           display: grid;
           place-items: center;
           cursor: pointer;
@@ -42,6 +31,7 @@ export default function GameFab({ onClick, style }) {
           background: linear-gradient(135deg, #14b8a6, #0d9488);
           box-shadow: 0 8px 24px rgba(13, 148, 136, 0.35);
           transition: transform 0.15s ease, filter 0.15s ease;
+          box-sizing: border-box;
         }
 
         .atrapa-game-fab:hover {
@@ -56,8 +46,8 @@ export default function GameFab({ onClick, style }) {
 
         @media (max-width: 480px) {
           .atrapa-game-fab {
-            right: 1rem;
-            bottom: 5.1rem;
+            right: 1rem !important;
+            bottom: 5.1rem !important;
             width: 3.1rem;
             height: 3.1rem;
           }

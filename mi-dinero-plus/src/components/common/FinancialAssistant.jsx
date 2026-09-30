@@ -103,15 +103,18 @@ function FinancialAssistant() {
         <span aria-hidden="true">💡</span>
         <style>{`
           .assistant-tab {
-            position: fixed;
-            right: 1rem;
-            bottom: 1.25rem;
+            position: fixed !important;
+            right: 1rem !important;
+            left: auto !important;
+            bottom: 1.25rem !important;
+            top: auto !important;
+            margin: 0 !important;
             z-index: 50;
             width: 3.25rem;
             height: 3.25rem;
             padding: 0;
             border: none;
-            border-radius: 999px;
+            border-radius: 50%;
             display: grid;
             place-items: center;
             background: linear-gradient(135deg, #7c3aed, #6d28d9);
@@ -121,6 +124,7 @@ function FinancialAssistant() {
             box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
             cursor: pointer;
             transition: transform 0.15s ease, filter 0.15s ease;
+            box-sizing: border-box;
           }
           .assistant-tab:hover {
             filter: brightness(1.06);
@@ -132,8 +136,8 @@ function FinancialAssistant() {
           }
           @media (max-width: 480px) {
             .assistant-tab {
-              right: 1rem;
-              bottom: 1.25rem;
+              right: 1rem !important;
+              bottom: 1.25rem !important;
               width: 3.1rem;
               height: 3.1rem;
             }
