@@ -1,4 +1,4 @@
-feat(auth): improve authentication and logout management
+{
   "headers": [
     {
       "source": "/(.*)",
