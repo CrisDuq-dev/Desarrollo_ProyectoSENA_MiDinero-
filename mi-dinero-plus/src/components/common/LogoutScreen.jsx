@@ -2,6 +2,11 @@ import { createPortal } from 'react-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { LOGOUT_MIN_MS, LOGOUT_LEAVE_MS } from '../../data/logoutPhrases'
 
+/**
+ * Pantalla de despedida a pantalla completa.
+ * Vive por encima de las rutas (se monta dentro de AuthProvider), por eso
+ * sigue visible aunque la sesión se cierre y la app cambie de página.
+ */
 export default function LogoutScreen() {
   const { logoutState, logoutPhrase } = useAuth()
   if (!logoutState) return null
@@ -52,7 +57,7 @@ export default function LogoutScreen() {
           pointer-events: none;
         }
         .logout-card {
-          width: min(28rem, 100%);
+          width: min(46rem, 100%);
           text-align: center;
           display: flex;
           flex-direction: column;
@@ -78,6 +83,9 @@ export default function LogoutScreen() {
           line-height: 1.55;
           font-style: italic;
           color: var(--text-muted, #94a3b8);
+          /* Evita que quede una palabra sola en la última línea:
+             si la frase no cabe en una línea, reparte el texto en líneas parejas */
+          text-wrap: balance;
           animation: logout-rise 0.7s ease 0.45s both;
         }
         .logout-bar {
