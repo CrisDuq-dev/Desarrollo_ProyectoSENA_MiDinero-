@@ -247,6 +247,23 @@
   text-align: center;
 }
 
+.sparkline-area {
+  fill: currentColor;
+  opacity: 0.14;
+  stroke: none;
+}
+.sparkline-dot {
+  fill: currentColor;
+}
+.sparkline.is-up {
+  color: var(--dash-green-text);
+}
+.sparkline.is-down {
+  color: var(--dash-red-text);
+}
+.sparkline.is-neutral {
+  color: var(--dash-blue-text);
+}
 .sparkline .sparkline-path {
   stroke-width: 1.75;
   stroke-linecap: round;

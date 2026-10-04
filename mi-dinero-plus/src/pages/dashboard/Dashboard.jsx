@@ -3,15 +3,11 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useFinance } from '../../contexts/FinanceContext'
 import { formatHistoricalFx } from '../../utils/currency'
+import { getFxHistory } from '../../services/fxHistory'
 import { ARTICLES } from '../../data/mundoplus/articles'
 import { MdWavingHand } from 'react-icons/md'
 import './Dashboard.css'
 
-/**
- * Separa el texto de formatHistoricalFx en:
- * - conversion: montos en USD/EUR
- * - unitRates: precio unitario del día (COP por 1 USD/EUR)
- */
 function splitHistoricalFx(amount, rateUsd, rateEur) {
   const full = formatHistoricalFx(amount, rateUsd, rateEur)
   if (!full) return { conversion: null, unitRates: null }
@@ -31,7 +27,6 @@ function splitHistoricalFx(amount, rateUsd, rateEur) {
   }
 }
 
-/** Fecha del movimiento: 3/09/2026 (mes siempre 2 dígitos) */
 function formatTxDate(value) {
   if (!value) return '—'
 
@@ -52,7 +47,8 @@ function getTxDateValue(tx) {
   return tx.date || tx.transactionDate || tx.transaction_date || tx.createdAt || 0
 }
 
-/** % de cambio seguro; null si no hay datos válidos */
+const FX_WINDOW_DAYS = 7
+
 function pctChange(current, previous) {
   const c = Number(current)
   const p = Number(previous)
@@ -79,11 +75,6 @@ function toneFromDelta(d) {
   return 'neutral'
 }
 
-/**
- * Mini gráfico de líneas.
- * - 0–1 puntos: línea punteada neutra (no rompe el layout)
- * - 2+: path SVG normalizado al min/max de la serie
- */
 function Sparkline({ points, tone = 'neutral' }) {
   const w = 72
   const h = 28
@@ -116,13 +107,13 @@ function Sparkline({ points, tone = 'neutral' }) {
   const max = Math.max(...series)
   const range = max - min || 1
 
-  const d = series
-    .map((p, i) => {
-      const x = pad + (i / (series.length - 1)) * (w - pad * 2)
-      const y = h - pad - ((p - min) / range) * (h - pad * 2)
-      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`
-    })
-    .join(' ')
+  const coords = series.map((p, i) => ({
+    x: pad + (i / (series.length - 1)) * (w - pad * 2),
+    y: h - pad - ((p - min) / range) * (h - pad * 2),
+  }))
+  const d = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ')
+  const area = `${d} L ${coords[coords.length - 1].x} ${h} L ${coords[0].x} ${h} Z`
+  const end = coords[coords.length - 1]
 
   return (
     <svg
@@ -132,7 +123,9 @@ function Sparkline({ points, tone = 'neutral' }) {
       height={h}
       aria-hidden="true"
     >
+      <path d={area} className="sparkline-area" />
       <path d={d} className="sparkline-path" fill="none" />
+      <circle cx={end.x} cy={end.y} r="2.2" className="sparkline-dot" />
     </svg>
   )
 }
@@ -218,8 +211,8 @@ function Dashboard() {
 
   const [rates, setRates] = useState({ usd: null, eur: null, updatedAt: null })
   const [ratesStatus, setRatesStatus] = useState('loading')
-  /** Historial de sesión (máx. 16 puntos) para % y sparklines */
-  const [ratesHistory, setRatesHistory] = useState([])
+  /** Histórico diario real (últimos días) para el % y las gráficas */
+  const [fxSeries, setFxSeries] = useState([])
 
   useEffect(() => {
     let cancelled = false
@@ -247,25 +240,6 @@ function Dashboard() {
             updatedAt: data.time_last_update_utc || new Date().toISOString(),
           })
           setRatesStatus('ok')
-          setRatesHistory((prev) => {
-            const list = Array.isArray(prev) ? prev : []
-            const last = list[list.length - 1]
-            if (
-              last &&
-              last.usd === usdToCop &&
-              last.eur === (Number.isFinite(eurToCop) ? eurToCop : last.eur)
-            ) {
-              return list
-            }
-            return [
-              ...list,
-              {
-                usd: usdToCop,
-                eur: Number.isFinite(eurToCop) ? eurToCop : null,
-                t: Date.now(),
-              },
-            ].slice(-16)
-          })
         }
       } catch {
         if (!cancelled) {
@@ -282,6 +256,23 @@ function Dashboard() {
     }
   }, [])
 
+  // Histórico diario: la fuente publica un valor por día, así que basta con refrescar cada hora.
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadHistory() {
+      const series = await getFxHistory(FX_WINDOW_DAYS)
+      if (!cancelled) setFxSeries(series)
+    }
+
+    loadHistory()
+    const id = setInterval(loadHistory, 60 * 60 * 1000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [])
+
   const formatCopRate = (value) => {
     if (value == null || !Number.isFinite(Number(value))) return '—'
     return new Intl.NumberFormat('es-CO', {
@@ -291,36 +282,35 @@ function Dashboard() {
     }).format(Number(value))
   }
 
+  // % de cambio de toda la ventana (primer día vs. último): sube = verde, baja = rojo
   const rateDelta = useMemo(() => {
-    const list = Array.isArray(ratesHistory) ? ratesHistory : []
-    if (list.length < 2) return { usd: null, eur: null }
-    const prev = list[list.length - 2]
-    const curr = list[list.length - 1]
+    if (fxSeries.length < 2) return { usd: null, eur: null }
+    const first = fxSeries[0]
+    const last = fxSeries[fxSeries.length - 1]
     return {
-      usd: pctChange(curr?.usd, prev?.usd),
-      eur: pctChange(curr?.eur, prev?.eur),
+      usd: pctChange(last?.usd, first?.usd),
+      eur: pctChange(last?.eur, first?.eur),
     }
-  }, [ratesHistory])
+  }, [fxSeries])
 
-  const sparkUsd = useMemo(() => {
-    const list = Array.isArray(ratesHistory) ? ratesHistory : []
-    return list
-      .map((h) => h?.usd)
-      .filter((n) => Number.isFinite(Number(n)))
-      .map(Number)
-  }, [ratesHistory])
+  const sparkUsd = useMemo(
+    () => fxSeries.map((h) => h?.usd).filter((n) => Number.isFinite(Number(n))).map(Number),
+    [fxSeries]
+  )
 
-  const sparkEur = useMemo(() => {
-    const list = Array.isArray(ratesHistory) ? ratesHistory : []
-    return list
-      .map((h) => h?.eur)
-      .filter((n) => Number.isFinite(Number(n)))
-      .map(Number)
-  }, [ratesHistory])
+  const sparkEur = useMemo(
+    () => fxSeries.map((h) => h?.eur).filter((n) => Number.isFinite(Number(n))).map(Number),
+    [fxSeries]
+  )
+
+  // El valor mostrado viene de la cotización en vivo; si esa falla, se usa el último día del histórico.
+  const fxLast = fxSeries[fxSeries.length - 1]
+  const shownUsd = rates.usd ?? fxLast?.usd ?? null
+  const shownEur = rates.eur ?? fxLast?.eur ?? null
 
   const usdTone = toneFromDelta(rateDelta.usd)
   const eurTone = toneFromDelta(rateDelta.eur)
-  const hasRates = rates.usd != null && Number.isFinite(Number(rates.usd))
+  const hasRates = shownUsd != null && Number.isFinite(Number(shownUsd))
 
   return (
     <main className="dashboard-page">
@@ -358,7 +348,7 @@ function Dashboard() {
                       {formatPct(rateDelta.usd)}
                     </span>
                   </div>
-                  <p className="rate-value">{formatCopRate(rates.usd)}</p>
+                  <p className="rate-value">{formatCopRate(shownUsd)}</p>
                   <div className="rate-bar-track" aria-hidden="true">
                     <div
                       className={`rate-bar-fill is-${usdTone}`}
@@ -368,7 +358,7 @@ function Dashboard() {
                   <div className="rate-card-foot">
                     <Sparkline points={sparkUsd} tone={usdTone} />
                     <span className="rate-card-hint">
-                      {sparkUsd.length < 2 ? 'Sin histórico' : 'Sesión'}
+                      {sparkUsd.length < 2 ? 'Sin histórico' : `Últimos ${sparkUsd.length} días`}
                     </span>
                   </div>
                 </div>
@@ -380,7 +370,7 @@ function Dashboard() {
                       {formatPct(rateDelta.eur)}
                     </span>
                   </div>
-                  <p className="rate-value">{formatCopRate(rates.eur)}</p>
+                  <p className="rate-value">{formatCopRate(shownEur)}</p>
                   <div className="rate-bar-track" aria-hidden="true">
                     <div
                       className={`rate-bar-fill is-${eurTone}`}
@@ -390,7 +380,7 @@ function Dashboard() {
                   <div className="rate-card-foot">
                     <Sparkline points={sparkEur} tone={eurTone} />
                     <span className="rate-card-hint">
-                      {sparkEur.length < 2 ? 'Sin histórico' : 'Sesión'}
+                      {sparkEur.length < 2 ? 'Sin histórico' : `Últimos ${sparkEur.length} días`}
                     </span>
                   </div>
                 </div>
