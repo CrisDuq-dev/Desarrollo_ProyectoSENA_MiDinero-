@@ -578,6 +578,7 @@ export function DicebearAvatarImg({
     seed: seed || 'usuario',
     options: options || DEFAULT_AVATAR_OPTIONS,
   })
+  const [loadedUrl, setLoadedUrl] = useState(null)
 
   return (
     <img
@@ -585,8 +586,12 @@ export function DicebearAvatarImg({
       alt=""
       width={size}
       height={size}
+      onLoad={() => setLoadedUrl(url)}
+      onError={() => setLoadedUrl(url)}
       className={`db-avatar-img ${className}`.trim()}
       style={{
+        opacity: loadedUrl === url ? 1 : 0,
+        transition: 'opacity 0.2s ease',
         width: size,
         height: size,
         borderRadius: '50%',

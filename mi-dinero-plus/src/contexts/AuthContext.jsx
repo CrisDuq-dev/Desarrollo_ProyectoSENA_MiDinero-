@@ -11,6 +11,7 @@ import {
   LOGOUT_LEAVE_MS,
   pickLogoutPhrase,
 } from '../data/logoutPhrases'
+import { cacheProfileResponse } from '../utils/profileCache'
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -46,6 +47,7 @@ const clearLegacyTokens = () => {
 
 const dispatchProfileLoaded = (data) => {
   if (typeof window === 'undefined') return
+  cacheProfileResponse(data)
   try {
     window.dispatchEvent(new CustomEvent('profileLoaded', { detail: data }))
   } catch {

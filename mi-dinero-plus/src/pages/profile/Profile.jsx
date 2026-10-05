@@ -4,6 +4,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,6 +14,11 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useFinance } from '../../contexts/FinanceContext'
 import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
+import {
+  readProfileCache,
+  writeProfileCache,
+  cacheProfileResponse,
+} from '../../utils/profileCache'
 import {
   DicebearAvatarEditor,
   DicebearAvatarImg,
@@ -70,150 +76,317 @@ function formatShortDate(value) {
   return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
 }
 
-function MomentumChart({ transactions = [], goals = [], debts = [] }) {
-  const { data, trend } = useMemo(() => {
-    const events = []
+const MOMENTUM_MAX_RECORDS = 30
 
-    transactions
-      .filter((t) => t && !t.deletedAt)
-      .forEach((t) => {
-        const amt = Number(t.amount) || 0
-        const d = parseLocalDate(
-          t.date || t.transactionDate || t.transaction_date || t.createdAt
-        )
-        if (!d || !amt) return
-        events.push({
-          at: d.getTime(),
-          dayKey: toDayKey(d),
-          delta: t.type === 'income' ? amt : -amt * 0.85,
-          label: t.type === 'income' ? 'Ingreso' : 'Gasto',
-        })
-      })
+function formatLongDate(dayKey) {
+  const d = parseLocalDate(dayKey)
+  if (!d) return ''
+  return d.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
 
-    goals
-      .filter((g) => g && !g.deletedAt)
-      .forEach((g) => {
-        const contribs = g.contributions || g.savings_goal_contributions || []
-        contribs.forEach((c) => {
-          const d = parseLocalDate(
-            c.date || c.contribution_date || c.createdAt || c.created_at
-          )
-          const amount = Number(c.amount ?? c.amount_cop) || 0
-          if (!d || amount <= 0) return
-          events.push({
-            at: d.getTime(),
-            dayKey: toDayKey(d),
-            delta: amount * 0.15,
-            label: 'Aporte meta',
-          })
-        })
+function buildMomentum({ transactions, goals, debts }) {
+  const events = []
+  const undated = { goals: 0, debts: 0 }
+  let order = 0
+  const push = (e) => events.push({ ...e, order: order++ })
+  const tieOf = (v) => Date.parse(v) || 0
 
-        if (g.status === 'completed') {
-          const d = parseLocalDate(
-            g.completedAt ||
-              g.completed_at ||
-              g.updatedAt ||
-              g.updated_at ||
-              g.createdAt
-          )
-          if (!d) return
-          const boost = Math.max(Number(g.targetAmount) || 0, 50_000) * 0.25
-          events.push({
-            at: d.getTime(),
-            dayKey: toDayKey(d),
-            delta: boost,
-            label: 'Meta cumplida',
-          })
-        } else if (!contribs.length) {
-          const current = Number(g.currentAmount || g.current_amount) || 0
-          if (current > 0) {
-            const d = parseLocalDate(g.updatedAt || g.updated_at || g.createdAt)
-            if (d) {
-              events.push({
-                at: d.getTime(),
-                dayKey: toDayKey(d),
-                delta: current * 0.15,
-                label: 'Aporte meta',
-              })
-            }
-          }
-        }
-      })
-
-    debts
-      .filter((d) => d && !d.deletedAt)
-      .forEach((debt) => {
-        const total = Number(debt.totalAmount || debt.pendingBalance) || 0
-        const created = parseLocalDate(debt.createdAt || debt.created_at)
-        if (created && total > 0) {
-          events.push({
-            at: created.getTime(),
-            dayKey: toDayKey(created),
-            delta: -total * 0.6,
-            label: 'Deuda nueva',
-          })
-        }
-        if (debt.status === 'paid') {
-          const paid = parseLocalDate(
-            debt.paidAt || debt.paid_at || debt.updatedAt || debt.createdAt
-          )
-          if (paid) {
-            events.push({
-              at: paid.getTime(),
-              dayKey: toDayKey(paid),
-              delta: total * 0.7,
-              label: 'Deuda pagada',
-            })
-          }
-        }
-      })
-
-    events.sort((a, b) => a.at - b.at)
-
-    if (events.length === 0) {
-      return {
-        data: [
-          { label: 'Inicio', impulso: 0 },
-          { label: 'Hoy', impulso: 10 },
-        ],
-        trend: 'flat',
-      }
-    }
-
-    const byDay = new Map()
-    let run = 0
-    events.forEach((e) => {
-      run += e.delta
-      byDay.set(e.dayKey, {
-        label: formatShortDate(e.dayKey),
-        impulso: Math.round(run),
-        event: e.label,
-        dayKey: e.dayKey,
+  transactions
+    .filter((t) => t && !t.deletedAt)
+    .forEach((t) => {
+      const amount = Number(t.amount) || 0
+      const d = parseLocalDate(
+        t.date || t.transactionDate || t.transaction_date || t.createdAt
+      )
+      if (!d || !amount) return
+      const income = t.type === 'income'
+      push({
+        at: d.getTime(),
+        tie: tieOf(t.createdAt),
+        dayKey: toDayKey(d),
+        delta: income ? amount : -amount,
+        title: income ? 'Ingreso' : 'Gasto',
+        detail: t.description || t.category || '',
       })
     })
 
-    const series = Array.from(byDay.values()).sort((a, b) =>
-      a.dayKey.localeCompare(b.dayKey)
+  debts
+    .filter((d) => d && !d.deletedAt)
+    .forEach((debt) => {
+      const total = Number(debt.totalAmount) || 0
+      if (total <= 0) return
+
+      const created = parseLocalDate(debt.createdAt || debt.created_at)
+      if (created) {
+        push({
+          at: created.getTime(),
+          tie: tieOf(debt.createdAt),
+          dayKey: toDayKey(created),
+          delta: -total,
+          title: 'Deuda nueva',
+          detail: debt.name || '',
+        })
+      }
+
+      const pending = Number(debt.pendingBalance)
+      const isPaid =
+        debt.status === 'paid' || (Number.isFinite(pending) && pending <= 0)
+      const paidAmount = isPaid
+        ? total
+        : Number.isFinite(pending)
+          ? Math.max(0, total - Math.min(total, pending))
+          : 0
+      if (paidAmount <= 0) return
+
+      const paidAt = isPaid ? parseLocalDate(debt.paidAt || debt.paid_at) : null
+      if (paidAt) {
+        push({
+          at: paidAt.getTime(),
+          tie: tieOf(debt.paidAt),
+          dayKey: toDayKey(paidAt),
+          delta: paidAmount,
+          title: 'Deuda pagada',
+          detail: debt.name || '',
+        })
+      } else {
+        undated.debts += paidAmount
+      }
+    })
+
+  goals
+    .filter((g) => g && !g.deletedAt)
+    .forEach((g) => {
+      const saved = Number(g.currentAmount) || 0
+      if (saved <= 0) return
+      const done =
+        g.status === 'completed'
+          ? parseLocalDate(g.completedAt || g.completed_at)
+          : null
+      if (done) {
+        push({
+          at: done.getTime(),
+          tie: tieOf(g.completedAt),
+          dayKey: toDayKey(done),
+          delta: saved,
+          title: 'Meta cumplida',
+          detail: g.name || '',
+        })
+      } else {
+        undated.goals += saved
+      }
+    })
+
+  events.sort((a, b) => a.at - b.at || a.tie - b.tie || a.order - b.order)
+
+  if (undated.goals > 0 || undated.debts > 0) {
+    events.push({
+      isToday: true,
+      dayKey: null,
+      delta: undated.goals + undated.debts,
+      title: 'Hoy · ahorro y pagos',
+      detail: '',
+      parts: [
+        undated.goals > 0 && { label: 'Ahorro en metas', amount: undated.goals },
+        undated.debts > 0 && { label: 'Pagos de deuda', amount: undated.debts },
+      ].filter(Boolean),
+    })
+  }
+
+  if (events.length === 0) {
+    return {
+      empty: true,
+      trend: 'flat',
+      change: 0,
+      last: 0,
+      records: 0,
+      domain: [-1, 1],
+      data: [
+        { n: 0, label: 'Inicio', value: 0, delta: 0, isStart: true, title: 'Inicio' },
+        { n: 1, label: 'Hoy', value: 0, delta: 0, title: 'Sin registros todavía' },
+      ],
+    }
+  }
+
+  let run = 0
+  const all = events.map((e) => {
+    run += e.delta
+    return { ...e, value: Math.round(run) }
+  })
+
+  const visible = all.slice(-MOMENTUM_MAX_RECORDS)
+  const cut = all.length - visible.length
+  const startValue = cut > 0 ? all[cut - 1].value : 0
+
+  const data = [
+    {
+      n: 0,
+      label: cut > 0 ? 'Antes' : 'Inicio',
+      value: startValue,
+      delta: 0,
+      isStart: true,
+      title: cut > 0 ? 'Saldo antes de estos registros' : 'Inicio',
+    },
+    ...visible.map((e, i) => ({
+      n: i + 1,
+      label: e.isToday ? 'Hoy' : formatShortDate(e.dayKey),
+      dateText: e.isToday ? '' : formatLongDate(e.dayKey),
+      value: e.value,
+      delta: e.delta,
+      title: e.title,
+      detail: e.detail,
+      parts: e.parts,
+      isToday: Boolean(e.isToday),
+    })),
+  ]
+
+  const values = data.map((p) => p.value)
+  const lo = Math.min(...values)
+  const hi = Math.max(...values)
+  const pad = (hi - lo || Math.max(Math.abs(hi), 1) * 0.2) * 0.14
+  const change = data[data.length - 1].value - startValue
+
+  return {
+    empty: false,
+    data,
+    trend: change > 0 ? 'up' : change < 0 ? 'down' : 'flat',
+    change,
+    last: data[data.length - 1].value,
+    records: visible.length,
+    domain: [lo - pad, hi + pad],
+  }
+}
+
+/** Hasta `max` posiciones repartidas parejo, siempre con la primera y la última. */
+function pickTicks(count, max = 5) {
+  if (count <= 1) return [0]
+  const k = Math.min(count, max)
+  const out = new Set()
+  for (let i = 0; i < k; i++) out.add(Math.round((i * (count - 1)) / (k - 1)))
+  return [...out]
+}
+
+/** Ancho actual de un elemento (se actualiza al girar el celular o cambiar el tamaño). */
+function useElementWidth() {
+  const ref = useRef(null)
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    const update = () => setWidth(el.clientWidth)
+    update()
+    if (typeof ResizeObserver === 'undefined') return undefined
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, width]
+}
+
+/** Etiqueta del eje X: la primera se alinea a la izquierda y la última a la derecha (no se cortan). */
+function MomentumTick({ x, y, payload, data, last }) {
+  const v = payload?.value
+  const anchor = v === 0 ? 'start' : v === last ? 'end' : 'middle'
+  return (
+    <text
+      x={x}
+      y={y + 12}
+      textAnchor={anchor}
+      fontSize={11}
+      fill="var(--text-muted)"
+    >
+      {data[v]?.label ?? ''}
+    </text>
+  )
+}
+
+function MomentumTooltip({ active, payload, fmt }) {
+  if (!active || !payload?.length) return null
+  const p = payload[0].payload
+  const tone = p.delta > 0 ? 'is-up' : p.delta < 0 ? 'is-down' : ''
+  const sign = p.delta > 0 ? '+' : p.delta < 0 ? '−' : ''
+  return (
+    <div className="momentum-tooltip">
+      <strong>{p.title}</strong>
+      {p.dateText && <span className="mt-muted">{p.dateText}</span>}
+      {p.detail && <span className="mt-muted">{p.detail}</span>}
+      {p.parts?.map((part) => (
+        <span key={part.label} className="mt-muted">
+          {part.label}: +{fmt(part.amount)}
+        </span>
+      ))}
+      {!p.isStart && p.delta !== 0 && (
+        <span className={`mt-delta ${tone}`}>
+          {sign}
+          {fmt(Math.abs(p.delta))}
+        </span>
+      )}
+      <span className="mt-total">Neto acumulado: {fmt(p.value)}</span>
+    </div>
+  )
+}
+
+function renderMomentumDot(props) {
+  const { cx, cy, payload, index } = props
+  if (!Number.isFinite(cx) || !Number.isFinite(cy)) {
+    return <g key={`dot-${index}`} />
+  }
+  if (payload.isStart) {
+    return (
+      <circle
+        key={`dot-${index}`}
+        cx={cx}
+        cy={cy}
+        r={3}
+        fill="var(--bg-surface)"
+        stroke="var(--text-muted)"
+        strokeWidth={1.5}
+      />
     )
-    const sliced = series.length > 12 ? series.slice(-12) : series
+  }
+  const color =
+    payload.delta > 0 ? '#16a34a' : payload.delta < 0 ? '#dc2626' : '#2563eb'
+  return (
+    <circle
+      key={`dot-${index}`}
+      cx={cx}
+      cy={cy}
+      r={payload.isToday ? 4.5 : 3.5}
+      fill={color}
+      stroke="var(--bg-surface)"
+      strokeWidth={1.5}
+    />
+  )
+}
 
-    const a = sliced[sliced.length - 2]?.impulso ?? 0
-    const b = sliced[sliced.length - 1]?.impulso ?? 0
-    const tr = b > a ? 'up' : b < a ? 'down' : 'flat'
+function MomentumChart({ transactions = [], goals = [], debts = [], formatMoney }) {
+  const [wrapRef, wrapWidth] = useElementWidth()
+  const fmt = (n) =>
+    typeof formatMoney === 'function'
+      ? formatMoney(n)
+      : Number(n).toLocaleString('es-CO')
 
-    return { data: sliced, trend: tr }
-  }, [transactions, goals, debts])
+  const { data, trend, change, last, records, domain, empty } = useMemo(
+    () => buildMomentum({ transactions, goals, debts }),
+    [transactions, goals, debts]
+  )
 
   const stroke =
     trend === 'up' ? '#16a34a' : trend === 'down' ? '#dc2626' : '#2563eb'
   const fillId = 'momentumFill'
+  const lastIndex = data.length - 1
+  // Una fecha cada ~85 px para que nunca se pisen (menos fechas en celular)
+  const maxTicks = wrapWidth ? Math.max(2, Math.min(6, Math.floor(wrapWidth / 85))) : 4
+  const ticks = pickTicks(data.length, maxTicks)
+  const zeroInView = domain[0] < 0 && domain[1] > 0
 
-  const tip =
-    trend === 'up'
-      ? 'Alza: ingresos, metas cumplidas o deudas pagadas'
-      : trend === 'down'
-        ? 'Baja: gastos o deudas nuevas'
-        : 'Estable · registra movimientos para ver cambios'
+  const changeText = `${change > 0 ? '+' : change < 0 ? '−' : ''}${fmt(Math.abs(change))}`
+  const tip = empty
+    ? 'Registra ingresos, gastos, metas o deudas para ver tu curva'
+    : `Cada punto es un registro · neto ${fmt(last)} (${changeText} en ${records} ${records === 1 ? 'registro' : 'registros'})`
 
   return (
     <div className="momentum">
@@ -231,9 +404,9 @@ function MomentumChart({ transactions = [], goals = [], debts = [] }) {
         </div>
       </div>
 
-      <div className="momentum-chart-wrap">
+      <div className="momentum-chart-wrap" ref={wrapRef}>
         <ResponsiveContainer width="100%" height={150}>
-          <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 10, right: 12, left: 12, bottom: 0 }}>
             <defs>
               <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={stroke} stopOpacity={0.35} />
@@ -246,53 +419,51 @@ function MomentumChart({ transactions = [], goals = [], debts = [] }) {
               vertical={false}
             />
             <XAxis
-              dataKey="label"
-              tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
+              dataKey="n"
+              type="number"
+              domain={[0, lastIndex]}
+              ticks={ticks}
+              interval={0}
+              allowDecimals={false}
+              padding={{ left: 8, right: 8 }}
               axisLine={false}
               tickLine={false}
-              interval={
-                data.length <= 5
-                  ? 0
-                  : data.length <= 8
-                    ? 1
-                    : data.length <= 12
-                      ? 2
-                      : 3
-              }
-              minTickGap={32}
+              tick={<MomentumTick data={data} last={lastIndex} />}
             />
-            <YAxis hide domain={['auto', 'auto']} />
+            <YAxis hide domain={domain} />
+            {zeroInView && (
+              <ReferenceLine
+                y={0}
+                stroke="var(--text-muted)"
+                strokeDasharray="4 4"
+                strokeOpacity={0.6}
+              />
+            )}
             <Tooltip
-              contentStyle={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border)',
-                borderRadius: 10,
-                fontSize: 12,
-                color: 'var(--text-primary)',
-              }}
-              formatter={(value) => [
-                Number(value).toLocaleString('es-CO'),
-                'Impulso',
-              ]}
-              labelFormatter={(label) => `Fecha: ${label}`}
+              content={<MomentumTooltip fmt={fmt} />}
+              cursor={{ stroke: 'var(--text-muted)', strokeDasharray: '3 3' }}
             />
             <Area
               type="monotone"
-              dataKey="impulso"
+              dataKey="value"
               stroke={stroke}
               strokeWidth={2.5}
               fill={`url(#${fillId})`}
-              dot={{ r: 3.5, strokeWidth: 1, fill: stroke }}
-              activeDot={{ r: 5 }}
+              dot={renderMomentumDot}
+              activeDot={{ r: 5.5 }}
             />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
       <div className="momentum-foot">
-        <span>Ingresos / metas ↑</span>
-        <span>Gastos / deudas ↓</span>
-        <span>Pagar deuda ↑</span>
+        <span>
+          <i className="momentum-dot is-up" /> Suma: ingresos, ahorro en metas, deudas
+          pagadas
+        </span>
+        <span>
+          <i className="momentum-dot is-down" /> Resta: gastos, deudas nuevas
+        </span>
       </div>
     </div>
   )
@@ -314,6 +485,7 @@ function Profile() {
     setAiEnabled,
     setAnimationsEnabled,
     resetSimulation,
+    formatMoney,
   } = useFinance()
 
   const [panel, setPanel] = useState(null)
@@ -322,9 +494,14 @@ function Profile() {
   const [avatarOpen, setAvatarOpen] = useState(false)
   const panelRef = useRef(null)
 
-  const [avatarSeed, setAvatarSeed] = useState('usuario')
-  const [avatarOptions, setAvatarOptions] = useState(null)
-  const [avatarUrl, setAvatarUrl] = useState(null)
+  // Últimos datos guardados: se muestran al instante y el servidor los confirma después
+  const [cachedProfile] = useState(() => readProfileCache(user))
+  const [profileLoaded, setProfileLoaded] = useState(false)
+  const profileReady = Boolean(cachedProfile) || profileLoaded
+
+  const [avatarSeed, setAvatarSeed] = useState(cachedProfile?.avatarSeed ?? 'usuario')
+  const [avatarOptions, setAvatarOptions] = useState(cachedProfile?.avatarOptions ?? null)
+  const [avatarUrl, setAvatarUrl] = useState(cachedProfile?.avatarUrl ?? null)
 
   const [currentPwd, setCurrentPwd] = useState('')
   const [newPwd, setNewPwd] = useState('')
@@ -335,7 +512,9 @@ function Profile() {
   const [savingSettings, setSavingSettings] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
-  const [jobRole, setJobRole] = useState('')
+  const [jobRole, setJobRole] = useState(
+    cachedProfile?.jobRole ?? user?.job_role ?? ''
+  )
   const [sendingReport, setSendingReport] = useState(null)
   const [resetting, setResetting] = useState(false)
 
@@ -462,6 +641,7 @@ function Profile() {
     try {
       await updateProfile(token, { job_role: value || null })
       updateUser({ ...(user || {}), job_role: value || null })
+      writeProfileCache(user, { jobRole: value || '' })
       setToast({ message: 'Cargo actualizado', visible: true })
     } catch (err) {
       setToast({
@@ -483,6 +663,7 @@ function Profile() {
         const profileUser = data.user ?? null
         const profileData = data.profile ?? {}
         const settings = data.settings ?? {}
+        cacheProfileResponse(data)
 
         if (profileUser) {
           updateUser({ ...profileUser, job_role: profileData.job_role ?? null })
@@ -523,6 +704,7 @@ function Profile() {
         setTimeout(() => setToast({ message: '', visible: false }), 3000)
       } finally {
         setLoadingProfile(false)
+        setProfileLoaded(true)
       }
     }
     load()
@@ -634,19 +816,24 @@ function Profile() {
               setAvatarOpen(true)
             }}
             title="Personalizar avatar"
+            disabled={!profileReady}
           >
-            <DicebearAvatarImg
-              seed={avatarSeed}
-              options={avatarOptions}
-              size={100}
-            />
+            {profileReady ? (
+              <DicebearAvatarImg
+                seed={avatarSeed}
+                options={avatarOptions}
+                size={100}
+              />
+            ) : (
+              <span className="avatar-skeleton" aria-hidden="true" />
+            )}
             <span className="avatar-edit-badge">Editar</span>
           </button>
           <div className="identity-text">
             <h1 className="profile-name">{displayName}</h1>
             <p className="profile-email">{user?.email ?? 'sin correo'}</p>
             <p className="profile-role">
-              {roleLabel} · Meta Autos Medellín
+              {profileReady ? `${roleLabel} · ` : ''}Meta Autos Medellín
             </p>
             <p className="profile-level">{levelLabel}</p>
             <div className="status-chips">
@@ -656,7 +843,9 @@ function Profile() {
                 IA {aiEnabled ? 'on' : 'off'}
               </span>
             </div>
-            {loadingProfile && <p className="hint">Cargando perfil…</p>}
+            {loadingProfile && !profileReady && (
+              <p className="hint">Cargando perfil…</p>
+            )}
           </div>
         </article>
 
@@ -665,6 +854,7 @@ function Profile() {
             transactions={transactions}
             goals={goals}
             debts={debts}
+            formatMoney={formatMoney}
           />
         </article>
       </div>
@@ -969,6 +1159,11 @@ function Profile() {
                 setAvatarSeed(payload.avatar_seed)
                 setAvatarOptions(payload.avatar_options)
                 setAvatarUrl(payload.avatar_url)
+                writeProfileCache(user, {
+                  avatarSeed: payload.avatar_seed,
+                  avatarOptions: payload.avatar_options,
+                  avatarUrl: payload.avatar_url,
+                })
                 setToast({ message: 'Avatar guardado', visible: true })
                 setAvatarOpen(false)
               } catch (err) {
