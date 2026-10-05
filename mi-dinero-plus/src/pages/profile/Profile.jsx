@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Area,
-  AreaChart,
   CartesianGrid,
+  ComposedChart,
+  Line,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -77,6 +78,9 @@ function formatShortDate(value) {
 }
 
 const MOMENTUM_MAX_RECORDS = 30
+const MOMENTUM_GREEN = '#16a34a'
+const MOMENTUM_RED = '#dc2626'
+const MOMENTUM_BLUE = '#2563eb'
 
 function formatLongDate(dayKey) {
   const d = parseLocalDate(dayKey)
@@ -88,6 +92,17 @@ function formatLongDate(dayKey) {
   })
 }
 
+/**
+ * Convierte los registros reales del usuario en la curva (un punto por registro).
+ *
+ * "Impulso neto" = tu posición acumulada con cantidades reales, sin pesos inventados:
+ *   suma:  ingresos · ahorro en metas · deudas pagadas
+ *   resta: gastos · deudas nuevas
+ *
+ * Los ingresos y gastos tienen fecha exacta. Del ahorro en metas y de los pagos parciales
+ * de deuda el sistema solo guarda el total (no la fecha de cada aporte), así que se
+ * muestran juntos en el último punto, "Hoy".
+ */
 function buildMomentum({ transactions, goals, debts }) {
   const events = []
   const undated = { goals: 0, debts: 0 }
@@ -204,9 +219,13 @@ function buildMomentum({ transactions, goals, debts }) {
       last: 0,
       records: 0,
       domain: [-1, 1],
+      windowed: false,
+      hasToday: false,
+      solidMin: 0,
+      solidMax: 0,
       data: [
-        { n: 0, label: 'Inicio', value: 0, delta: 0, isStart: true, title: 'Inicio' },
-        { n: 1, label: 'Hoy', value: 0, delta: 0, title: 'Sin registros todavía' },
+        { n: 0, label: 'Inicio', value: 0, solid: 0, dashed: null, delta: 0, isStart: true, title: 'Inicio' },
+        { n: 1, label: 'Hoy', value: 0, solid: 0, dashed: null, delta: 0, title: 'Sin registros todavía' },
       ],
     }
   }
@@ -243,6 +262,14 @@ function buildMomentum({ transactions, goals, debts }) {
     })),
   ]
 
+  // Línea sólida = registros con fecha. Último tramo punteado = "Hoy" (ahorro y pagos sin fecha).
+  const todayIdx = data.findIndex((p) => p.isToday)
+  data.forEach((p, i) => {
+    p.solid = todayIdx === -1 || i < todayIdx ? p.value : null
+    p.dashed = todayIdx !== -1 && i >= todayIdx - 1 ? p.value : null
+  })
+  const solidVals = data.filter((p) => p.solid != null).map((p) => p.solid)
+
   const values = data.map((p) => p.value)
   const lo = Math.min(...values)
   const hi = Math.max(...values)
@@ -256,6 +283,10 @@ function buildMomentum({ transactions, goals, debts }) {
     change,
     last: data[data.length - 1].value,
     records: visible.length,
+    windowed: cut > 0,
+    hasToday: todayIdx !== -1,
+    solidMin: Math.min(...solidVals),
+    solidMax: Math.max(...solidVals),
     domain: [lo - pad, hi + pad],
   }
 }
@@ -267,6 +298,31 @@ function pickTicks(count, max = 5) {
   const out = new Set()
   for (let i = 0; i < k; i++) out.add(Math.round((i * (count - 1)) / (k - 1)))
   return [...out]
+}
+
+/**
+ * Quita marcas del eje X que repiten fecha o quedan demasiado juntas (menos de `minGapPx`).
+ * La primera y la última siempre se conservan.
+ */
+function thinTicks(indexes, data, stepPx, minGapPx) {
+  const out = []
+  indexes.forEach((i, k) => {
+    const isLast = k === indexes.length - 1
+    const prev = out[out.length - 1]
+    if (prev === undefined) {
+      out.push(i)
+      return
+    }
+    const tooClose =
+      data[prev].label === data[i].label || (i - prev) * stepPx < minGapPx
+    if (!tooClose) {
+      out.push(i)
+    } else if (isLast) {
+      if (out.length > 1) out[out.length - 1] = i
+      else out.push(i)
+    }
+  })
+  return out
 }
 
 /** Ancho actual de un elemento (se actualiza al girar el celular o cambiar el tamaño). */
@@ -362,6 +418,24 @@ function renderMomentumDot(props) {
   )
 }
 
+function renderTodayDot(props) {
+  const { cx, cy, payload, index } = props
+  if (!payload?.isToday || !Number.isFinite(cx) || !Number.isFinite(cy)) {
+    return <g key={`today-${index}`} />
+  }
+  return (
+    <circle
+      key={`today-${index}`}
+      cx={cx}
+      cy={cy}
+      r={5}
+      fill="var(--bg-surface)"
+      stroke={payload.value >= 0 ? MOMENTUM_GREEN : MOMENTUM_RED}
+      strokeWidth={2.5}
+    />
+  )
+}
+
 function MomentumChart({ transactions = [], goals = [], debts = [], formatMoney }) {
   const [wrapRef, wrapWidth] = useElementWidth()
   const fmt = (n) =>
@@ -369,24 +443,45 @@ function MomentumChart({ transactions = [], goals = [], debts = [], formatMoney 
       ? formatMoney(n)
       : Number(n).toLocaleString('es-CO')
 
-  const { data, trend, change, last, records, domain, empty } = useMemo(
+  const model = useMemo(
     () => buildMomentum({ transactions, goals, debts }),
     [transactions, goals, debts]
   )
+  const { data, trend, change, last, records, domain, empty } = model
+  const { windowed, hasToday, solidMin, solidMax } = model
 
-  const stroke =
-    trend === 'up' ? '#16a34a' : trend === 'down' ? '#dc2626' : '#2563eb'
+  // Verde por encima del cero, rojo por debajo: la línea cambia de color donde cruza el cero.
+  const straddle = solidMin < 0 && solidMax > 0
+  const flat = solidMax === solidMin
+  const zeroAt = straddle ? solidMax / (solidMax - solidMin) : 0
+  const strokeId = 'momentumStroke'
   const fillId = 'momentumFill'
+  const lineColor = straddle
+    ? `url(#${strokeId})`
+    : flat
+      ? solidMax > 0
+        ? MOMENTUM_GREEN
+        : solidMax < 0
+          ? MOMENTUM_RED
+          : MOMENTUM_BLUE
+      : solidMax <= 0
+        ? MOMENTUM_RED
+        : MOMENTUM_GREEN
+
   const lastIndex = data.length - 1
   // Una fecha cada ~85 px para que nunca se pisen (menos fechas en celular)
   const maxTicks = wrapWidth ? Math.max(2, Math.min(6, Math.floor(wrapWidth / 85))) : 4
-  const ticks = pickTicks(data.length, maxTicks)
+  const stepPx = data.length > 1 ? Math.max(1, (wrapWidth || 300) - 40) / (data.length - 1) : 1
+  const ticks = thinTicks(pickTicks(data.length, maxTicks), data, stepPx, 78)
   const zeroInView = domain[0] < 0 && domain[1] > 0
 
   const changeText = `${change > 0 ? '+' : change < 0 ? '−' : ''}${fmt(Math.abs(change))}`
+  const countText = `${records} ${records === 1 ? 'registro' : 'registros'}`
   const tip = empty
     ? 'Registra ingresos, gastos, metas o deudas para ver tu curva'
-    : `Cada punto es un registro · neto ${fmt(last)} (${changeText} en ${records} ${records === 1 ? 'registro' : 'registros'})`
+    : windowed
+      ? `Últimos ${countText} · ${changeText} (neto ${fmt(last)})`
+      : `${countText} · neto ${fmt(last)}`
 
   return (
     <div className="momentum">
@@ -405,13 +500,37 @@ function MomentumChart({ transactions = [], goals = [], debts = [], formatMoney 
       </div>
 
       <div className="momentum-chart-wrap" ref={wrapRef}>
-        <ResponsiveContainer width="100%" height={150}>
-          <AreaChart data={data} margin={{ top: 10, right: 12, left: 12, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 10, right: 12, left: 12, bottom: 0 }}>
             <defs>
-              <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={stroke} stopOpacity={0.35} />
-                <stop offset="100%" stopColor={stroke} stopOpacity={0.02} />
+              <linearGradient id={strokeId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={MOMENTUM_GREEN} />
+                <stop offset={zeroAt} stopColor={MOMENTUM_GREEN} />
+                <stop offset={zeroAt} stopColor={MOMENTUM_RED} />
+                <stop offset="1" stopColor={MOMENTUM_RED} />
               </linearGradient>
+              {straddle ? (
+                <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor={MOMENTUM_GREEN} stopOpacity={0.4} />
+                  <stop offset={zeroAt} stopColor={MOMENTUM_GREEN} stopOpacity={0.04} />
+                  <stop offset={zeroAt} stopColor={MOMENTUM_RED} stopOpacity={0.04} />
+                  <stop offset="1" stopColor={MOMENTUM_RED} stopOpacity={0.4} />
+                </linearGradient>
+              ) : (
+                <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                  {solidMax <= 0 && !flat ? (
+                    <>
+                      <stop offset="0" stopColor={lineColor} stopOpacity={0.04} />
+                      <stop offset="1" stopColor={lineColor} stopOpacity={0.4} />
+                    </>
+                  ) : (
+                    <>
+                      <stop offset="0" stopColor={lineColor} stopOpacity={0.4} />
+                      <stop offset="1" stopColor={lineColor} stopOpacity={0.03} />
+                    </>
+                  )}
+                </linearGradient>
+              )}
             </defs>
             <CartesianGrid
               strokeDasharray="3 3"
@@ -445,14 +564,27 @@ function MomentumChart({ transactions = [], goals = [], debts = [], formatMoney 
             />
             <Area
               type="monotone"
-              dataKey="value"
-              stroke={stroke}
+              dataKey="solid"
+              stroke={lineColor}
               strokeWidth={2.5}
               fill={`url(#${fillId})`}
               dot={renderMomentumDot}
               activeDot={{ r: 5.5 }}
+              connectNulls={false}
             />
-          </AreaChart>
+            {hasToday && (
+              <Line
+                type="monotone"
+                dataKey="dashed"
+                stroke="var(--text-muted)"
+                strokeWidth={2}
+                strokeDasharray="5 4"
+                dot={renderTodayDot}
+                activeDot={{ r: 5.5 }}
+                connectNulls={false}
+              />
+            )}
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
 
@@ -464,6 +596,12 @@ function MomentumChart({ transactions = [], goals = [], debts = [], formatMoney 
         <span>
           <i className="momentum-dot is-down" /> Resta: gastos, deudas nuevas
         </span>
+        {hasToday && (
+          <span>
+            <i className="momentum-dash" /> Hoy: ahorro en metas y pagos de deuda (sin fecha
+            propia)
+          </span>
+        )}
       </div>
     </div>
   )
