@@ -126,6 +126,23 @@ const normalizeTransaction = (transaction) => ({
         : null,
 })
 
+/** Día local de hoy como 'YYYY-MM-DD' (para aportes/pagos hechos en esta sesión). */
+const todayDayKey = () => {
+  const d = new Date()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
+}
+
+/** Lista de aportes/pagos con fecha: [{ amount, date }]. Vacía si el API no la envía. */
+const normalizeDatedEntries = (list, dateKey) =>
+  Array.isArray(list)
+    ? list.map((entry) => ({
+        amount: Number(entry.amount_cop ?? entry.amount ?? 0),
+        date: entry[dateKey] ?? entry.date ?? null,
+      }))
+    : []
+
 const normalizeGoal = (goal) => ({
   id: goal.id,
   name: goal.name ?? '',
@@ -141,6 +158,7 @@ const normalizeGoal = (goal) => ({
   deletedAt: goal.deleted_at ?? goal.deletedAt ?? null,
   completedAt: goal.completed_at ?? goal.completedAt ?? null,
   createdAt: goal.created_at ?? goal.createdAt ?? new Date().toISOString(),
+  contributions: normalizeDatedEntries(goal.contributions, 'contribution_date'),
 })
 
 const normalizeDebt = (debt) => ({
@@ -154,6 +172,7 @@ const normalizeDebt = (debt) => ({
   deletedAt: debt.deleted_at ?? debt.deletedAt ?? null,
   paidAt: debt.paid_at ?? debt.paidAt ?? null,
   createdAt: debt.created_at ?? debt.createdAt ?? new Date().toISOString(),
+  payments: normalizeDatedEntries(debt.payments, 'payment_date'),
 })
 
 const normalizeActivity = (activity) => {
@@ -1054,6 +1073,10 @@ export function FinanceProvider({ children }) {
                 ...goal,
                 currentAmount: updatedAmount,
                 status: updatedStatus,
+                contributions: [
+                  ...(goal.contributions || []),
+                  { amount: amountCop, date: todayDayKey() },
+                ],
               }
             : goal
         )
@@ -1300,6 +1323,10 @@ export function FinanceProvider({ children }) {
                   updatedStatus === 'paid'
                     ? new Date().toISOString()
                     : debt.paidAt,
+                payments: [
+                  ...(debt.payments || []),
+                  { amount: amountCop, date: todayDayKey() },
+                ],
               }
             : debt
         )

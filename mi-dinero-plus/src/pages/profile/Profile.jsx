@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Area,
-  CartesianGrid,
   ComposedChart,
-  Line,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -34,6 +32,15 @@ import {
   resetSimulationApi,
   changePassword,
 } from '../../services/api'
+import {
+  DAILY_LIMIT,
+  LEVELS,
+  POINT_RULES,
+  buildChartData,
+  buildScoreModel,
+  formatPoints,
+  getLevelInfo,
+} from '../../utils/habitScore'
 import './Profile.css'
 
 const JOB_ROLES = [
@@ -42,254 +49,19 @@ const JOB_ROLES = [
   { value: 'Coordinador', label: 'Coordinador' },
   { value: 'contador', label: 'Contador' },
   { value: 'Limpieza', label: 'Limpieza' },
-  { value: 'seguridad', label: 'Seguridad' },
+  { value: 'seguridad', label: 'seguridad' },
+  { value: 'Mecánico', label: 'Mecánico' },
   { value: 'otro', label: 'Otro' },
 ]
 
-function parseLocalDate(value) {
-  if (value == null || value === '') return null
-
-  if (typeof value === 'string') {
-    const onlyDay = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-    if (onlyDay) {
-      return new Date(+onlyDay[1], +onlyDay[2] - 1, +onlyDay[3])
-    }
-
-    if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-      const d = new Date(value)
-      if (Number.isNaN(d.getTime())) return null
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate())
-    }
-  }
-
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return null
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
-}
-
-function toDayKey(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function formatShortDate(value) {
-  const d = parseLocalDate(value)
-  if (!d) return ''
-  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
-}
-
-const MOMENTUM_MAX_RECORDS = 30
 const MOMENTUM_GREEN = '#16a34a'
 const MOMENTUM_RED = '#dc2626'
 const MOMENTUM_BLUE = '#2563eb'
+const TREND_COLOR = { up: MOMENTUM_GREEN, down: MOMENTUM_RED, flat: MOMENTUM_BLUE }
+const TREND_ARROW = { up: '▲', down: '▼', flat: '●' }
 
-function formatLongDate(dayKey) {
-  const d = parseLocalDate(dayKey)
-  if (!d) return ''
-  return d.toLocaleDateString('es-CO', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-}
-
-/**
- * Convierte los registros reales del usuario en la curva (un punto por registro).
- *
- * "Impulso neto" = tu posición acumulada con cantidades reales, sin pesos inventados:
- *   suma:  ingresos · ahorro en metas · deudas pagadas
- *   resta: gastos · deudas nuevas
- *
- * Los ingresos y gastos tienen fecha exacta. Del ahorro en metas y de los pagos parciales
- * de deuda el sistema solo guarda el total (no la fecha de cada aporte), así que se
- * muestran juntos en el último punto, "Hoy".
- */
-function buildMomentum({ transactions, goals, debts }) {
-  const events = []
-  const undated = { goals: 0, debts: 0 }
-  let order = 0
-  const push = (e) => events.push({ ...e, order: order++ })
-  const tieOf = (v) => Date.parse(v) || 0
-
-  transactions
-    .filter((t) => t && !t.deletedAt)
-    .forEach((t) => {
-      const amount = Number(t.amount) || 0
-      const d = parseLocalDate(
-        t.date || t.transactionDate || t.transaction_date || t.createdAt
-      )
-      if (!d || !amount) return
-      const income = t.type === 'income'
-      push({
-        at: d.getTime(),
-        tie: tieOf(t.createdAt),
-        dayKey: toDayKey(d),
-        delta: income ? amount : -amount,
-        title: income ? 'Ingreso' : 'Gasto',
-        detail: t.description || t.category || '',
-      })
-    })
-
-  debts
-    .filter((d) => d && !d.deletedAt)
-    .forEach((debt) => {
-      const total = Number(debt.totalAmount) || 0
-      if (total <= 0) return
-
-      const created = parseLocalDate(debt.createdAt || debt.created_at)
-      if (created) {
-        push({
-          at: created.getTime(),
-          tie: tieOf(debt.createdAt),
-          dayKey: toDayKey(created),
-          delta: -total,
-          title: 'Deuda nueva',
-          detail: debt.name || '',
-        })
-      }
-
-      const pending = Number(debt.pendingBalance)
-      const isPaid =
-        debt.status === 'paid' || (Number.isFinite(pending) && pending <= 0)
-      const paidAmount = isPaid
-        ? total
-        : Number.isFinite(pending)
-          ? Math.max(0, total - Math.min(total, pending))
-          : 0
-      if (paidAmount <= 0) return
-
-      const paidAt = isPaid ? parseLocalDate(debt.paidAt || debt.paid_at) : null
-      if (paidAt) {
-        push({
-          at: paidAt.getTime(),
-          tie: tieOf(debt.paidAt),
-          dayKey: toDayKey(paidAt),
-          delta: paidAmount,
-          title: 'Deuda pagada',
-          detail: debt.name || '',
-        })
-      } else {
-        undated.debts += paidAmount
-      }
-    })
-
-  goals
-    .filter((g) => g && !g.deletedAt)
-    .forEach((g) => {
-      const saved = Number(g.currentAmount) || 0
-      if (saved <= 0) return
-      const done =
-        g.status === 'completed'
-          ? parseLocalDate(g.completedAt || g.completed_at)
-          : null
-      if (done) {
-        push({
-          at: done.getTime(),
-          tie: tieOf(g.completedAt),
-          dayKey: toDayKey(done),
-          delta: saved,
-          title: 'Meta cumplida',
-          detail: g.name || '',
-        })
-      } else {
-        undated.goals += saved
-      }
-    })
-
-  events.sort((a, b) => a.at - b.at || a.tie - b.tie || a.order - b.order)
-
-  if (undated.goals > 0 || undated.debts > 0) {
-    events.push({
-      isToday: true,
-      dayKey: null,
-      delta: undated.goals + undated.debts,
-      title: 'Hoy · ahorro y pagos',
-      detail: '',
-      parts: [
-        undated.goals > 0 && { label: 'Ahorro en metas', amount: undated.goals },
-        undated.debts > 0 && { label: 'Pagos de deuda', amount: undated.debts },
-      ].filter(Boolean),
-    })
-  }
-
-  if (events.length === 0) {
-    return {
-      empty: true,
-      trend: 'flat',
-      change: 0,
-      last: 0,
-      records: 0,
-      domain: [-1, 1],
-      windowed: false,
-      hasToday: false,
-      solidMin: 0,
-      solidMax: 0,
-      data: [
-        { n: 0, label: 'Inicio', value: 0, solid: 0, dashed: null, delta: 0, isStart: true, title: 'Inicio' },
-        { n: 1, label: 'Hoy', value: 0, solid: 0, dashed: null, delta: 0, title: 'Sin registros todavía' },
-      ],
-    }
-  }
-
-  let run = 0
-  const all = events.map((e) => {
-    run += e.delta
-    return { ...e, value: Math.round(run) }
-  })
-
-  const visible = all.slice(-MOMENTUM_MAX_RECORDS)
-  const cut = all.length - visible.length
-  const startValue = cut > 0 ? all[cut - 1].value : 0
-
-  const data = [
-    {
-      n: 0,
-      label: cut > 0 ? 'Antes' : 'Inicio',
-      value: startValue,
-      delta: 0,
-      isStart: true,
-      title: cut > 0 ? 'Saldo antes de estos registros' : 'Inicio',
-    },
-    ...visible.map((e, i) => ({
-      n: i + 1,
-      label: e.isToday ? 'Hoy' : formatShortDate(e.dayKey),
-      dateText: e.isToday ? '' : formatLongDate(e.dayKey),
-      value: e.value,
-      delta: e.delta,
-      title: e.title,
-      detail: e.detail,
-      parts: e.parts,
-      isToday: Boolean(e.isToday),
-    })),
-  ]
-
-  // Línea sólida = registros con fecha. Último tramo punteado = "Hoy" (ahorro y pagos sin fecha).
-  const todayIdx = data.findIndex((p) => p.isToday)
-  data.forEach((p, i) => {
-    p.solid = todayIdx === -1 || i < todayIdx ? p.value : null
-    p.dashed = todayIdx !== -1 && i >= todayIdx - 1 ? p.value : null
-  })
-  const solidVals = data.filter((p) => p.solid != null).map((p) => p.solid)
-
-  const values = data.map((p) => p.value)
-  const lo = Math.min(...values)
-  const hi = Math.max(...values)
-  const pad = (hi - lo || Math.max(Math.abs(hi), 1) * 0.2) * 0.14
-  const change = data[data.length - 1].value - startValue
-
-  return {
-    empty: false,
-    data,
-    trend: change > 0 ? 'up' : change < 0 ? 'down' : 'flat',
-    change,
-    last: data[data.length - 1].value,
-    records: visible.length,
-    windowed: cut > 0,
-    hasToday: todayIdx !== -1,
-    solidMin: Math.min(...solidVals),
-    solidMax: Math.max(...solidVals),
-    domain: [lo - pad, hi + pad],
-  }
-}
+/** Puntaje con signo menos tipográfico (sin '+' para positivos). */
+const scoreText = (n) => (n < 0 ? `−${Math.abs(n)}` : String(n))
 
 /** Hasta `max` posiciones repartidas parejo, siempre con la primera y la última. */
 function pickTicks(count, max = 5) {
@@ -359,184 +131,154 @@ function MomentumTick({ x, y, payload, data, last }) {
   )
 }
 
-function MomentumTooltip({ active, payload, fmt }) {
+function MomentumTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const p = payload[0].payload
-  const tone = p.delta > 0 ? 'is-up' : p.delta < 0 ? 'is-down' : ''
-  const sign = p.delta > 0 ? '+' : p.delta < 0 ? '−' : ''
   return (
     <div className="momentum-tooltip">
-      <strong>{p.title}</strong>
-      {p.dateText && <span className="mt-muted">{p.dateText}</span>}
-      {p.detail && <span className="mt-muted">{p.detail}</span>}
-      {p.parts?.map((part) => (
-        <span key={part.label} className="mt-muted">
-          {part.label}: +{fmt(part.amount)}
+      <strong>{p.isStart ? p.label : p.dateText}</strong>
+      {p.items?.map((it) => (
+        <span key={it.kind} className="mt-line">
+          <span className="mt-muted">
+            {it.label}
+            {it.count > 1 ? ` ×${it.count}` : ''}
+            {it.count > it.counted ? ` · máx. ${DAILY_LIMIT}/día` : ''}
+          </span>
+          <b className={it.points > 0 ? 'is-up' : 'is-down'}>
+            {formatPoints(it.points)}
+          </b>
         </span>
       ))}
-      {!p.isStart && p.delta !== 0 && (
-        <span className={`mt-delta ${tone}`}>
-          {sign}
-          {fmt(Math.abs(p.delta))}
-        </span>
+      {!p.isStart && (
+        <span className="mt-total">Acumulado: {scoreText(p.value)} pts</span>
       )}
-      <span className="mt-total">Neto acumulado: {fmt(p.value)}</span>
     </div>
   )
 }
 
-function renderMomentumDot(props) {
-  const { cx, cy, payload, index } = props
-  if (!Number.isFinite(cx) || !Number.isFinite(cy)) {
-    return <g key={`dot-${index}`} />
-  }
-  if (payload.isStart) {
+/**
+ * Puntos casi invisibles: pequeños en cada día con movimiento, grandes en los hitos
+ * (meta cumplida / deuda pagada) y resaltado en el último punto.
+ */
+function makeDotRenderer(color, lastIndex) {
+  return ({ cx, cy, index, payload }) => {
+    if (!Number.isFinite(cx) || !Number.isFinite(cy) || payload.isStart) {
+      return <g key={`dot-${index}`} />
+    }
+    if (payload.milestone) {
+      return (
+        <circle
+          key={`dot-${index}`}
+          cx={cx}
+          cy={cy}
+          r={5}
+          fill="var(--bg-surface)"
+          stroke={color}
+          strokeWidth={2.5}
+        />
+      )
+    }
+    const isLast = index === lastIndex
     return (
       <circle
         key={`dot-${index}`}
         cx={cx}
         cy={cy}
-        r={3}
-        fill="var(--bg-surface)"
-        stroke="var(--text-muted)"
-        strokeWidth={1.5}
+        r={isLast ? 4 : 2.5}
+        fill={color}
+        fillOpacity={isLast ? 1 : 0.75}
+        stroke={isLast ? 'var(--bg-surface)' : 'none'}
+        strokeWidth={isLast ? 1.5 : 0}
       />
     )
   }
-  const color =
-    payload.delta > 0 ? '#16a34a' : payload.delta < 0 ? '#dc2626' : '#2563eb'
-  return (
-    <circle
-      key={`dot-${index}`}
-      cx={cx}
-      cy={cy}
-      r={payload.isToday ? 4.5 : 3.5}
-      fill={color}
-      stroke="var(--bg-surface)"
-      strokeWidth={1.5}
-    />
-  )
 }
 
-function renderTodayDot(props) {
-  const { cx, cy, payload, index } = props
-  if (!payload?.isToday || !Number.isFinite(cx) || !Number.isFinite(cy)) {
-    return <g key={`today-${index}`} />
-  }
-  return (
-    <circle
-      key={`today-${index}`}
-      cx={cx}
-      cy={cy}
-      r={5}
-      fill="var(--bg-surface)"
-      stroke={payload.value >= 0 ? MOMENTUM_GREEN : MOMENTUM_RED}
-      strokeWidth={2.5}
-    />
-  )
-}
-
-function MomentumChart({ transactions = [], goals = [], debts = [], formatMoney }) {
+function MomentumChart({ chart }) {
   const [wrapRef, wrapWidth] = useElementWidth()
-  const fmt = (n) =>
-    typeof formatMoney === 'function'
-      ? formatMoney(n)
-      : Number(n).toLocaleString('es-CO')
+  const [showRules, setShowRules] = useState(false)
+  const { data, trend, change, total, activeDays, windowed, domain, min, max, empty } =
+    chart
 
-  const model = useMemo(
-    () => buildMomentum({ transactions, goals, debts }),
-    [transactions, goals, debts]
-  )
-  const { data, trend, change, last, records, domain, empty } = model
-  const { windowed, hasToday, solidMin, solidMax } = model
-
-  // Verde por encima del cero, rojo por debajo: la línea cambia de color donde cruza el cero.
-  const straddle = solidMin < 0 && solidMax > 0
-  const flat = solidMax === solidMin
-  const zeroAt = straddle ? solidMax / (solidMax - solidMin) : 0
-  const strokeId = 'momentumStroke'
-  const fillId = 'momentumFill'
-  const lineColor = straddle
-    ? `url(#${strokeId})`
-    : flat
-      ? solidMax > 0
-        ? MOMENTUM_GREEN
-        : solidMax < 0
-          ? MOMENTUM_RED
-          : MOMENTUM_BLUE
-      : solidMax <= 0
-        ? MOMENTUM_RED
-        : MOMENTUM_GREEN
-
+  const color = TREND_COLOR[trend]
   const lastIndex = data.length - 1
+  const dotRenderer = useMemo(
+    () => makeDotRenderer(color, lastIndex),
+    [color, lastIndex]
+  )
+
   // Una fecha cada ~85 px para que nunca se pisen (menos fechas en celular)
   const maxTicks = wrapWidth ? Math.max(2, Math.min(6, Math.floor(wrapWidth / 85))) : 4
   const stepPx = data.length > 1 ? Math.max(1, (wrapWidth || 300) - 40) / (data.length - 1) : 1
   const ticks = thinTicks(pickTicks(data.length, maxTicks), data, stepPx, 78)
-  const zeroInView = domain[0] < 0 && domain[1] > 0
+  const zeroInView = min < 0 && max > 0
 
-  const changeText = `${change > 0 ? '+' : change < 0 ? '−' : ''}${fmt(Math.abs(change))}`
-  const countText = `${records} ${records === 1 ? 'registro' : 'registros'}`
   const tip = empty
-    ? 'Registra ingresos, gastos, metas o deudas para ver tu curva'
-    : windowed
-      ? `Últimos ${countText} · ${changeText} (neto ${fmt(last)})`
-      : `${countText} · neto ${fmt(last)}`
+    ? 'Registra ingresos, gastos, metas o deudas para empezar a sumar puntos'
+    : `${activeDays} ${activeDays === 1 ? 'día' : 'días'} con movimiento${
+        windowed ? ` · se muestran los últimos ${data.length - 1}` : ''
+      }`
 
   return (
     <div className="momentum">
       <div className="momentum-head">
-        <div>
-          <h2>Curva de impulso</h2>
+        <div className="momentum-title">
+          <div className="momentum-title-row">
+            <h2>Curva de impulso</h2>
+            <button
+              type="button"
+              className="momentum-info"
+              aria-label="¿Cómo se calculan los puntos?"
+              aria-expanded={showRules}
+              onClick={() => setShowRules((v) => !v)}
+            >
+              i
+            </button>
+          </div>
           <p className="momentum-tip">{tip}</p>
         </div>
-        <div className={`momentum-badge is-${trend}`}>
-          {trend === 'up'
-            ? '▲ Subiendo'
-            : trend === 'down'
-              ? '▼ Bajando'
-              : '● Estable'}
-        </div>
       </div>
+
+      <div className="momentum-score">
+        <strong className="momentum-score-num">{scoreText(total)}</strong>
+        <span className="momentum-score-unit">pts</span>
+        <span
+          className={`momentum-delta is-${trend}`}
+          title="Cambio en el periodo mostrado"
+        >
+          {TREND_ARROW[trend]} {formatPoints(change)}
+        </span>
+      </div>
+
+      {showRules && (
+        <div className="momentum-rules" role="note">
+          <p>Sube con buenos hábitos y baja con gastos y deudas nuevas.</p>
+          <ul>
+            {POINT_RULES.map((r) => (
+              <li key={r.kind}>
+                <span>{r.label}</span>
+                <b className={r.points > 0 ? 'is-up' : 'is-down'}>
+                  {formatPoints(r.points)}
+                </b>
+              </li>
+            ))}
+          </ul>
+          <p className="momentum-rules-note">
+            Cada tipo suma hasta {DAILY_LIMIT} veces por día (las metas cumplidas y las
+            deudas pagadas no tienen tope).
+          </p>
+        </div>
+      )}
 
       <div className="momentum-chart-wrap" ref={wrapRef}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 10, right: 12, left: 12, bottom: 0 }}>
             <defs>
-              <linearGradient id={strokeId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor={MOMENTUM_GREEN} />
-                <stop offset={zeroAt} stopColor={MOMENTUM_GREEN} />
-                <stop offset={zeroAt} stopColor={MOMENTUM_RED} />
-                <stop offset="1" stopColor={MOMENTUM_RED} />
+              <linearGradient id="momentumFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={color} stopOpacity={0.22} />
+                <stop offset="1" stopColor={color} stopOpacity={0.02} />
               </linearGradient>
-              {straddle ? (
-                <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor={MOMENTUM_GREEN} stopOpacity={0.4} />
-                  <stop offset={zeroAt} stopColor={MOMENTUM_GREEN} stopOpacity={0.04} />
-                  <stop offset={zeroAt} stopColor={MOMENTUM_RED} stopOpacity={0.04} />
-                  <stop offset="1" stopColor={MOMENTUM_RED} stopOpacity={0.4} />
-                </linearGradient>
-              ) : (
-                <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
-                  {solidMax <= 0 && !flat ? (
-                    <>
-                      <stop offset="0" stopColor={lineColor} stopOpacity={0.04} />
-                      <stop offset="1" stopColor={lineColor} stopOpacity={0.4} />
-                    </>
-                  ) : (
-                    <>
-                      <stop offset="0" stopColor={lineColor} stopOpacity={0.4} />
-                      <stop offset="1" stopColor={lineColor} stopOpacity={0.03} />
-                    </>
-                  )}
-                </linearGradient>
-              )}
             </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="var(--border)"
-              vertical={false}
-            />
             <XAxis
               dataKey="n"
               type="number"
@@ -555,53 +297,24 @@ function MomentumChart({ transactions = [], goals = [], debts = [], formatMoney 
                 y={0}
                 stroke="var(--text-muted)"
                 strokeDasharray="4 4"
-                strokeOpacity={0.6}
+                strokeOpacity={0.5}
               />
             )}
             <Tooltip
-              content={<MomentumTooltip fmt={fmt} />}
+              content={<MomentumTooltip />}
               cursor={{ stroke: 'var(--text-muted)', strokeDasharray: '3 3' }}
             />
             <Area
               type="monotone"
-              dataKey="solid"
-              stroke={lineColor}
-              strokeWidth={2.5}
-              fill={`url(#${fillId})`}
-              dot={renderMomentumDot}
-              activeDot={{ r: 5.5 }}
-              connectNulls={false}
+              dataKey="value"
+              stroke={color}
+              strokeWidth={2}
+              fill="url(#momentumFill)"
+              dot={dotRenderer}
+              activeDot={{ r: 5 }}
             />
-            {hasToday && (
-              <Line
-                type="monotone"
-                dataKey="dashed"
-                stroke="var(--text-muted)"
-                strokeWidth={2}
-                strokeDasharray="5 4"
-                dot={renderTodayDot}
-                activeDot={{ r: 5.5 }}
-                connectNulls={false}
-              />
-            )}
           </ComposedChart>
         </ResponsiveContainer>
-      </div>
-
-      <div className="momentum-foot">
-        <span>
-          <i className="momentum-dot is-up" /> Suma: ingresos, ahorro en metas, deudas
-          pagadas
-        </span>
-        <span>
-          <i className="momentum-dot is-down" /> Resta: gastos, deudas nuevas
-        </span>
-        {hasToday && (
-          <span>
-            <i className="momentum-dash" /> Hoy: ahorro en metas y pagos de deuda (sin fecha
-            propia)
-          </span>
-        )}
       </div>
     </div>
   )
@@ -623,7 +336,6 @@ function Profile() {
     setAiEnabled,
     setAnimationsEnabled,
     resetSimulation,
-    formatMoney,
   } = useFinance()
 
   const [panel, setPanel] = useState(null)
@@ -671,12 +383,14 @@ function Profile() {
   const roleLabel =
     JOB_ROLES.find((r) => r.value === jobRole)?.label ||
     (jobRole ? jobRole : 'Sin cargo')
-  const levelLabel =
-    progress >= 70
-      ? 'Planificador Avanzado'
-      : progress >= 35
-        ? 'Organizador Financiero'
-        : 'Aprendiz Financiero'
+  // Puntaje de hábitos: alimenta la curva y el nivel. "Progreso edu." (arriba) es aparte.
+  const habit = useMemo(
+    () => buildScoreModel({ transactions, goals, debts }),
+    [transactions, goals, debts]
+  )
+  const chart = useMemo(() => buildChartData(habit), [habit])
+  const levelInfo = getLevelInfo(habit.total)
+  const levelPercent = Math.round(levelInfo.progress * 100)
   const moduleLabel =
     educationLevel === 'advanced'
       ? 'Módulo Avanzado'
@@ -694,6 +408,45 @@ function Profile() {
     }, 60)
     return () => clearTimeout(t)
   }, [panel, avatarOpen])
+
+  // "¡Subiste de nivel!": avisa una sola vez, al superar el nivel más alto visto en este navegador
+  const levelIndex = levelInfo.index
+  const hasData = transactions.length + goals.length + debts.length > 0
+  const levelUserKey = user?.id ?? user?.email ?? null
+  useEffect(() => {
+    if (!hasData || levelUserKey == null) return undefined
+    // Pequeña espera: transacciones, metas y deudas llegan del servidor en momentos distintos
+    const timer = setTimeout(() => {
+      const key = `midinero:nivelMax:${levelUserKey}`
+      let seen = null
+      try {
+        const raw = window.localStorage.getItem(key)
+        seen = raw === null ? null : Number(raw)
+      } catch {
+        return
+      }
+      const save = () => {
+        try {
+          window.localStorage.setItem(key, String(levelIndex))
+        } catch {
+          // ignore
+        }
+      }
+      if (seen === null || Number.isNaN(seen)) {
+        save() // primera vez: se registra el nivel actual sin celebrar
+        return
+      }
+      if (levelIndex > seen) {
+        save()
+        setToast({
+          message: `¡Subiste de nivel! Ahora eres ${LEVELS[levelIndex].label}`,
+          visible: true,
+        })
+        setTimeout(() => setToast({ message: '', visible: false }), 4500)
+      }
+    }, 1200)
+    return () => clearTimeout(timer)
+  }, [levelIndex, hasData, levelUserKey])
 
   const handleChangeEmail = (e) => setEmailInput(e.target.value)
 
@@ -960,7 +713,7 @@ function Profile() {
               <DicebearAvatarImg
                 seed={avatarSeed}
                 options={avatarOptions}
-                size={100}
+                size={130}
               />
             ) : (
               <span className="avatar-skeleton" aria-hidden="true" />
@@ -973,7 +726,27 @@ function Profile() {
             <p className="profile-role">
               {profileReady ? `${roleLabel} · ` : ''}Meta Autos Medellín
             </p>
-            <p className="profile-level">{levelLabel}</p>
+            <div className="level-block">
+              <div className="level-row">
+                <span className="profile-level">{levelInfo.label}</span>
+                <span className="level-points">{scoreText(habit.total)} pts</span>
+              </div>
+              <div
+                className="level-bar"
+                role="progressbar"
+                aria-label="Progreso hacia el siguiente nivel"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={levelPercent}
+              >
+                <span style={{ width: `${levelPercent}%` }} />
+              </div>
+              <p className="level-hint">
+                {levelInfo.next
+                  ? `${levelInfo.pointsToNext} pts para ${levelInfo.next.label}`
+                  : 'Nivel máximo alcanzado'}
+              </p>
+            </div>
             <div className="status-chips">
               <span className="chip">{currency || 'COP'}</span>
               <span className="chip">{moduleLabel}</span>
@@ -988,12 +761,7 @@ function Profile() {
         </article>
 
         <article className="momentum-card">
-          <MomentumChart
-            transactions={transactions}
-            goals={goals}
-            debts={debts}
-            formatMoney={formatMoney}
-          />
+          <MomentumChart chart={chart} />
         </article>
       </div>
 

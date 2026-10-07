@@ -31,7 +31,36 @@ const getDebts = async (req, res) => {
       [userId]
     );
 
-    res.json(debts);
+    // Pagos con su fecha (alimentan la curva de puntos del Perfil).
+    // Si falla esta consulta, las deudas igual se devuelven (sin historial de pagos).
+    const paymentsByDebt = new Map();
+    try {
+      const [payments] = await pool.query(
+        `SELECT p.debt_id, p.amount_cop,
+                DATE_FORMAT(p.payment_date, '%Y-%m-%d') AS payment_date
+         FROM debt_payments p
+         INNER JOIN debts d ON d.id = p.debt_id
+         WHERE d.user_id = ? AND d.deleted_at IS NULL
+         ORDER BY p.payment_date ASC, p.id ASC`,
+        [userId]
+      );
+      for (const p of payments) {
+        if (!paymentsByDebt.has(p.debt_id)) paymentsByDebt.set(p.debt_id, []);
+        paymentsByDebt.get(p.debt_id).push({
+          amount_cop: p.amount_cop,
+          payment_date: p.payment_date,
+        });
+      }
+    } catch (payError) {
+      console.error('Error al obtener pagos de deudas:', payError.message);
+    }
+
+    res.json(
+      debts.map((debt) => ({
+        ...debt,
+        payments: paymentsByDebt.get(debt.id) || [],
+      }))
+    );
   } catch (error) {
     console.error('Error al obtener deudas:', error);
     res.status(500).json({ message: 'Error interno del servidor' });

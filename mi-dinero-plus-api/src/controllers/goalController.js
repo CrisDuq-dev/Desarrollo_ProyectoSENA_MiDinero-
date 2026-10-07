@@ -31,7 +31,36 @@ const getGoals = async (req, res) => {
       [userId]
     );
 
-    res.json(goals);
+    // Aportes con su fecha (alimentan la curva de puntos del Perfil).
+    // Si falla esta consulta, las metas igual se devuelven (sin historial de aportes).
+    const contributionsByGoal = new Map();
+    try {
+      const [contributions] = await pool.query(
+        `SELECT c.goal_id, c.amount_cop,
+                DATE_FORMAT(c.contribution_date, '%Y-%m-%d') AS contribution_date
+         FROM savings_goal_contributions c
+         INNER JOIN savings_goals g ON g.id = c.goal_id
+         WHERE g.user_id = ? AND g.deleted_at IS NULL
+         ORDER BY c.contribution_date ASC, c.id ASC`,
+        [userId]
+      );
+      for (const c of contributions) {
+        if (!contributionsByGoal.has(c.goal_id)) contributionsByGoal.set(c.goal_id, []);
+        contributionsByGoal.get(c.goal_id).push({
+          amount_cop: c.amount_cop,
+          contribution_date: c.contribution_date,
+        });
+      }
+    } catch (contribError) {
+      console.error('Error al obtener aportes de metas:', contribError.message);
+    }
+
+    res.json(
+      goals.map((goal) => ({
+        ...goal,
+        contributions: contributionsByGoal.get(goal.id) || [],
+      }))
+    );
   } catch (error) {
     console.error('Error al obtener metas:', error);
     res.status(500).json({ message: 'Error interno del servidor' });

@@ -28,7 +28,7 @@ export default function GameModal({ open, onClose, children }) {
           )}
         </div>
         <p className="atrapa-modal-foot">
-          Simulación educativa · no es dinero real
+          Simulación educativa
         </p>
       </div>
       <style>{`
