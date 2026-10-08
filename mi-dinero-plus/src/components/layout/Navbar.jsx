@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useFinance } from '../../contexts/FinanceContext'
+import ConfirmDialog from '../ui/ConfirmDialog'
 import {
   FiHome,
   FiRepeat,
@@ -35,6 +36,7 @@ function Navbar() {
   } = useFinance()
   const [notifOpen, setNotifOpen] = useState(false)
   const [clearing, setClearing] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const dropdownRef = useRef(null)
   const navigate = useNavigate()
 
@@ -49,13 +51,6 @@ function Navbar() {
 
   const handleClear = async () => {
     if (clearing) return
-    if (
-      !window.confirm(
-        '¿Borrar todas las notificaciones del historial? Esta acción no se puede deshacer.'
-      )
-    ) {
-      return
-    }
     setClearing(true)
     try {
       await clearAllActivities()
@@ -63,6 +58,7 @@ function Navbar() {
       console.error(err)
     } finally {
       setClearing(false)
+      setConfirmOpen(false)
     }
   }
 
@@ -79,6 +75,7 @@ function Navbar() {
 
   useEffect(() => {
     const handler = (e) => {
+      if (e.target.closest?.('[data-confirm-dialog]')) return
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setNotifOpen(false)
       }
@@ -199,7 +196,7 @@ function Navbar() {
                     <button
                       type="button"
                       className="link-button danger"
-                      onClick={handleClear}
+                      onClick={() => setConfirmOpen(true)}
                       disabled={clearing || notifications.length === 0}
                     >
                       {clearing ? 'Limpiando…' : 'Limpiar'}
@@ -323,6 +320,23 @@ function Navbar() {
           </nav>
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="¿Limpiar las notificaciones?"
+        message="Vas a borrar el historial de notificaciones de tu simulación."
+        count={notifications.length}
+        countLabel={
+          notifications.length === 1
+            ? 'notificación se eliminará'
+            : 'notificaciones se eliminarán'
+        }
+        confirmLabel="Sí, limpiar"
+        loadingLabel="Limpiando…"
+        loading={clearing}
+        onConfirm={handleClear}
+        onCancel={() => setConfirmOpen(false)}
+      />
 
        <style>{`
         .navbar {

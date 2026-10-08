@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  FiArrowLeft,
   FiActivity,
   FiCreditCard,
   FiTarget,
@@ -10,6 +9,7 @@ import {
   FiTrash2,
 } from 'react-icons/fi'
 import { useFinance } from '../../contexts/FinanceContext'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
 
 function formatDate(d) {
   return new Date(d).toLocaleString('es-CO', {
@@ -54,6 +54,7 @@ function ActivityCenter() {
   const [goalsFilter, setGoalsFilter] = useState('all')
   const [debtsFilter, setDebtsFilter] = useState('all')
   const [clearing, setClearing] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   useEffect(() => {
     loadActivities()
@@ -108,13 +109,6 @@ function ActivityCenter() {
 
   const handleClearAll = async () => {
     if (clearing) return
-    if (
-      !window.confirm(
-        '¿Borrar todo el historial de actividad? Esta acción no se puede deshacer.'
-      )
-    ) {
-      return
-    }
     setClearing(true)
     try {
       await clearAllActivities()
@@ -123,6 +117,7 @@ function ActivityCenter() {
       console.error(err)
     } finally {
       setClearing(false)
+      setConfirmOpen(false)
     }
   }
 
@@ -197,7 +192,6 @@ function ActivityCenter() {
     <section className="activity-center">
       <div className="activity-top">
         <Link to="/profile" className="back-link">
-          <FiArrowLeft size={16} />
           Volver a Mi Perfil
         </Link>
       </div>
@@ -206,7 +200,7 @@ function ActivityCenter() {
         <div className="hero-text">
           <h1>Centro de Actividad Financiera</h1>
           <p>
-            de movimientos, metas y deudas de tu simulación. Filtra,
+            Historial de movimientos, metas y deudas de tu simulación. Filtra,
             marca como leídas o vacía el registro cuando quieras.
           </p>
         </div>
@@ -231,7 +225,7 @@ function ActivityCenter() {
         <button
           type="button"
           className="secondary-button danger"
-          onClick={handleClearAll}
+          onClick={() => setConfirmOpen(true)}
           disabled={clearing || (activities || []).length === 0}
         >
           <FiTrash2 size={15} />
@@ -326,6 +320,23 @@ function ActivityCenter() {
         </article>
       )}
 
+      <ConfirmDialog
+        open={confirmOpen}
+        title="¿Vaciar todo el historial?"
+        message="Vas a borrar los movimientos, metas y deudas registrados en tu Centro de Actividad."
+        count={(activities || []).length}
+        countLabel={
+          (activities || []).length === 1
+            ? 'actividad se eliminará'
+            : 'actividades se eliminarán'
+        }
+        confirmLabel="Sí, vaciar historial"
+        loadingLabel="Vaciando…"
+        loading={clearing}
+        onConfirm={handleClearAll}
+        onCancel={() => setConfirmOpen(false)}
+      />
+
       <style>{`
         .activity-center {
           --ac-blue: #2563eb;
@@ -361,8 +372,9 @@ function ActivityCenter() {
           font-size: 0.92rem;
           transition: color 0.15s ease;
         }
-        .back-link:hover {
-          color: var(--text-primary);
+        .back-link:hover,
+        .back-link:focus-visible {
+          color: var(--ac-blue);
         }
 
         .activity-hero {
@@ -377,6 +389,10 @@ function ActivityCenter() {
           padding: 1.2rem 1.35rem;
           box-shadow: var(--ac-shadow);
         }
+        .hero-text {
+          flex: 1 1 22rem;
+          min-width: 0;
+        }
         .hero-text h1 {
           margin: 0 0 0.35rem;
           font-size: 1.3rem;
@@ -387,7 +403,8 @@ function ActivityCenter() {
         .hero-text p {
           margin: 0;
           color: var(--text-muted);
-          max-width: 40rem;
+          max-width: 46rem;
+          overflow-wrap: anywhere;
           font-size: 0.92rem;
           font-weight: 500;
           line-height: 1.45;
