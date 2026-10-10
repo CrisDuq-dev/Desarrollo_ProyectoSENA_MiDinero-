@@ -1,11 +1,13 @@
 import { Outlet } from 'react-router-dom'
 import Navbar from './Navbar'
 import ScrollToTop from './ScrollToTop'
+import IdleGuard from '../common/IdleGuard'
 
 function MainLayout() {
   return (
     <div className="main-layout">
       <ScrollToTop />
+      <IdleGuard />
       <Navbar />
       <main className="main-content">
         <Outlet />
