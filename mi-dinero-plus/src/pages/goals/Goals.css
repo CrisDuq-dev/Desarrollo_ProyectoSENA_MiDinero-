@@ -23,7 +23,6 @@
   overflow-x: hidden;
 }
 
-/* —— IA —— */
 .goals-page .goals-ai {
   display: flex;
   gap: 0.9rem;
@@ -109,7 +108,6 @@
   font-weight: 500;
 }
 
-/* —— Layout —— */
 .goals-page .goals-layout {
   display: grid;
   grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
@@ -209,7 +207,6 @@
   color: var(--text-muted);
 }
 
-/* Fecha */
 .goals-page .goal-date-wrap {
   display: block;
   width: 100%;
@@ -313,7 +310,6 @@
   background-size: 16px;
 }
 
-/* Botón crear meta — siempre verde (no lo pisa Deudas) */
 .goals-page .primary-button {
   width: 100%;
   margin-top: 0.15rem;
@@ -343,10 +339,26 @@
 
 .goals-page .goal-edit-form {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.7rem;
   min-width: 0;
   max-width: 100%;
   overflow-x: hidden;
+}
+
+.goals-page .goal-edit-form label {
+  gap: 0.3rem;
+  font-size: 0.86rem;
+}
+
+.goals-page .goal-edit-form input,
+.goals-page .goal-edit-form select {
+  padding: 0.58rem 0.8rem;
+  font-size: 0.92rem;
+}
+
+.goals-page .goal-edit-form .goal-date-wrap input[type='date'] {
+  padding: 0.58rem 0.8rem;
+  min-height: 2.3rem;
 }
 
 .goal-edit-modal-root :is(
@@ -372,7 +384,6 @@
   filter: brightness(1.06);
 }
 
-/* —— Modal aportar (estilo deudas, color metas) —— */
 .goal-contribute-form {
   display: grid;
   gap: 0.95rem;
@@ -467,7 +478,6 @@
   box-shadow: 0 8px 22px rgba(22, 163, 74, 0.5) !important;
 }
 
-/* —— Buscar —— */
 .goals-page .goal-search-card {
   padding: 0.95rem 1.1rem 1rem;
 }
@@ -546,7 +556,6 @@
   font-weight: 600;
 }
 
-/* —— Derecha —— */
 .goals-page .goals-right {
   display: grid;
   gap: 1rem;
@@ -748,7 +757,6 @@
   font-weight: 500;
 }
 
-/* Progreso — siempre verde en Metas */
 .goals-page .progress-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;

@@ -1,9 +1,5 @@
 const pool = require('../config/db');
 
-/**
- * Normaliza y valida un monto monetario.
- * Rechaza NaN, infinitos, no positivos y magnitudes absurdas (anti-overflow).
- */
 function assertPositiveMoney(value, fieldName = 'monto') {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n) || n <= 0 || n > 1e12) {
@@ -31,8 +27,6 @@ const getGoals = async (req, res) => {
       [userId]
     );
 
-    // Aportes con su fecha (alimentan la curva de puntos del Perfil).
-    // Si falla esta consulta, las metas igual se devuelven (sin historial de aportes).
     const contributionsByGoal = new Map();
     try {
       const [contributions] = await pool.query(
@@ -149,7 +143,6 @@ const addContribution = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // Bloqueo pesimista: serializa aportes concurrentes sobre la misma meta
     const [goals] = await conn.query(
       `SELECT id, name, target_amount_cop, current_amount_cop, status
        FROM savings_goals
@@ -192,7 +185,6 @@ const addContribution = async (req, res) => {
       ? target
       : Math.round(newCurrentRaw * 100) / 100;
 
-    // Defensa en profundidad: mutación siempre acotada a user_id
     const [updateResult] = await conn.query(
       `UPDATE savings_goals
        SET current_amount_cop = ?,
@@ -253,9 +245,9 @@ const addContribution = async (req, res) => {
   }
 };
 
-// =====================
+// ===============================
 // ELIMINAR META (borrado lógico)
-// =====================
+// ===============================
 const deleteGoal = async (req, res) => {
   const userId = req.user.id;
   const { id } = req.params;

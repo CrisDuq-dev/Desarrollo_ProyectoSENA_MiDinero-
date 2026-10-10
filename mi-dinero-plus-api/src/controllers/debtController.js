@@ -1,9 +1,5 @@
 const pool = require('../config/db');
 
-/**
- * Normaliza y valida un monto monetario.
- * Rechaza NaN, infinitos, no positivos y magnitudes absurdas (anti-overflow).
- */
 function assertPositiveMoney(value, fieldName = 'monto') {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n) || n <= 0 || n > 1e12) {
@@ -11,7 +7,6 @@ function assertPositiveMoney(value, fieldName = 'monto') {
     err.status = 400;
     throw err;
   }
-  // Estabiliza comparación decimal a 2 dígitos (COP/centavos lógicos)
   return Math.round(n * 100) / 100;
 }
 
@@ -31,8 +26,6 @@ const getDebts = async (req, res) => {
       [userId]
     );
 
-    // Pagos con su fecha (alimentan la curva de puntos del Perfil).
-    // Si falla esta consulta, las deudas igual se devuelven (sin historial de pagos).
     const paymentsByDebt = new Map();
     try {
       const [payments] = await pool.query(
@@ -165,7 +158,6 @@ const addPayment = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // Bloqueo pesimista: serializa abonos concurrentes sobre la misma deuda
     const [debts] = await conn.query(
       `SELECT id, name, total_amount_cop, pending_balance_cop, status
        FROM debts
@@ -199,7 +191,6 @@ const addPayment = async (req, res) => {
     const isPaid = newPendingRaw <= 0;
     const newPending = isPaid ? 0 : Math.round(newPendingRaw * 100) / 100;
 
-    // Siempre condicionar por user_id (defensa en profundidad / anti-IDOR)
     const [updateResult] = await conn.query(
       `UPDATE debts
        SET pending_balance_cop = ?,

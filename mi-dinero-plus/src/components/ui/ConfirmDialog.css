@@ -1,3 +1,7 @@
+/* =========================
+   ConfirmDialog — confirmación en rojo de Mi Dinero+
+   ========================= */
+
 .cd-backdrop {
   position: fixed;
   inset: 0;

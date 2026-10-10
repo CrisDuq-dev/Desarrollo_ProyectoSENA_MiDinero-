@@ -32,31 +32,37 @@ function Modal({
           align-items: center;
           justify-content: center;
           padding: 1rem;
-          z-index: 50;
+          z-index: 1500;
+          -webkit-backdrop-filter: blur(3px);
+          backdrop-filter: blur(3px);
         }
         .modal-box {
-          width: min(480px, 100%);
+          width: min(440px, 100%);
+          max-height: calc(100vh - 2rem);
+          max-height: calc(100dvh - 2rem);
+          overflow-y: auto;
+          box-sizing: border-box;
           background: var(--bg-surface, #ffffff);
           color: var(--text-primary, #111827);
           border: 1px solid var(--border, #e5e7eb);
           border-radius: 1rem;
-          padding: 1.5rem;
+          padding: 1.15rem 1.3rem;
           box-shadow: 0 32px 80px rgba(0, 0, 0, 0.28);
         }
-        header h2 {
-          margin: 0 0 1rem;
+        .modal-box header h2 {
+          margin: 0 0 0.75rem;
           color: var(--text-primary, #111827);
-          font-size: 1.15rem;
+          font-size: 1.1rem;
         }
         .modal-content {
-          margin-bottom: 1.5rem;
+          margin-bottom: 1.1rem;
           color: var(--text-primary, #111827);
         }
         .modal-content p {
           margin: 0;
           color: var(--text-muted, #6b7280);
         }
-        footer {
+        .modal-box footer {
           display: flex;
           justify-content: flex-end;
           gap: 0.75rem;

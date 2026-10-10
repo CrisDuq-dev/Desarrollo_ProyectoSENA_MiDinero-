@@ -297,6 +297,7 @@ export function FinanceProvider({ children }) {
     const source = payload.source || null
 
     const requestPayload = {
+      source,
       action: payload.action,
       amount: payload.amount ?? null,
       category: payload.category ?? null,

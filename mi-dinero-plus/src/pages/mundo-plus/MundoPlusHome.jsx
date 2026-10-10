@@ -18,6 +18,13 @@ const WELCOME_MSG = {
     'Hola. Soy tu guía de Mundo +. Puedo hablar de lo que quieras y también orientarte en finanzas personales dentro de la simulación. ¿Qué te gustaría saber hoy?',
 }
 
+const SUGGESTIONS = [
+  '¿Cómo armo un presupuesto?',
+  '¿Qué artículo me recomiendas?',
+  '¿Cómo voy con mis metas y deudas?',
+  '¿Cómo registro un gasto?',
+]
+
 function MundoPlusHome() {
   const { token } = useAuth()
   const { aiEnabled } = useFinance()
@@ -48,9 +55,8 @@ function MundoPlusHome() {
     setSending(false)
   }
 
-  const handleSend = async (event) => {
-    event?.preventDefault?.()
-    const text = draft.trim()
+  const sendMessage = async (rawText) => {
+    const text = String(rawText || '').trim()
     if (!text || sending) return
 
     if (!aiEnabled) {
@@ -115,6 +121,11 @@ function MundoPlusHome() {
     } finally {
       setSending(false)
     }
+  }
+
+  const handleSend = (event) => {
+    event?.preventDefault?.()
+    return sendMessage(draft)
   }
 
   return (
@@ -223,6 +234,20 @@ function MundoPlusHome() {
             ))}
             {sending && (
               <div className="mp-bubble is-bot is-typing">Pensando…</div>
+            )}
+            {messages.length === 1 && aiEnabled && !sending && (
+              <div className="mp-suggestions">
+                {SUGGESTIONS.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="mp-suggestion"
+                    onClick={() => sendMessage(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
@@ -627,6 +652,28 @@ function MundoPlusHome() {
         .mp-bubble.is-typing {
           opacity: 0.75;
           font-style: italic;
+        }
+        .mp-suggestions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.4rem;
+          margin-top: 0.15rem;
+        }
+        .mp-suggestion {
+          border: 1px solid rgba(124, 58, 237, 0.35);
+          background: transparent;
+          color: var(--mp-text);
+          border-radius: 999px;
+          padding: 0.4rem 0.75rem;
+          font: inherit;
+          font-size: 0.78rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .mp-suggestion:hover {
+          background: rgba(124, 58, 237, 0.14);
+          border-color: rgba(124, 58, 237, 0.6);
         }
 
         .mp-chat-form {

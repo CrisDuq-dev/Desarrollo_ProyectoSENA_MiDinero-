@@ -3,13 +3,6 @@ import { createPortal } from 'react-dom'
 import { FiAlertTriangle, FiTrash2 } from 'react-icons/fi'
 import './ConfirmDialog.css'
 
-/**
- * Confirmación propia de Mi Dinero+ para acciones que borran datos (reemplaza window.confirm).
- *
- * - Se dibuja en <body> (portal) para que ninguna barra o contenedor la recorte.
- * - Esc o clic fuera = cancelar. El foco empieza en "cancelar" (acción segura).
- * - `count` + `countLabel` muestran cuántos registros se van a borrar.
- */
 function ConfirmDialog({
   open,
   title,
@@ -50,7 +43,6 @@ function ConfirmDialog({
         return
       }
       if (e.key !== 'Tab' || !cardRef.current) return
-      // El foco no se escapa del cuadro mientras está abierto
       const items = [...cardRef.current.querySelectorAll('button:not(:disabled)')]
       if (items.length === 0) return
       const first = items[0]

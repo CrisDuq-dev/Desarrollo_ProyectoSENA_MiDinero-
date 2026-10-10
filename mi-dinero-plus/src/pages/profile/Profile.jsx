@@ -59,11 +59,8 @@ const MOMENTUM_RED = '#dc2626'
 const MOMENTUM_BLUE = '#2563eb'
 const TREND_COLOR = { up: MOMENTUM_GREEN, down: MOMENTUM_RED, flat: MOMENTUM_BLUE }
 const TREND_ARROW = { up: '▲', down: '▼', flat: '●' }
-
-/** Puntaje con signo menos tipográfico (sin '+' para positivos). */
 const scoreText = (n) => (n < 0 ? `−${Math.abs(n)}` : String(n))
 
-/** Hasta `max` posiciones repartidas parejo, siempre con la primera y la última. */
 function pickTicks(count, max = 5) {
   if (count <= 1) return [0]
   const k = Math.min(count, max)
@@ -72,10 +69,6 @@ function pickTicks(count, max = 5) {
   return [...out]
 }
 
-/**
- * Quita marcas del eje X que repiten fecha o quedan demasiado juntas (menos de `minGapPx`).
- * La primera y la última siempre se conservan.
- */
 function thinTicks(indexes, data, stepPx, minGapPx) {
   const out = []
   indexes.forEach((i, k) => {
@@ -97,7 +90,6 @@ function thinTicks(indexes, data, stepPx, minGapPx) {
   return out
 }
 
-/** Ancho actual de un elemento (se actualiza al girar el celular o cambiar el tamaño). */
 function useElementWidth() {
   const ref = useRef(null)
   const [width, setWidth] = useState(0)
@@ -114,7 +106,6 @@ function useElementWidth() {
   return [ref, width]
 }
 
-/** Etiqueta del eje X: la primera se alinea a la izquierda y la última a la derecha (no se cortan). */
 function MomentumTick({ x, y, payload, data, last }) {
   const v = payload?.value
   const anchor = v === 0 ? 'start' : v === last ? 'end' : 'middle'
@@ -156,10 +147,6 @@ function MomentumTooltip({ active, payload }) {
   )
 }
 
-/**
- * Puntos casi invisibles: pequeños en cada día con movimiento, grandes en los hitos
- * (meta cumplida / deuda pagada) y resaltado en el último punto.
- */
 function makeDotRenderer(color, lastIndex) {
   return ({ cx, cy, index, payload }) => {
     if (!Number.isFinite(cx) || !Number.isFinite(cy) || payload.isStart) {
@@ -207,7 +194,6 @@ function MomentumChart({ chart }) {
     [color, lastIndex]
   )
 
-  // Una fecha cada ~85 px para que nunca se pisen (menos fechas en celular)
   const maxTicks = wrapWidth ? Math.max(2, Math.min(6, Math.floor(wrapWidth / 85))) : 4
   const stepPx = data.length > 1 ? Math.max(1, (wrapWidth || 300) - 40) / (data.length - 1) : 1
   const ticks = thinTicks(pickTicks(data.length, maxTicks), data, stepPx, 78)
@@ -343,8 +329,6 @@ function Profile() {
   const [confirmReset, setConfirmReset] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const panelRef = useRef(null)
-
-  // Últimos datos guardados: se muestran al instante y el servidor los confirma después
   const [cachedProfile] = useState(() => readProfileCache(user))
   const [profileLoaded, setProfileLoaded] = useState(false)
   const profileReady = Boolean(cachedProfile) || profileLoaded
@@ -383,7 +367,7 @@ function Profile() {
   const roleLabel =
     JOB_ROLES.find((r) => r.value === jobRole)?.label ||
     (jobRole ? jobRole : 'Sin cargo')
-  // Puntaje de hábitos: alimenta la curva y el nivel. "Progreso edu." (arriba) es aparte.
+
   const habit = useMemo(
     () => buildScoreModel({ transactions, goals, debts }),
     [transactions, goals, debts]
@@ -409,13 +393,12 @@ function Profile() {
     return () => clearTimeout(t)
   }, [panel, avatarOpen])
 
-  // "¡Subiste de nivel!": avisa una sola vez, al superar el nivel más alto visto en este navegador
   const levelIndex = levelInfo.index
   const hasData = transactions.length + goals.length + debts.length > 0
   const levelUserKey = user?.id ?? user?.email ?? null
   useEffect(() => {
     if (!hasData || levelUserKey == null) return undefined
-    // Pequeña espera: transacciones, metas y deudas llegan del servidor en momentos distintos
+
     const timer = setTimeout(() => {
       const key = `midinero:nivelMax:${levelUserKey}`
       let seen = null
@@ -429,11 +412,10 @@ function Profile() {
         try {
           window.localStorage.setItem(key, String(levelIndex))
         } catch {
-          // ignore
         }
       }
       if (seen === null || Number.isNaN(seen)) {
-        save() // primera vez: se registra el nivel actual sin celebrar
+        save() 
         return
       }
       if (levelIndex > seen) {
@@ -599,7 +581,6 @@ function Profile() {
       }
     }
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   const onResetSimulation = async () => {

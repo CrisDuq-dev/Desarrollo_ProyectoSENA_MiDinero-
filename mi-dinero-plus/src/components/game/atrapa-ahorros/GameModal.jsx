@@ -5,8 +5,6 @@ import { FaGamepad } from 'react-icons/fa'
 export default function GameModal({ open, onClose, children }) {
   if (!open) return null
 
-  // Portal a <body>: el modal queda fuera de cualquier contenedor de la página
-  // (navbar sticky, layouts, stacking contexts) y siempre se centra en la ventana.
   return createPortal(
     <div className="atrapa-modal-root" role="dialog" aria-modal="true" aria-label="Atrapa tus Ahorros">
       <div className="atrapa-modal-backdrop" onClick={onClose} />
@@ -33,6 +31,7 @@ export default function GameModal({ open, onClose, children }) {
       </div>
       <style>{`
         .atrapa-modal-root {
+          font-family: 'Nunito', system-ui, sans-serif;
           position: fixed;
           inset: 0;
           z-index: 1000;

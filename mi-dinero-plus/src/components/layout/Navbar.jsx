@@ -12,12 +12,21 @@ import {
   FiBookOpen,
   FiUser,
   FiBell,
+  FiAlertTriangle,
   FiSun,
   FiMoon,
   FiMenu,
   FiX,
   FiLogOut,
 } from 'react-icons/fi'
+
+const ALERT_MESSAGES = [
+  'Entorno de simulación educativa: aquí no se usa dinero real',
+  'Nunca escribas datos reales: ni contraseñas, ni números de tarjeta, ni cuentas bancarias',
+  'Los consejos de la IA son educativos y no reemplazan a un profesional financiero',
+  'Practica sin riesgo: equivocarte aquí no cuesta nada y aprender sí vale',
+  'Las tasas de cambio son de referencia y pueden diferir de las del mercado',
+]
 
 function Navbar() {
   const { logout } = useAuth()
@@ -114,10 +123,26 @@ function Navbar() {
   return (
     <header className={`navbar ${theme}`}>
       {showAlert && (
-        <div className="navbar-alert">
-          <span>
-            Entorno de Simulación Educativa — No utilizamos dinero real
+        <div className="navbar-alert" role="status">
+          <span className="navbar-alert-badge">
+            <FiAlertTriangle size={13} aria-hidden="true" />
+            <span className="navbar-alert-badge-text">Aviso</span>
           </span>
+          <div className="navbar-alert-marquee">
+            <div className="navbar-alert-track">
+              {[0, 1].map((copy) => (
+                <ul
+                  key={copy}
+                  className="navbar-alert-list"
+                  aria-hidden={copy === 1 ? 'true' : undefined}
+                >
+                  {ALERT_MESSAGES.map((message) => (
+                    <li key={message}>{message}</li>
+                  ))}
+                </ul>
+              ))}
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => setShowAlert(false)}
@@ -367,20 +392,78 @@ function Navbar() {
           );
         }
 
+        /* Cinta de aviso en color de advertencia (ámbar) con texto en movimiento */
         .navbar-alert {
           display: flex;
-          justify-content: center;
           align-items: center;
+          gap: 0.7rem;
           position: relative;
           width: 100%;
-          padding: 0.45rem 2.5rem 0.45rem 1rem;
-          background: rgba(37, 99, 235, 0.1);
-          color: var(--text-primary);
-          border-bottom: 1px solid var(--border);
+          box-sizing: border-box;
+          padding: 0.38rem 2.75rem 0.38rem 0.85rem;
+          background: linear-gradient(90deg, #f59e0b, #fbbf24 50%, #f59e0b);
+          color: #1f1300;
+          border-bottom: 1px solid rgba(120, 53, 15, 0.45);
           font-size: 0.8rem;
-          font-weight: 700;
-          text-align: center;
+          font-weight: 800;
           letter-spacing: 0.01em;
+        }
+
+        .navbar-alert-badge {
+          flex-shrink: 0;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          padding: 0.18rem 0.55rem;
+          border-radius: 999px;
+          background: #1f1300;
+          color: #fde68a;
+          font-size: 0.68rem;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .navbar-alert-marquee {
+          flex: 1;
+          min-width: 0;
+          overflow: hidden;
+          -webkit-mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+        }
+
+        .navbar-alert-track {
+          display: flex;
+          width: max-content;
+          animation: navbar-alert-scroll 60s linear infinite;
+        }
+
+        /* Se detiene al pasar el cursor para poder leer con calma */
+        .navbar-alert-marquee:hover .navbar-alert-track {
+          animation-play-state: paused;
+        }
+
+        .navbar-alert-list {
+          display: flex;
+          flex-shrink: 0;
+          margin: 0;
+          padding: 0;
+          list-style: none;
+        }
+
+        .navbar-alert-list li {
+          white-space: nowrap;
+        }
+
+        .navbar-alert-list li::after {
+          content: '•';
+          margin: 0 1.4rem;
+          opacity: 0.6;
+        }
+
+        @keyframes navbar-alert-scroll {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
         }
 
         .navbar-alert button {
@@ -390,10 +473,42 @@ function Navbar() {
           transform: translateY(-50%);
           border: none;
           background: transparent;
-          color: var(--text-muted);
-          font-size: 1.2rem;
+          color: #1f1300;
+          font-size: 1.3rem;
           cursor: pointer;
           line-height: 1;
+          opacity: 0.75;
+        }
+
+        .navbar-alert button:hover {
+          opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+          .navbar-alert-badge-text {
+            display: none;
+          }
+        }
+
+        /* Sin animación si el usuario lo prefiere: se muestra solo el primer mensaje */
+        @media (prefers-reduced-motion: reduce) {
+          .navbar-alert-track {
+            animation: none;
+            width: auto;
+          }
+          .navbar-alert-list:nth-child(2),
+          .navbar-alert-list li:not(:first-child),
+          .navbar-alert-list li::after {
+            display: none;
+          }
+          .navbar-alert-list li {
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .navbar-alert-marquee {
+            -webkit-mask-image: none;
+            mask-image: none;
+          }
         }
 
         .navbar-bar {

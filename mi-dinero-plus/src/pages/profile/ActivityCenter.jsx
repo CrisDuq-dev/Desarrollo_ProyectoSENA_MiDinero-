@@ -403,7 +403,8 @@ function ActivityCenter() {
         .hero-text p {
           margin: 0;
           color: var(--text-muted);
-          max-width: 46rem;
+          max-width: none;
+          text-wrap: pretty;
           overflow-wrap: anywhere;
           font-size: 0.92rem;
           font-weight: 500;

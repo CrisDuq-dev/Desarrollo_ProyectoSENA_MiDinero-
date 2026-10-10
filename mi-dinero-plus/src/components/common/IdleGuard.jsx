@@ -65,7 +65,6 @@ function IdleGuard() {
   const sessionRevoked = useRef(false)
   const cardRef = useRef(null)
   const primaryRef = useRef(null)
-
   const open = phase !== 'active' && !logoutState
 
   useEffect(() => {
@@ -161,7 +160,7 @@ function IdleGuard() {
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.stopPropagation()
-        latest.current.keepSession()
+        latest.current.keepSession() 
         return
       }
       if (e.key !== 'Tab' || !cardRef.current) return

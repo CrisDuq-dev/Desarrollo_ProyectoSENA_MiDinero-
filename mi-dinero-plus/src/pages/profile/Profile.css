@@ -20,7 +20,6 @@
   overflow-x: hidden;
 }
 
-/* —— Hero —— */
 .profile-page .profile-hero {
   display: grid;
   grid-template-columns: 1fr 1.05fr;
@@ -93,7 +92,6 @@
   word-break: break-word;
 }
 
-/* Nivel + barra de progreso al siguiente nivel */
 .profile-page .level-block {
   margin-top: 0.85rem;
   max-width: 24rem;
@@ -169,7 +167,6 @@
   background: rgba(124, 58, 237, 0.08);
 }
 
-/* —— Momentum —— */
 .profile-page .momentum {
   position: relative;
 }
@@ -223,7 +220,6 @@
   color: var(--profile-blue);
 }
 
-/* Número protagonista: puntos acumulados + cuánto subió o bajó */
 .profile-page .momentum-score {
   display: flex;
   align-items: baseline;
@@ -268,7 +264,6 @@
   color: var(--profile-blue);
 }
 
-/* Reglas de puntos (icono i) */
 .profile-page .momentum-rules {
   position: absolute;
   top: 2.4rem;
@@ -327,7 +322,6 @@
   min-width: 0;
 }
 
-/* —— Mid: menú + stats —— */
 .profile-page .profile-mid {
   display: grid;
   grid-template-columns: 1.2fr 0.9fr;
@@ -483,14 +477,12 @@
   color: var(--profile-purple);
 }
 
-/* —— Paneles —— */
 .profile-page .profile-panel {
   margin-top: 1.25rem;
   max-width: 560px;
   scroll-margin-top: 88px;
 }
 
-/* Editor avatar: cuadro a la izquierda en desktop */
 .profile-page .avatar-editor-anchor {
   margin-top: 1.25rem;
   scroll-margin-top: 88px;
@@ -592,7 +584,6 @@
   margin: 1rem 0;
 }
 
-/* Botones scoped (no hereda sombra roja de Deudas) */
 .profile-page .primary-button,
 .profile-page .secondary-button,
 .profile-page .danger-button {
@@ -694,7 +685,6 @@
   font-size: 0.9rem;
 }
 
-/* —— Responsive —— */
 @media (prefers-reduced-motion: reduce) {
   .profile-page .stats-row.with-anim .stat-box {
     animation: none;
@@ -808,7 +798,6 @@
   }
 }
 
-/* ---- Avatar mientras carga el perfil (sin mostrar uno genérico) ---- */
 .profile-page .avatar-skeleton {
   display: block;
   width: 130px;
@@ -834,7 +823,6 @@
   .profile-page .avatar-skeleton { animation: none; }
 }
 
-/* ---- Curva de impulso ---- */
 .profile-page .momentum-chart-wrap .recharts-surface {
   overflow: visible;
 }

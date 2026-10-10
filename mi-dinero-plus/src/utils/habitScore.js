@@ -78,7 +78,7 @@ export function collectEvents({ transactions = [], goals = [], debts = [] } = {}
     const list = Array.isArray(g.contributions) ? g.contributions : []
     list.forEach((c) => add(c?.date, 'goalContribution'))
     if (list.length === 0 && Number(g.currentAmount) > 0) {
-      add(g.createdAt, 'goalContribution')
+      add(g.createdAt, 'goalContribution') 
     }
 
     if (g.status === 'completed') {
@@ -99,7 +99,7 @@ export function collectEvents({ transactions = [], goals = [], debts = [] } = {}
 
     const hasProgress = isPaid || (Number.isFinite(pending) && pending < total)
     if (list.length === 0 && hasProgress) {
-      add(debt.createdAt, 'debtPayment')
+      add(debt.createdAt, 'debtPayment') 
     }
 
     if (isPaid) {
@@ -110,7 +110,7 @@ export function collectEvents({ transactions = [], goals = [], debts = [] } = {}
   return events
 }
 
-// -puntaje
+// ---------------------------------------------------------------- puntaje
 
 /**
  * Agrupa por día aplicando el tope diario y acumula el puntaje.
