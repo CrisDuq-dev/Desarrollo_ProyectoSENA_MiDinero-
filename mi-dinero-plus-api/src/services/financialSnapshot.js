@@ -1,4 +1,4 @@
-feat: implement financial snapshot service and related functions
+const pool = require('../config/db');
 
 const toNum = (value) => {
   const n = Number(value);
@@ -67,7 +67,10 @@ async function getFinancialSnapshot(userId) {
       nextDue: debts.next_due || null,
     };
   } catch (error) {
-    console.error('No se pudo calcular el resumen financiero para la IA:', error.message);
+    console.error(
+      'No se pudo calcular el resumen financiero para la IA:',
+      error.message
+    );
     return null;
   }
 }
@@ -78,11 +81,15 @@ function formatSnapshotForPrompt(snapshot) {
   const lines = [];
 
   if (snapshot.txCount > 0) {
-    lines.push(`- Balance total (ingresos menos gastos): ${formatCOP(snapshot.balance)} COP`);
+    lines.push(
+      `- Balance total (ingresos menos gastos): ${formatCOP(snapshot.balance)} COP`
+    );
     if (snapshot.income30d > 0 || snapshot.expense30d > 0) {
       let line = `- Últimos 30 días: ingresos ${formatCOP(snapshot.income30d)}, gastos ${formatCOP(snapshot.expense30d)}`;
       if (snapshot.income30d > 0) {
-        const pct = Math.round((snapshot.expense30d / snapshot.income30d) * 100);
+        const pct = Math.round(
+          (snapshot.expense30d / snapshot.income30d) * 100
+        );
         line += ` (los gastos equivalen al ${pct} % de los ingresos)`;
       }
       lines.push(line);
@@ -94,7 +101,9 @@ function formatSnapshotForPrompt(snapshot) {
   if (snapshot.goalCount > 0) {
     let line = `- Metas: ${snapshot.goalCount} en total, ${snapshot.goalsCompleted} cumplidas`;
     if (snapshot.targetTotal > 0) {
-      const pct = Math.round((snapshot.savedTotal / snapshot.targetTotal) * 100);
+      const pct = Math.round(
+        (snapshot.savedTotal / snapshot.targetTotal) * 100
+      );
       line += `; ahorrado ${formatCOP(snapshot.savedTotal)} de ${formatCOP(snapshot.targetTotal)} (${pct} %)`;
     }
     lines.push(line);
@@ -113,4 +122,8 @@ function formatSnapshotForPrompt(snapshot) {
   return lines.join('\n');
 }
 
-module.exports = { getFinancialSnapshot, formatSnapshotForPrompt, formatCOP };
+module.exports = {
+  getFinancialSnapshot,
+  formatSnapshotForPrompt,
+  formatCOP,
+};
