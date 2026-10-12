@@ -484,7 +484,7 @@
   overflow-x: auto;
 }
 
-/* Escritorio: solo tabla */
+/* Desktop: table only */
 .dash-tx-table-view {
   display: block;
 }
@@ -550,6 +550,12 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
+}
+
+.transactions-table th:nth-child(2),
+.transactions-table td:nth-child(2) {
+  text-align: left;
+  padding-left: 0.75rem;
 }
 
 .transactions-table td {
