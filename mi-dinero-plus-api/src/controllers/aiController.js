@@ -9,7 +9,7 @@ const {
 const apiKey = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 25000;
 
 const ALLOWED_LEVELS = new Set(['basic', 'intermediate', 'advanced']);
 
@@ -348,7 +348,7 @@ const getMundoPlusReply = async (req, res) => {
         ...historyMessages,
         { role: 'user', content: message },
       ],
-      { temperature: 0.6, maxTokens: 700 }
+      { temperature: 0.6, maxTokens: 1100 }
     );
 
     if (!response.ok) {
@@ -376,7 +376,7 @@ const getMundoPlusReply = async (req, res) => {
       question && question.length <= 220 && FINANCE_QUESTION_RE.test(question)
         ? question
         : pickFinanceCloser();
-    const safeBody = clipAtSentence(body, 760);
+    const safeBody = clipAtSentence(body, 1200);
 
     return res.json({ reply: safeBody ? `${safeBody}\n\n${closing}` : closing });
   } catch (error) {

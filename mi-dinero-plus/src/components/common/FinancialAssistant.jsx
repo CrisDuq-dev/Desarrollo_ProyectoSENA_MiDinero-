@@ -52,7 +52,6 @@ function FinancialAssistant() {
     }
   }, [assistantState, setAssistantState])
 
-  // Si la IA se desactiva, ocultar
   useEffect(() => {
     if (!aiEnabled) {
       setAssistantState('hidden')
@@ -82,12 +81,10 @@ function FinancialAssistant() {
     }
   }
 
-  // No mostrar en Dashboard, Perfil u otras rutas
   if (!isAllowedPage) {
     return null
   }
 
-  // IA desactivada o estado oculto
   if (!aiEnabled || assistantState === 'hidden') {
     return null
   }
