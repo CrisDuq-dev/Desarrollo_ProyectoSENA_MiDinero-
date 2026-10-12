@@ -866,3 +866,48 @@
     grid-area: del;
   }
 }
+
+.tx-history-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.tx-history-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border, rgba(148, 163, 184, 0.2));
+}
+
+.tx-history-section-head h3 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.tx-history-section-head.income h3 {
+  color: var(--tx-green);
+}
+
+.tx-history-section-head.expense h3 {
+  color: var(--tx-red);
+}
+
+.tx-history-section-head span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+}
+
+.tx-section-empty {
+  margin: 0;
+  padding: 0.65rem 0.25rem 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+}

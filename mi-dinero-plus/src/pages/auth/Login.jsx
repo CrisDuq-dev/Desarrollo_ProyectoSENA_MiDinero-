@@ -143,7 +143,7 @@ function Login() {
     setCorreo(ADMIN_USER)
     setPassword(ADMIN_PASS)
     setErrores({})
-    setInfo('Credenciales cargadas. Pulsa «Iniciar sesión».')
+    setInfo('Credenciales cargadas. Pulsa: Iniciar sesión.')
     try {
       await navigator.clipboard.writeText(
         `Usuario: ${ADMIN_USER}\nContraseña: ${ADMIN_PASS}`

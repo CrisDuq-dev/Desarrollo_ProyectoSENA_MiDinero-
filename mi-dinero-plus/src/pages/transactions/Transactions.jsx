@@ -155,6 +155,16 @@ function Transactions() {
     })
   }, [sortedTransactions, searchQuery])
 
+  const incomeTransactions = useMemo(
+    () => filteredTransactions.filter((tx) => tx.type === 'income'),
+    [filteredTransactions]
+  )
+
+  const expenseTransactions = useMemo(
+    () => filteredTransactions.filter((tx) => tx.type === 'expense'),
+    [filteredTransactions]
+  )
+
   const adviceForThisPage =
     aiEnabled &&
     aiSource === MODULE &&
@@ -524,76 +534,153 @@ function Transactions() {
                   No se encontró ningún movimiento con “{searchQuery.trim()}”.
                 </p>
               ) : (
-                <ul className="tx-list">
-                  {filteredTransactions.map((tx) => {
-                    const isIncome = tx.type === 'income'
-                    const fxHint = formatHistoricalFx(
-                      tx.amount,
-                      tx.rateUsdAtCreate,
-                      tx.rateEurAtCreate
-                    )
-                    const isEditing = editingId === tx.id
-                    return (
-                      <li
-                        key={tx.id}
-                        className={`tx-row${isEditing ? ' is-editing' : ''}`}
-                      >
-                        <div
-                          className={`tx-row-icon ${
-                            isIncome ? 'income' : 'expense'
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {isIncome ? (
-                            <FiArrowUp size={16} />
-                          ) : (
-                            <FiArrowDown size={16} />
-                          )}
-                        </div>
-                        <div className="tx-row-info">
-                          <strong>{tx.description}</strong>
-                          <span>
-                            {tx.category} · {formatTxDate(tx.date)}
-                          </span>
-                        </div>
-                        <div
-                          className={`tx-row-amount ${
-                            isIncome ? 'income' : 'expense'
-                          }`}
-                        >
-                          <span className="tx-row-main">
-                            {isIncome ? '+' : '-'}
-                            {formatMoney(tx.amount)}
-                          </span>
-                          {fxHint && (
-                            <span
-                              className="tx-row-fx"
-                              title="Conversión y tasa del día congeladas al registrar el movimiento"
+                <div className="tx-history-sections">
+                  {/* INGRESOS */}
+                  <div className="tx-history-section">
+                    <div className="tx-history-section-head income">
+                      <h3>Ingresos</h3>
+                      <span>
+                        {incomeTransactions.length} ingreso
+                        {incomeTransactions.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    {incomeTransactions.length === 0 ? (
+                      <p className="tx-section-empty">Sin ingresos en este filtro.</p>
+                    ) : (
+                      <ul className="tx-list">
+                        {incomeTransactions.map((tx) => {
+                          const fxHint = formatHistoricalFx(
+                            tx.amount,
+                            tx.rateUsdAtCreate,
+                            tx.rateEurAtCreate
+                          )
+                          const isEditing = editingId === tx.id
+                          return (
+                            <li
+                              key={tx.id}
+                              className={`tx-row${isEditing ? ' is-editing' : ''}`}
                             >
-                              {fxHint}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          className="tx-row-edit"
-                          aria-label="Editar"
-                          onClick={() => abrirEdicion(tx)}
-                        >
-                          <FiEdit2 size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          className="tx-row-del"
-                          aria-label="Eliminar"
-                          onClick={() => setConfirmDelete(tx.id)}
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
+                              <div
+                                className="tx-row-icon income"
+                                aria-hidden="true"
+                              >
+                                <FiArrowUp size={16} />
+                              </div>
+                              <div className="tx-row-info">
+                                <strong>{tx.description}</strong>
+                                <span>
+                                  {tx.category} · {formatTxDate(tx.date)}
+                                </span>
+                              </div>
+                              <div className="tx-row-amount income">
+                                <span className="tx-row-main">
+                                  +{formatMoney(tx.amount)}
+                                </span>
+                                {fxHint && (
+                                  <span
+                                    className="tx-row-fx"
+                                    title="Conversión y tasa del día congeladas al registrar el movimiento"
+                                  >
+                                    {fxHint}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                className="tx-row-edit"
+                                aria-label="Editar"
+                                onClick={() => abrirEdicion(tx)}
+                              >
+                                <FiEdit2 size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                className="tx-row-del"
+                                aria-label="Eliminar"
+                                onClick={() => setConfirmDelete(tx.id)}
+                              >
+                                <FiTrash2 size={16} />
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* GASTOS */}
+                  <div className="tx-history-section">
+                    <div className="tx-history-section-head expense">
+                      <h3>Gastos</h3>
+                      <span>
+                        {expenseTransactions.length} gasto
+                        {expenseTransactions.length === 1 ? '' : 's'}
+                      </span>
+                    </div>
+                    {expenseTransactions.length === 0 ? (
+                      <p className="tx-section-empty">Sin gastos en este filtro.</p>
+                    ) : (
+                      <ul className="tx-list">
+                        {expenseTransactions.map((tx) => {
+                          const fxHint = formatHistoricalFx(
+                            tx.amount,
+                            tx.rateUsdAtCreate,
+                            tx.rateEurAtCreate
+                          )
+                          const isEditing = editingId === tx.id
+                          return (
+                            <li
+                              key={tx.id}
+                              className={`tx-row${isEditing ? ' is-editing' : ''}`}
+                            >
+                              <div
+                                className="tx-row-icon expense"
+                                aria-hidden="true"
+                              >
+                                <FiArrowDown size={16} />
+                              </div>
+                              <div className="tx-row-info">
+                                <strong>{tx.description}</strong>
+                                <span>
+                                  {tx.category} · {formatTxDate(tx.date)}
+                                </span>
+                              </div>
+                              <div className="tx-row-amount expense">
+                                <span className="tx-row-main">
+                                  -{formatMoney(tx.amount)}
+                                </span>
+                                {fxHint && (
+                                  <span
+                                    className="tx-row-fx"
+                                    title="Conversión y tasa del día congeladas al registrar el movimiento"
+                                  >
+                                    {fxHint}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                className="tx-row-edit"
+                                aria-label="Editar"
+                                onClick={() => abrirEdicion(tx)}
+                              >
+                                <FiEdit2 size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                className="tx-row-del"
+                                aria-label="Eliminar"
+                                onClick={() => setConfirmDelete(tx.id)}
+                              >
+                                <FiTrash2 size={16} />
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                </div>
               )}
             </section>
           </div>
