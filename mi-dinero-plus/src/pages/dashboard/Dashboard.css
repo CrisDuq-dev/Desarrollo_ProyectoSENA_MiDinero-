@@ -514,7 +514,7 @@
 .transactions-table td:nth-child(2) {
   width: 26%;
   text-align: left;
-  padding-left: 1rem;
+  padding-left: 1.75rem;
 }
 
 .transactions-table th:nth-child(3),
