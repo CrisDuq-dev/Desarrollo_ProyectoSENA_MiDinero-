@@ -42,7 +42,7 @@
   background: var(--dash-glass);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 0.9rem 1rem;
+  padding: 1.15rem 1.25rem;
   border-radius: 1rem;
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
@@ -58,12 +58,12 @@
 }
 
 .dashboard-greeting .eyebrow {
-  margin: 0 0 0.28rem;
+  margin: 0 0 0.35rem;
   display: flex;
   align-items: center;
   gap: 0.4rem;
   font-family: inherit;
-  font-size: 1.18rem;
+  font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.25;
@@ -85,8 +85,8 @@
 }
 
 .dashboard-greeting h1 {
-  margin: 0 0 0.3rem;
-  font-size: clamp(1.22rem, 2vw, 1.42rem);
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.45rem, 2.4vw, 1.75rem);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -95,9 +95,9 @@
 
 .greeting-text .greeting-sub {
   margin: 0;
-  max-width: 32rem;
-  font-size: 0.85rem;
-  line-height: 1.45;
+  max-width: 36rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
   color: var(--text-muted);
 }
 
@@ -487,22 +487,43 @@
 .transactions-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   min-width: 720px;
 }
 
-/* Tarjetas ocultas en escritorio */
-.dash-tx-cards {
-  display: none;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  gap: 0.65rem;
-}
+.transactions-table th:nth-child(1),
+.transactions-table td:nth-child(1) {
+  width: 11%;
+} /* Fecha */
+
+.transactions-table th:nth-child(2),
+.transactions-table td:nth-child(2) {
+  width: 24%;
+} /* Descripción */
+
+.transactions-table th:nth-child(3),
+.transactions-table td:nth-child(3) {
+  width: 11%;
+} /* Tipo */
+
+.transactions-table th:nth-child(4),
+.transactions-table td:nth-child(4) {
+  width: 14%;
+} /* Monto */
+
+.transactions-table th:nth-child(5),
+.transactions-table td:nth-child(5) {
+  width: 20%;
+} /* Conversión */
+
+.transactions-table th:nth-child(6),
+.transactions-table td:nth-child(6) {
+  width: 20%;
+} /* Tasa del día */
 
 .transactions-table th,
 .transactions-table td {
-  text-align: left;
-  padding: 0.75rem 0.65rem;
+  padding: 0.75rem 0.5rem;
   border-bottom: 1px solid var(--border);
   color: var(--text-primary);
   font-size: 0.9rem;
@@ -510,11 +531,20 @@
 }
 
 .transactions-table th {
+  text-align: center;
   font-weight: 700;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-muted);
+}
+
+.transactions-table td {
+  text-align: center;
+}
+
+.transactions-table td:nth-child(2) {
+  text-align: left;
 }
 
 .transactions-table tbody tr:hover {
