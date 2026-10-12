@@ -484,7 +484,7 @@
   overflow-x: auto;
 }
 
-/* Desktop: table only */
+/* Escritorio: solo tabla */
 .dash-tx-table-view {
   display: block;
 }
@@ -506,12 +506,15 @@
 
 .transactions-table th:nth-child(1),
 .transactions-table td:nth-child(1) {
-  width: 11%;
+  width: 10%;
+  padding-right: 0.35rem;
 }
 
 .transactions-table th:nth-child(2),
 .transactions-table td:nth-child(2) {
-  width: 24%;
+  width: 26%;
+  text-align: left;
+  padding-left: 1rem;
 }
 
 .transactions-table th:nth-child(3),
@@ -552,18 +555,14 @@
   color: var(--text-muted);
 }
 
-.transactions-table th:nth-child(2),
-.transactions-table td:nth-child(2) {
-  text-align: left;
-  padding-left: 0.75rem;
-}
-
 .transactions-table td {
   text-align: center;
 }
 
+.transactions-table th:nth-child(2),
 .transactions-table td:nth-child(2) {
   text-align: left;
+  padding-left: 1rem;
 }
 
 .transactions-table tbody tr:hover {
@@ -856,7 +855,6 @@
 }
 
 @media (max-width: 768px) {
-  /* Móvil / tablet: solo tarjetas, sin tabla */
   .dash-tx-table-view {
     display: none;
   }
