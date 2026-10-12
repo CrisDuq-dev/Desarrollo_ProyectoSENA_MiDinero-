@@ -484,6 +484,19 @@
   overflow-x: auto;
 }
 
+/* Escritorio: solo tabla */
+.dash-tx-table-view {
+  display: block;
+}
+
+.dash-tx-cards {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0.65rem;
+}
+
 .transactions-table {
   width: 100%;
   border-collapse: collapse;
@@ -494,32 +507,32 @@
 .transactions-table th:nth-child(1),
 .transactions-table td:nth-child(1) {
   width: 11%;
-} /* Fecha */
+}
 
 .transactions-table th:nth-child(2),
 .transactions-table td:nth-child(2) {
   width: 24%;
-} /* Descripción */
+}
 
 .transactions-table th:nth-child(3),
 .transactions-table td:nth-child(3) {
   width: 11%;
-} /* Tipo */
+}
 
 .transactions-table th:nth-child(4),
 .transactions-table td:nth-child(4) {
   width: 14%;
-} /* Monto */
+}
 
 .transactions-table th:nth-child(5),
 .transactions-table td:nth-child(5) {
   width: 20%;
-} /* Conversión */
+}
 
 .transactions-table th:nth-child(6),
 .transactions-table td:nth-child(6) {
   width: 20%;
-} /* Tasa del día */
+}
 
 .transactions-table th,
 .transactions-table td {
@@ -836,59 +849,16 @@
   }
 }
 
-@media (max-width: 640px) {
-  .dashboard-page {
-    padding: 0.75rem;
-    gap: 0.9rem;
-  }
-
-  .dashboard-summary-grid {
-    grid-template-columns: 1fr;
-  }
-
-  /* rates-grid-equal es flex, no grid */
-  .rates-grid-equal {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .rate-value {
-    font-size: 1rem;
-  }
-
-  .rates-title {
-    font-size: 0.68rem;
-  }
-
-  .rates-note {
-    font-size: 0.7rem;
-  }
-
-  .section-header,
-  .panel-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.65rem;
-  }
-
-  .secondary-button {
-    align-self: flex-start;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-  }
-
+@media (max-width: 768px) {
+  /* Móvil / tablet: solo tarjetas, sin tabla */
   .dash-tx-table-view {
     display: none;
-  }
-
-  .transactions-table {
-    min-width: 0;
   }
 
   .dash-tx-cards {
     display: flex;
     flex-direction: column;
+    gap: 0.65rem;
   }
 
   .dash-tx-card {
@@ -928,6 +898,52 @@
     font-size: 0.78rem;
     color: var(--text-muted);
     overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-page {
+    padding: 0.75rem;
+    gap: 0.9rem;
+  }
+
+  .dashboard-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rates-grid-equal {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .rate-value {
+    font-size: 1rem;
+  }
+
+  .rates-title {
+    font-size: 0.68rem;
+  }
+
+  .rates-note {
+    font-size: 0.7rem;
+  }
+
+  .section-header,
+  .panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .secondary-button {
+    align-self: flex-start;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .transactions-table {
+    min-width: 0;
   }
 }
 
