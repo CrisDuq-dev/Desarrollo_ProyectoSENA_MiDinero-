@@ -504,6 +504,28 @@
   min-width: 720px;
 }
 
+.transactions-table th,
+.transactions-table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.transactions-table th {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.transactions-table td {
+  text-align: center;
+}
+
 .transactions-table th:nth-child(1),
 .transactions-table td:nth-child(1) {
   width: 9%;
@@ -535,6 +557,10 @@
 .transactions-table th:nth-child(6),
 .transactions-table td:nth-child(6) {
   width: 20%;
+}
+
+.transactions-table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.04);
 }
 
 .transactions-table th,
