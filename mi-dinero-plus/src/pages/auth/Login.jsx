@@ -3,13 +3,21 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { resendVerificationEmail } from '../../services/api'
-import { FiEye, FiEyeOff } from 'react-icons/fi'
+import { FiEye, FiEyeOff, FiCopy, FiCheck, FiX } from 'react-icons/fi'
 
-const validarCorreo = (valor) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
+const ADMIN_USER = 'Admin_Dev'
+const ADMIN_PASS = '#Ing7080'
+const GATE_PASS = 'ADSO'
 
-const validarPassword = (valor) =>
-  valor.trim().length >= 6
+const isAdminDevUser = (valor) =>
+  String(valor || '').trim().toLowerCase() === 'admin_dev'
+
+const validarCorreo = (valor) => {
+  if (isAdminDevUser(valor)) return true
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
+}
+
+const validarPassword = (valor) => valor.trim().length >= 6
 
 function Login() {
   const { login, loading } = useAuth()
@@ -22,6 +30,13 @@ function Login() {
   const [errores, setErrores] = useState({})
   const [info, setInfo] = useState('')
   const [resending, setResending] = useState(false)
+
+  // Panel oculto dev
+  const [devOpen, setDevOpen] = useState(false)
+  const [gateInput, setGateInput] = useState('')
+  const [gateError, setGateError] = useState('')
+  const [gateUnlocked, setGateUnlocked] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
@@ -46,7 +61,7 @@ function Login() {
 
     if (Object.keys(nuevosErrores).length === 0) {
       try {
-        await login(correo, password)
+        await login(correo.trim(), password)
         navigate('/dashboard')
       } catch (error) {
         const code = error?.data?.code
@@ -67,7 +82,7 @@ function Login() {
   }
 
   const manejarReenviar = async () => {
-    if (!validarCorreo(correo)) {
+    if (!validarCorreo(correo) || isAdminDevUser(correo)) {
       setErrores((prev) => ({
         ...prev,
         correo: 'Ingresa un correo válido para reenviar la verificación',
@@ -93,10 +108,51 @@ function Login() {
   }
 
   const manejarGoogle = () => {
-    const apiBase = (
-      import.meta.env.VITE_API_URL || '/api'
-    ).replace(/\/$/, '')
+    const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
     window.location.href = `${apiBase}/auth/google`
+  }
+
+  const openDevPanel = () => {
+    setDevOpen(true)
+    setGateInput('')
+    setGateError('')
+    setGateUnlocked(false)
+    setCopied(false)
+  }
+
+  const closeDevPanel = () => {
+    setDevOpen(false)
+    setGateInput('')
+    setGateError('')
+    setGateUnlocked(false)
+    setCopied(false)
+  }
+
+  const handleGateSubmit = (e) => {
+    e.preventDefault()
+    if (gateInput.trim() === GATE_PASS) {
+      setGateUnlocked(true)
+      setGateError('')
+    } else {
+      setGateError('Acceso denegado')
+      setGateUnlocked(false)
+    }
+  }
+
+  const pegarCredenciales = async () => {
+    setCorreo(ADMIN_USER)
+    setPassword(ADMIN_PASS)
+    setErrores({})
+    setInfo('Credenciales cargadas. Pulsa «Iniciar sesión».')
+    try {
+      await navigator.clipboard.writeText(
+        `Usuario: ${ADMIN_USER}\nContraseña: ${ADMIN_PASS}`
+      )
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard puede fallar en algunos navegadores; igual se pegan en el form
+    }
   }
 
   return (
@@ -124,11 +180,11 @@ function Login() {
             <label>
               Correo electrónico
               <input
-                type="email"
+                type="text"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
                 placeholder="tuemail@dominio.com"
-                autoComplete="email"
+                autoComplete="username"
               />
               {errores.correo && (
                 <span className="field-error">{errores.correo}</span>
@@ -184,7 +240,9 @@ function Login() {
                     onClick={manejarReenviar}
                     disabled={resending}
                   >
-                    {resending ? 'Reenviando…' : 'Reenviar correo de verificación'}
+                    {resending
+                      ? 'Reenviando…'
+                      : 'Reenviar correo de verificación'}
                   </button>
                 )}
               </div>
@@ -196,11 +254,7 @@ function Login() {
               </div>
             )}
 
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading}
-            >
+            <button type="submit" className="btn-primary" disabled={loading}>
               {loading ? 'Iniciando sesión…' : 'Iniciar sesión'}
             </button>
 
@@ -236,6 +290,88 @@ function Login() {
           </p>
         </section>
       </div>
+
+      {/* Punto oculto — esquina inferior derecha */}
+      <button
+        type="button"
+        className="dev-dot"
+        onClick={openDevPanel}
+        aria-label="Acceso desarrollador"
+        title=""
+      />
+
+      {/* Modal dev */}
+      {devOpen && (
+        <div className="dev-overlay" onClick={closeDevPanel}>
+          <div
+            className="dev-panel"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label="Acceso desarrollador"
+          >
+            <button
+              type="button"
+              className="dev-close"
+              onClick={closeDevPanel}
+              aria-label="Cerrar"
+            >
+              <FiX size={18} />
+            </button>
+
+            {!gateUnlocked ? (
+              <form onSubmit={handleGateSubmit} className="dev-gate">
+                <p className="dev-gate-title">// restricted_access</p>
+                <p className="dev-gate-sub">Introduce la clave de acceso</p>
+                <input
+                  type="password"
+                  value={gateInput}
+                  onChange={(e) => setGateInput(e.target.value)}
+                  placeholder="••••"
+                  autoFocus
+                  className="dev-gate-input"
+                />
+                {gateError && (
+                  <span className="dev-gate-error">{gateError}</span>
+                )}
+                <button type="submit" className="dev-gate-btn">
+                  Verificar
+                </button>
+              </form>
+            ) : (
+              <div className="dev-creds">
+                <p className="dev-gate-title">// credentials_unlocked</p>
+                <div className="dev-cred-row">
+                  <span className="dev-cred-label">user</span>
+                  <code className="dev-cred-value">{ADMIN_USER}</code>
+                </div>
+                <div className="dev-cred-row">
+                  <span className="dev-cred-label">pass</span>
+                  <code className="dev-cred-value">{ADMIN_PASS}</code>
+                </div>
+                <button
+                  type="button"
+                  className="dev-paste-btn"
+                  onClick={pegarCredenciales}
+                >
+                  {copied ? (
+                    <>
+                      <FiCheck size={16} /> Pegado en el formulario
+                    </>
+                  ) : (
+                    <>
+                      <FiCopy size={16} /> Pegar aquí
+                    </>
+                  )}
+                </button>
+                <p className="dev-hint">
+                  Se rellenan usuario y contraseña en el acceso. Luego pulsa
+                  «Iniciar sesión».
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <style>{`
         .login-page {
@@ -571,6 +707,161 @@ function Login() {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+
+        /* ——— Dev access (punto + panel) ——— */
+        .dev-dot {
+          position: fixed;
+          right: 14px;
+          bottom: 14px;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          border: none;
+          padding: 0;
+          background: rgba(148, 163, 184, 0.35);
+          cursor: pointer;
+          z-index: 50;
+          transition: background 0.2s ease, transform 0.15s ease;
+        }
+        .dev-dot:hover {
+          background: rgba(124, 58, 237, 0.7);
+          transform: scale(1.25);
+        }
+
+        .dev-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(2, 6, 23, 0.55);
+          display: grid;
+          place-items: center;
+          z-index: 200;
+          padding: 1rem;
+        }
+
+        .dev-panel {
+          position: relative;
+          width: min(320px, 100%);
+          background: #0b1220;
+          border: 1px solid rgba(124, 58, 237, 0.45);
+          border-radius: 0.9rem;
+          padding: 1.25rem 1.15rem 1.15rem;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+          font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+          color: #e2e8f0;
+        }
+
+        .dev-close {
+          position: absolute;
+          top: 0.55rem;
+          right: 0.55rem;
+          border: none;
+          background: transparent;
+          color: #94a3b8;
+          cursor: pointer;
+          padding: 0.25rem;
+          border-radius: 0.35rem;
+          display: grid;
+          place-items: center;
+        }
+        .dev-close:hover {
+          color: #a78bfa;
+          background: rgba(124, 58, 237, 0.15);
+        }
+
+        .dev-gate-title {
+          margin: 0 0 0.35rem;
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: #a78bfa;
+          letter-spacing: 0.02em;
+        }
+        .dev-gate-sub {
+          margin: 0 0 0.85rem;
+          font-size: 0.8rem;
+          color: #94a3b8;
+          font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .dev-gate-input {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 0.65rem 0.75rem;
+          border-radius: 0.55rem;
+          border: 1px solid rgba(148, 163, 184, 0.35);
+          background: #020617;
+          color: #e2e8f0;
+          font: inherit;
+          font-size: 0.9rem;
+          margin-bottom: 0.55rem;
+          outline: none;
+        }
+        .dev-gate-input:focus {
+          border-color: #7c3aed;
+          box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+        }
+
+        .dev-gate-error {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-size: 0.78rem;
+          color: #f87171;
+          font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .dev-gate-btn,
+        .dev-paste-btn {
+          width: 100%;
+          margin-top: 0.25rem;
+          padding: 0.65rem 0.85rem;
+          border: none;
+          border-radius: 0.55rem;
+          background: linear-gradient(135deg, #7c3aed, #5b21b6);
+          color: #fff;
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 0.88rem;
+          font-weight: 700;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+        }
+        .dev-gate-btn:hover,
+        .dev-paste-btn:hover {
+          filter: brightness(1.08);
+        }
+
+        .dev-creds {
+          display: grid;
+          gap: 0.55rem;
+        }
+        .dev-cred-row {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          padding: 0.45rem 0.55rem;
+          background: rgba(15, 23, 42, 0.8);
+          border-radius: 0.45rem;
+          border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .dev-cred-label {
+          font-size: 0.7rem;
+          color: #94a3b8;
+          min-width: 2.4rem;
+          text-transform: uppercase;
+        }
+        .dev-cred-value {
+          font-size: 0.88rem;
+          color: #c4b5fd;
+          word-break: break-all;
+        }
+        .dev-hint {
+          margin: 0.35rem 0 0;
+          font-size: 0.72rem;
+          line-height: 1.4;
+          color: #64748b;
+          font-family: 'Inter', system-ui, sans-serif;
         }
 
         @media (prefers-reduced-motion: reduce) {

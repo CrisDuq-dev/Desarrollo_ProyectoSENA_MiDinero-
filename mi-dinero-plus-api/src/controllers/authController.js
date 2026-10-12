@@ -149,8 +149,17 @@ const register = async (req, res) => {
 // LOGIN
 // =====================
 const login = async (req, res) => {
-  const email = normalizeEmail(req.body.email)
+  const rawEmail = String(req.body.email || '').trim()
   const password = req.body.password
+
+  // Admin_Dev (sin @) → email interno
+  const isAdminDev =
+    rawEmail.toLowerCase() === 'admin_dev' ||
+    rawEmail.toLowerCase() === 'admin_dev@midinero.local'
+
+  const email = isAdminDev
+    ? 'admin_dev@midinero.local'
+    : normalizeEmail(rawEmail)
 
   if (!email || !password) {
     return res
@@ -158,7 +167,7 @@ const login = async (req, res) => {
       .json({ message: 'Correo y contraseña son obligatorios' })
   }
 
-  if (!EMAIL_RE.test(email)) {
+  if (!isAdminDev && !EMAIL_RE.test(email)) {
     return res.status(401).json({ message: 'Credenciales incorrectas' })
   }
 
