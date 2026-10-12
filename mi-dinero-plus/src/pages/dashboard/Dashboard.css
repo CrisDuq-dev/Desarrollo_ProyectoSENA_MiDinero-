@@ -528,17 +528,16 @@
 
 .transactions-table th:nth-child(1),
 .transactions-table td:nth-child(1) {
-  width: 11%;
-  padding-left: 1.75rem;
-  padding-right: 0.5rem;
-  text-align: left;
+  width: 14% !important;
+  padding-left: 2.2rem !important;
+  text-align: left !important;
 }
 
 .transactions-table th:nth-child(2),
 .transactions-table td:nth-child(2) {
-  width: 25%; 
-  padding-left: 1.25rem;
-  text-align: left;
+  width: 22% !important;
+  padding-left: 0.5rem !important;
+  text-align: left !important;
 }
 
 .transactions-table th:nth-child(3),
