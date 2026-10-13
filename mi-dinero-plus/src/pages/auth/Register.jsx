@@ -45,24 +45,28 @@ const BENEFITS = [
   {
     icon: FiBarChart2,
     label: 'Controla tus gastos',
+    desc: 'Registra y clasifica cada movimiento.',
     color: '#dc2626',
     soft: 'rgba(220, 38, 38, 0.12)',
   },
   {
     icon: FiDollarSign,
     label: 'Aprende a ahorrar',
+    desc: 'Crea el hábito con aportes constantes.',
     color: '#2563eb',
     soft: 'rgba(37, 99, 235, 0.12)',
   },
   {
     icon: FiTarget,
     label: 'Cumple tus metas',
+    desc: 'Objetivos claros con avance medible.',
     color: '#16a34a',
     soft: 'rgba(22, 163, 74, 0.12)',
   },
   {
     icon: FiTrendingUp,
     label: 'Mejora tus decisiones',
+    desc: 'Orientación de la IA según tu nivel.',
     color: '#7c3aed',
     soft: 'rgba(124, 58, 237, 0.12)',
   },
@@ -182,16 +186,19 @@ function Register() {
           </div>
 
           <div className="hero-benefits">
-            {BENEFITS.map(({ icon: Icon, label, color, soft }) => (
+            {BENEFITS.map(({ icon: Icon, label, desc, color, soft }) => (
               <div key={label} className="benefit-wrap">
                 <div
                   className="benefit-item"
                   style={{ '--accent': color, '--soft': soft }}
                 >
                   <span className="benefit-icon">
-                    <Icon size={18} />
+                    <Icon size={20} />
                   </span>
-                  <span className="benefit-label">{label}</span>
+                  <span className="benefit-text">
+                    <span className="benefit-label">{label}</span>
+                    <span className="benefit-desc">{desc}</span>
+                  </span>
                 </div>
               </div>
             ))}
@@ -377,6 +384,9 @@ function Register() {
             </p>
             <p className="inst-copy">
               © 2026 Mi Dinero+. Aprendizaje y responsabilidad financiera.
+              <span className="inst-credit">
+                Desarrollado por <strong>Cristian Camilo Duque Franco</strong>
+              </span>
             </p>
           </div>
 
@@ -484,6 +494,23 @@ function Register() {
           box-shadow: 0 20px 48px rgba(37, 99, 235, 0.22);
           overflow: visible;
           min-height: 100%;
+          position: relative;
+          isolation: isolate;
+        }
+
+        /* Fondo decorativo: luces de color y cuadrícula sutil */
+        .register-hero::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          border-radius: inherit;
+          pointer-events: none;
+          background:
+            radial-gradient(420px 260px at 92% 0%, rgba(20, 184, 166, 0.38), transparent 60%),
+            radial-gradient(380px 260px at 0% 100%, rgba(124, 58, 237, 0.32), transparent 60%),
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 36px 36px,
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 36px 36px;
         }
 
         .sim-badge {
@@ -577,44 +604,76 @@ function Register() {
         }
 
         .benefit-item {
+          position: relative;
           display: flex;
-          align-items: center;
-          gap: 0.65rem;
-          padding: 0.95rem 1rem;
+          align-items: flex-start;
+          gap: 0.7rem;
+          padding: 0.9rem 0.9rem 0.95rem 1.05rem;
+          height: 100%;
+          box-sizing: border-box;
           background: #ffffff;
-          border-radius: 0.9rem;
-          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
+          border-radius: 1rem;
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16);
           text-align: left;
           cursor: default;
-          transform: scale(1);
-          transform-origin: center center;
+          overflow: hidden;
           transition:
-            transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-            box-shadow 0.35s ease;
+            transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 0.3s ease;
+        }
+
+        /* Franja de color a la izquierda */
+        .benefit-item::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          bottom: 0;
+          width: 4px;
+          background: var(--accent);
         }
 
         .benefit-item:hover {
-          transform: scale(1.035);
-          box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+          transform: translateY(-4px);
+          box-shadow: 0 16px 32px rgba(15, 23, 42, 0.26);
           z-index: 3;
+        }
+
+        .benefit-wrap {
+          overflow: visible;
         }
 
         .benefit-icon {
           display: grid;
           place-items: center;
-          width: 2.15rem;
-          height: 2.15rem;
-          border-radius: 0.55rem;
-          background: var(--soft);
-          color: var(--accent);
+          width: 2.5rem;
+          height: 2.5rem;
+          border-radius: 0.8rem;
+          background: var(--accent);
+          color: #fff;
           flex-shrink: 0;
+          box-shadow: 0 8px 16px rgba(15, 23, 42, 0.2);
+        }
+
+        .benefit-text {
+          display: flex;
+          flex-direction: column;
+          gap: 0.18rem;
+          min-width: 0;
         }
 
         .benefit-label {
-          font-size: 0.88rem;
+          font-size: 0.9rem;
           font-weight: 800;
           color: #0f172a;
-          line-height: 1.25;
+          line-height: 1.2;
+        }
+
+        .benefit-desc {
+          font-size: 0.74rem;
+          font-weight: 600;
+          color: #64748b;
+          line-height: 1.4;
         }
 
         .register-form-panel {
@@ -916,6 +975,18 @@ function Register() {
           border-top: 1px solid #334155;
           font-size: 0.78rem !important;
           color: #64748b !important;
+        }
+
+        .inst-credit {
+          display: block;
+          margin-top: 0.3rem;
+          font-size: 0.82rem;
+          color: #94a3b8;
+        }
+
+        .inst-credit strong {
+          color: #e2e8f0;
+          font-weight: 800;
         }
 
         .inst-grid {
