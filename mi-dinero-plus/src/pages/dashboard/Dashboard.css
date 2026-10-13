@@ -608,7 +608,7 @@
 .transactions-table td .dash-tx-fx,
 .transactions-table td:nth-child(5) *,
 .transactions-table td:nth-child(6) * {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 400;
 }
 
