@@ -484,6 +484,7 @@
   overflow-x: auto;
 }
 
+/* Escritorio: solo tabla */
 .dash-tx-table-view {
   display: block;
 }
@@ -510,7 +511,7 @@
 
 .transactions-table th:nth-child(2),
 .transactions-table td:nth-child(2) {
-  width: 26%;
+  width: 28%;
 } /* Descripción */
 
 .transactions-table th:nth-child(3),
@@ -520,30 +521,30 @@
 
 .transactions-table th:nth-child(4),
 .transactions-table td:nth-child(4) {
-  width: 14%;
+  width: 13%;
 } /* Monto */
 
 .transactions-table th:nth-child(5),
 .transactions-table td:nth-child(5) {
-  width: 19%;
+  width: 18.5%;
 } /* Conversión */
 
 .transactions-table th:nth-child(6),
 .transactions-table td:nth-child(6) {
-  width: 19%;
+  width: 18.5%;
 } /* Tasa del día */
 
 .transactions-table th,
 .transactions-table td {
-  padding: 0.75rem 0.65rem;
+  padding: 0.75rem 0.55rem;
   border-bottom: 1px solid var(--border);
   color: var(--text-primary);
   font-size: 0.9rem;
   vertical-align: middle;
+  text-align: center;
 }
 
 .transactions-table th {
-  text-align: center;
   font-weight: 700;
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -551,26 +552,36 @@
   color: var(--text-muted);
 }
 
-.transactions-table td {
-  text-align: center;
+.transactions-table th:nth-child(1),
+.transactions-table td:nth-child(1) {
+  padding-right: 1rem;
 }
 
 .transactions-table th:nth-child(2),
 .transactions-table td:nth-child(2) {
-  text-align: left;
-  padding-left: 1.15rem;
-  padding-right: 1rem;
-}
-
-.transactions-table th:nth-child(1),
-.transactions-table td:nth-child(1) {
-  padding-right: 0.85rem;
-}
-
-.transactions-table td:nth-child(2) {
+  text-align: center;
+  padding-left: 1.35rem;
+  padding-right: 1.1rem;
   word-break: break-word;
   overflow-wrap: anywhere;
   line-height: 1.35;
+}
+
+.transactions-table th:nth-child(3),
+.transactions-table td:nth-child(3),
+.transactions-table th:nth-child(4),
+.transactions-table td:nth-child(4) {
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+}
+
+.transactions-table th:nth-child(5),
+.transactions-table td:nth-child(5),
+.transactions-table th:nth-child(6),
+.transactions-table td:nth-child(6) {
+  padding-left: 0.45rem;
+  padding-right: 0.45rem;
+  font-size: 0.84rem;
 }
 
 .transactions-table tbody tr:hover {
@@ -903,7 +914,7 @@
     align-items: center;
   }
 
-  /* Móvil: solo tarjetas, ocultar tabla */
+  /* Móvil: solo tarjetas */
   .dash-tx-table-view {
     display: none;
   }
