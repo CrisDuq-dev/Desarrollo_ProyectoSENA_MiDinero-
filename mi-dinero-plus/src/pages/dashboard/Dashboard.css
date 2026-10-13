@@ -484,7 +484,6 @@
   overflow-x: auto;
 }
 
-/* Escritorio: solo tabla */
 .dash-tx-table-view {
   display: block;
 }
@@ -504,65 +503,35 @@
   min-width: 720px;
 }
 
-.transactions-table th,
-.transactions-table td {
-  padding: 0.75rem 0.5rem;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  vertical-align: middle;
-}
-
-.transactions-table th {
-  text-align: center;
-  font-weight: 700;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
-}
-
-.transactions-table td {
-  text-align: center;
-}
-
 .transactions-table th:nth-child(1),
 .transactions-table td:nth-child(1) {
-  width: 14% !important;
-  padding-left: 2.2rem !important;
-  text-align: left !important;
-}
+  width: 11%;
+} /* Fecha */
 
 .transactions-table th:nth-child(2),
 .transactions-table td:nth-child(2) {
-  width: 22% !important;
-  padding-left: 0.5rem !important;
-  text-align: left !important;
-}
+  width: 24%;
+} /* Descripción */
 
 .transactions-table th:nth-child(3),
 .transactions-table td:nth-child(3) {
   width: 11%;
-}
+} /* Tipo */
 
 .transactions-table th:nth-child(4),
 .transactions-table td:nth-child(4) {
   width: 14%;
-}
+} /* Monto */
 
 .transactions-table th:nth-child(5),
 .transactions-table td:nth-child(5) {
   width: 20%;
-}
+} /* Conversión */
 
 .transactions-table th:nth-child(6),
 .transactions-table td:nth-child(6) {
   width: 20%;
-}
-
-.transactions-table tbody tr:hover {
-  background: rgba(37, 99, 235, 0.04);
-}
+} /* Tasa del día */
 
 .transactions-table th,
 .transactions-table td {
@@ -586,10 +555,8 @@
   text-align: center;
 }
 
-.transactions-table th:nth-child(2),
 .transactions-table td:nth-child(2) {
   text-align: left;
-  padding-left: 1rem;
 }
 
 .transactions-table tbody tr:hover {
@@ -881,57 +848,6 @@
   }
 }
 
-@media (max-width: 768px) {
-  .dash-tx-table-view {
-    display: none;
-  }
-
-  .dash-tx-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-  }
-
-  .dash-tx-card {
-    padding: 0.85rem 0.9rem;
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    background: var(--bg-surface);
-  }
-
-  .dash-tx-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-bottom: 0.35rem;
-  }
-
-  .dash-tx-card-desc {
-    margin: 0 0 0.25rem;
-    font-weight: 700;
-    font-size: 0.92rem;
-    color: var(--text-primary);
-    word-break: break-word;
-  }
-
-  .dash-tx-card-date {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-  }
-
-  .dash-tx-card-fx {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    margin-top: 0.45rem;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    overflow-wrap: anywhere;
-  }
-}
-
 @media (max-width: 640px) {
   .dashboard-page {
     padding: 0.75rem;
@@ -973,8 +889,57 @@
     align-items: center;
   }
 
+  /* Móvil: solo tarjetas, ocultar tabla */
+  .dash-tx-table-view {
+    display: none;
+  }
+
   .transactions-table {
     min-width: 0;
+  }
+
+  .dash-tx-cards {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dash-tx-card {
+    padding: 0.85rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--bg-surface);
+  }
+
+  .dash-tx-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .dash-tx-card-desc {
+    margin: 0 0 0.25rem;
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    word-break: break-word;
+  }
+
+  .dash-tx-card-date {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .dash-tx-card-fx {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-top: 0.45rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    overflow-wrap: anywhere;
   }
 }
 
