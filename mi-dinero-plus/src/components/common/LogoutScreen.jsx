@@ -65,11 +65,7 @@ export default function LogoutScreen() {
           height={120}
         />
         <h2 className="logout-title">{title}</h2>
-        {phrase ? (
-          <p className="logout-phrase">
-            <span className="logout-phrase-inner">“{phrase}”</span>
-          </p>
-        ) : null}
+        {phrase ? <p className="logout-phrase">“{phrase}”</p> : null}
         <div className="logout-bar" aria-hidden="true">
           <span />
         </div>
@@ -77,7 +73,6 @@ export default function LogoutScreen() {
       </div>
 
       <style>{`
-        /* —— Pantalla —— */
         .logout-screen {
           position: fixed;
           inset: 0;
@@ -85,11 +80,15 @@ export default function LogoutScreen() {
           display: grid;
           place-items: center;
           padding: 1.5rem;
+          box-sizing: border-box;
           background:
             radial-gradient(ellipse at 50% 35%, rgba(37, 99, 235, 0.22), transparent 60%),
             var(--bg-page, #0b1220);
           color: var(--text-primary, #e2e8f0);
           font-family: 'Nunito', 'Comic Neue', system-ui, -apple-system, 'Segoe UI', sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          overflow-x: hidden;
           overflow-y: auto;
           animation: logout-fade-in 0.35s ease both;
         }
@@ -103,14 +102,15 @@ export default function LogoutScreen() {
           animation: logout-fade-out var(--logout-leave-ms, 450ms) ease both;
         }
 
-        /* —— Contenido —— */
         .logout-card {
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          width: min(40rem, calc(100vw - 3rem));
+          width: min(44rem, calc(100vw - 2.5rem));
+          max-width: 100%;
         }
+
         .logout-logo {
           width: 120px;
           height: 120px;
@@ -118,41 +118,36 @@ export default function LogoutScreen() {
           animation: logout-logo-in 0.55s ease both;
         }
 
-        /* Título: igual en cierre e ingreso (como ¡Hasta pronto!) */
         .logout-title {
-          margin: 1.25rem 0 0.7rem;
-          font-size: 1.65rem;
+          margin: 1.25rem 0 0.75rem;
+          font-family: 'Nunito', system-ui, sans-serif;
+          font-size: clamp(1.45rem, 4vw, 1.75rem);
           font-weight: 800;
           line-height: 1.25;
-          text-wrap: balance;
+          letter-spacing: -0.01em;
           color: var(--text-primary, #f1f5f9);
           animation: logout-rise 0.6s ease 0.25s both;
         }
 
-        /* Frase: completa, cursiva, sin recorte — igual en ambos modos */
         .logout-phrase {
           margin: 0 auto;
-          padding: 0 0.75rem;
+          padding: 0 0.5rem;
           width: 100%;
-          max-width: 34rem;
-          font-size: 1.08rem;
-          font-weight: 400;
+          max-width: 40rem;
+          font-family: 'Nunito', system-ui, sans-serif;
+          font-size: clamp(1rem, 2.6vw, 1.12rem);
+          font-weight: 600;
           font-style: italic;
-          line-height: 1.55;
+          line-height: 1.65;
           color: var(--text-muted, #94a3b8);
           overflow: visible;
-          text-overflow: unset;
+          text-overflow: clip;
           white-space: normal;
           word-break: normal;
-          overflow-wrap: break-word;
-          hyphens: none;
-          /* Reparte la frase en líneas parejas: nunca queda una palabra suelta ni cortada */
-          text-wrap: balance;
+          overflow-wrap: anywhere;
+          hyphens: manual;
+          text-wrap: pretty;
           animation: logout-rise 0.7s ease 0.45s both;
-        }
-        .logout-phrase-inner {
-          display: inline;
-          font-style: italic;
         }
 
         .logout-bar {
@@ -173,10 +168,12 @@ export default function LogoutScreen() {
           transform-origin: left center;
           animation: logout-progress var(--logout-ms, 5200ms) linear both;
         }
+
         .logout-note {
-          margin: 0.7rem 0 0;
-          font-size: 0.8rem;
-          font-weight: 400;
+          margin: 0.75rem 0 0;
+          font-family: 'Nunito', system-ui, sans-serif;
+          font-size: 0.85rem;
+          font-weight: 600;
           font-style: normal;
           color: var(--text-muted, #94a3b8);
           animation: logout-rise 0.5s ease 0.7s both;
@@ -200,7 +197,11 @@ export default function LogoutScreen() {
         @media (max-width: 480px) {
           .logout-logo { width: 96px; height: 96px; }
           .logout-title { font-size: 1.4rem; }
-          .logout-phrase { font-size: 1rem; padding: 0 0.35rem; }
+          .logout-phrase {
+            font-size: 1.02rem;
+            line-height: 1.6;
+            padding: 0 0.25rem;
+          }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -214,6 +215,10 @@ export default function LogoutScreen() {
           .logout-bar span {
             animation-duration: 0.01ms !important;
             animation-delay: 0ms !important;
+          }
+          .logout-bar span {
+            animation: none;
+            transform: scaleX(1);
           }
         }
       `}</style>
