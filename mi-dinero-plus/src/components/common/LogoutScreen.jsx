@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import {
@@ -9,6 +10,20 @@ import {
 
 export default function LogoutScreen() {
   const { logoutState, logoutPhrase, entryState, entryPhrase } = useAuth()
+
+  const active = Boolean(logoutState || entryState)
+
+  useEffect(() => {
+    if (!active) return undefined
+    const prevBody = document.body.style.overflow
+    const prevHtml = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevBody
+      document.documentElement.style.overflow = prevHtml
+    }
+  }, [active])
 
   const isLogout = Boolean(logoutState)
   const isLogin = Boolean(entryState)
@@ -74,6 +89,8 @@ export default function LogoutScreen() {
             radial-gradient(ellipse at 50% 35%, rgba(37, 99, 235, 0.22), transparent 60%),
             var(--bg-page, #0b1220);
           color: var(--text-primary, #e2e8f0);
+          font-family: 'Nunito', 'Comic Neue', system-ui, -apple-system, 'Segoe UI', sans-serif;
+          overflow-y: auto;
           animation: logout-fade-in 0.35s ease both;
         }
         .logout-screen.is-login {
@@ -107,16 +124,17 @@ export default function LogoutScreen() {
           font-size: 1.65rem;
           font-weight: 800;
           line-height: 1.25;
+          text-wrap: balance;
           color: var(--text-primary, #f1f5f9);
           animation: logout-rise 0.6s ease 0.25s both;
         }
 
         /* Frase: completa, cursiva, sin recorte — igual en ambos modos */
         .logout-phrase {
-          margin: 0;
+          margin: 0 auto;
           padding: 0 0.75rem;
           width: 100%;
-          max-width: 100%;
+          max-width: 34rem;
           font-size: 1.08rem;
           font-weight: 400;
           font-style: italic;
@@ -128,6 +146,8 @@ export default function LogoutScreen() {
           word-break: normal;
           overflow-wrap: break-word;
           hyphens: none;
+          /* Reparte la frase en líneas parejas: nunca queda una palabra suelta ni cortada */
+          text-wrap: balance;
           animation: logout-rise 0.7s ease 0.45s both;
         }
         .logout-phrase-inner {

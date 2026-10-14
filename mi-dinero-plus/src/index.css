@@ -27,7 +27,6 @@
 }
 
 html {
-  /* Evita scroll horizontal global en móvil */
   overflow-x: hidden;
   background: var(--bg-page);
   color: var(--text-primary);
@@ -48,13 +47,11 @@ body,
 .main-layout main {
   background: var(--bg-page);
   color: var(--text-primary);
-  /* 100vh como respaldo; 100dvh evita saltos con la barra del navegador móvil */
   min-height: 100vh;
   min-height: 100dvh;
   max-width: 100%;
 }
 
-/* iOS: font-size < 16px en inputs provoca zoom automático */
 @media (max-width: 768px) {
   input,
   select,
@@ -85,4 +82,17 @@ body,
 
 *::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
+}
+
+html,
+body,
+#root {
+  font-family: 'Nunito', 'Comic Neue', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }

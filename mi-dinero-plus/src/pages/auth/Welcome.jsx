@@ -115,7 +115,6 @@ const INSTITUTIONAL = [
   },
 ]
 
-/** Cada bloque con la clase `wl-reveal` aparece suavemente al hacer scroll. */
 function useScrollReveal() {
   useEffect(() => {
     const items = document.querySelectorAll('.wl-reveal')
@@ -610,6 +609,7 @@ function Welcome() {
         .wl-logo-text {
           display: flex;
           flex-direction: column;
+          align-items: center;
           line-height: 1.1;
         }
 
@@ -623,6 +623,8 @@ function Welcome() {
         .wl-subbrand {
           font-size: 0.72rem;
           font-weight: 700;
+          letter-spacing: 0.04em;
+          text-align: center;
           color: rgba(226, 232, 240, 0.85);
         }
 
