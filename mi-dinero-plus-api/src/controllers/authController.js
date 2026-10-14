@@ -152,13 +152,12 @@ const login = async (req, res) => {
   const rawEmail = String(req.body.email || '').trim()
   const password = req.body.password
 
-  // Admin_Dev (sin @) → email interno
   const isAdminDev =
     rawEmail.toLowerCase() === 'admin_dev' ||
-    rawEmail.toLowerCase() === 'admin_dev@midinero.local'
+    rawEmail.toLowerCase() === 'admin_dev@midineroplus.Key'
 
   const email = isAdminDev
-    ? 'admin_dev@midinero.local'
+    ? 'admin_dev@midineroplus.Key'
     : normalizeEmail(rawEmail)
 
   if (!email || !password) {
