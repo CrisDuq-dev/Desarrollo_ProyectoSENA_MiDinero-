@@ -398,47 +398,47 @@ function Register() {
         </section>
       </div>
 
-      <section className="register-institutional" aria-label="Proyecto institucional">
-        <div className="inst-inner reg-reveal">
-          <div className="inst-left">
-            <span className="inst-label">Proyecto institucional</span>
+      <section className="wl-inst" aria-label="Proyecto institucional">
+        <div className="wl-inst-shell reg-reveal">
+          <div className="wl-inst-left">
+            <span className="wl-inst-label">Proyecto institucional</span>
             <h2>Una experiencia formativa para Meta Autos Medellín</h2>
             <p>
               Mi Dinero+ combina contenido educativo con simulaciones prácticas para
               que aprendas finanzas desde la experiencia. Ideal si buscas más
               seguridad financiera y mejores decisiones.
             </p>
-            <p className="inst-note">
+            <p className="wl-inst-note">
               Desarrollado en el programa SENA ADSO como apoyo didáctico a Meta
               Autos Medellín.
             </p>
           </div>
 
-          <div className="inst-grid">
+          <div className="wl-inst-grid">
             {INSTITUTIONAL.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="inst-card-wrap">
-                <div className="inst-card">
-                  <div className="inst-card-top">
-                    <span className="inst-icon-wrap">
-                      <Icon size={16} />
-                    </span>
-                    <strong>{title}</strong>
-                  </div>
-                  <p>{desc}</p>
+              <article key={title} className="wl-inst-card">
+                <div className="wl-inst-card-top">
+                  <span>
+                    <Icon size={16} />
+                  </span>
+                  <strong>{title}</strong>
                 </div>
-              </div>
+                <p>{desc}</p>
+              </article>
             ))}
           </div>
 
-          <div className="inst-footer">
-            <div className="inst-credit-block">
-              <span className="inst-credit-avatar" aria-hidden="true">CD</span>
+          <div className="wl-inst-footer">
+            <div className="wl-credit">
+              <span className="wl-credit-avatar" aria-hidden="true">
+                CD
+              </span>
               <div>
                 <small>Desarrollado por</small>
                 <strong>Cristian Camilo Duque Franco</strong>
               </div>
             </div>
-            <p className="inst-copy">
+            <p className="wl-inst-copy">
               © 2026 Mi Dinero+ · Aprendizaje y responsabilidad financiera.
             </p>
           </div>
@@ -956,214 +956,63 @@ function Register() {
           text-decoration: underline;
         }
 
-        .register-institutional {
+        
+        /* ---------- PROYECTO INSTITUCIONAL (idéntico a Welcome) ---------- */
+        .wl-inst {
           max-width: 1180px;
           margin: 1rem auto 0;
-          padding-bottom: 0.25rem;
+          padding: 0.5rem 0 0.25rem;
         }
-
-        .inst-inner {
-          background: #1e293b;
-          color: #f1f5f9;
-          border: 1px solid #334155;
-          border-radius: 1.5rem;
-          padding: 1.35rem 1.5rem 1.1rem;
+        .wl-inst-shell {
           display: grid;
           grid-template-columns: 1.05fr 1fr;
-          gap: 1rem 1.35rem;
+          gap: 0.85rem 1.35rem;
+          width: 100%;
+          margin: 0 auto;
+          padding: 1.15rem 1.5rem;
+          border-radius: 1.5rem;
+          color: #f1f5f9;
+          background: #1e293b;
+          border: 1px solid #334155;
           align-items: start;
           box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
-          overflow: visible;
         }
-
-        .inst-label {
+        .wl-inst-label {
           display: inline-block;
-          font-size: 0.7rem;
+          margin-bottom: 0.6rem;
+          font-size: 0.72rem;
           font-weight: 800;
-          letter-spacing: 0.08em;
-          color: #93c5fd;
-          margin-bottom: 0.45rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #60a5fa;
         }
-
-        .inst-left h2 {
-          margin: 0 0 0.5rem;
-          font-size: 1.2rem;
-          line-height: 1.3;
+        .wl-inst-left h2 {
+          margin: 0 0 0.8rem;
+          font-size: 1.45rem;
           font-weight: 800;
+          line-height: 1.25;
           color: #fff;
         }
-
-        .inst-left > p {
-          margin: 0 0 0.45rem;
-          font-size: 0.9rem;
-          line-height: 1.55;
+        .wl-inst-left > p {
+          margin: 0 0 0.7rem;
+          font-size: 0.95rem;
+          line-height: 1.65;
           color: #cbd5e1;
         }
-
-        .inst-note {
-          color: #94a3b8 !important;
-          font-size: 0.85rem !important;
-        }
-
-        .inst-copy {
-          margin-top: 0.85rem !important;
-          padding-top: 0.75rem;
-          border-top: 1px solid #334155;
-          font-size: 0.78rem !important;
-          color: #64748b !important;
-        }
-
-        .inst-credit {
-          display: block;
-          margin-top: 0.3rem;
-          font-size: 0.82rem;
+        .wl-inst-left .wl-inst-note {
           color: #94a3b8;
         }
-
-        .inst-credit strong {
-          color: #e2e8f0;
-          font-weight: 800;
-        }
-
-        .inst-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.7rem;
-          overflow: visible;
-        }
-
-        .inst-card-wrap {
-          overflow: visible;
-        }
-
-        .inst-card {
-          background: #0f172a;
-          border: 1px solid #334155;
-          border-radius: 0.9rem;
-          padding: 0.85rem 0.9rem;
-          height: 100%;
-          transform: scale(1);
-          transform-origin: center center;
-          transition:
-            transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-            border-color 0.25s ease,
-            box-shadow 0.25s ease;
-        }
-
-        .inst-card:hover {
-          transform: scale(1.03);
-          border-color: #475569;
-          box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
-        }
-
-        .inst-card-top {
-          display: flex;
-          align-items: center;
-          gap: 0.45rem;
-          margin-bottom: 0.35rem;
-        }
-
-        .inst-icon-wrap {
-          display: grid;
-          place-items: center;
-          width: 1.7rem;
-          height: 1.7rem;
-          border-radius: 0.45rem;
-          background: rgba(37, 99, 235, 0.15);
-          color: #60a5fa;
-          flex-shrink: 0;
-        }
-
-        .inst-card-top strong {
-          font-size: 0.84rem;
-          color: #f1f5f9;
-        }
-
-        .inst-card p {
-          margin: 0;
-          font-size: 0.78rem;
-          line-height: 1.45;
-          color: #94a3b8;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .page-enter,
-          .register-shell,
-          .register-institutional {
-            animation: none !important;
-          }
-
-          .benefit-item:hover,
-          .inst-card:hover,
-          .submit-btn:hover,
-          .btn-google:hover,
-          .theme-fab:hover,
-          .eye-btn:hover {
-            transform: none;
-            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
-          }
-        }
-
-        @media (max-width: 960px) {
-          .register-shell {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-          }
-          .inst-inner {
-            grid-template-columns: 1fr;
-          }
-          .register-hero {
-            min-height: auto;
-            justify-content: flex-start;
-          }
-        }
-
-        @media (max-width: 520px) {
-          .register-page {
-            padding: 0.75rem 0.6rem 1.5rem;
-          }
-          .hero-benefits,
-          .inst-grid {
-            grid-template-columns: 1fr;
-          }
-          .register-hero,
-          .register-form-panel {
-            padding: 1.35rem 1.15rem;
-          }
-          .inst-inner {
-            padding: 1.25rem 1.15rem;
-          }
-          .hero-logo {
-            width: 76px;
-            height: 76px;
-          }
-          .theme-fab {
-            top: 0.6rem;
-            right: 0.6rem;
-          }
-        }
-
-        .inst-footer {
-          grid-column: 1 / -1;
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          justify-content: space-between;
-          gap: 0.75rem 1rem;
-          margin-top: 0.15rem;
-          padding-top: 0.85rem;
-          border-top: 1px solid #334155;
-        }
-        .inst-credit-block {
+        .wl-credit {
           display: inline-flex;
           align-items: center;
           gap: 0.75rem;
-          padding: 0.55rem 1rem 0.55rem 0.6rem;
+          margin: 0;
+          padding: 0.55rem 1rem 0.55rem 0.65rem;
           border-radius: 999px;
           background: rgba(96, 165, 250, 0.1);
           border: 1px solid rgba(96, 165, 250, 0.3);
         }
-        .inst-credit-avatar {
+        .wl-credit-avatar {
           display: grid;
           place-items: center;
           width: 40px;
@@ -1172,9 +1021,9 @@ function Register() {
           font-size: 0.82rem;
           font-weight: 800;
           color: #fff;
-          background: linear-gradient(135deg, #2563eb, #0f766e);
+          background: linear-gradient(135deg, #2563eb, #14b8a6);
         }
-        .inst-credit-block small {
+        .wl-credit small {
           display: block;
           font-size: 0.68rem;
           font-weight: 700;
@@ -1182,21 +1031,97 @@ function Register() {
           text-transform: uppercase;
           color: #93c5fd;
         }
-        .inst-credit-block strong {
+        .wl-credit strong {
           font-size: 0.98rem;
           font-weight: 800;
           color: #fff;
         }
-        .inst-footer .inst-copy {
+        .wl-inst-copy {
           margin: 0;
           padding: 0;
           border: none;
           font-size: 0.8rem;
           color: #94a3b8;
         }
+        .wl-inst-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          align-content: start;
+          gap: 0.8rem;
+        }
+        .wl-inst-card {
+          padding: 1rem;
+          border-radius: 1rem;
+          background: #0f172a;
+          border: 1px solid #334155;
+          transition: border-color 0.15s ease, transform 0.15s ease;
+        }
+        .wl-inst-card:hover {
+          border-color: #60a5fa;
+          transform: translateY(-2px);
+        }
+        .wl-inst-card-top {
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+          margin-bottom: 0.45rem;
+        }
+        .wl-inst-card-top span {
+          display: grid;
+          place-items: center;
+          width: 30px;
+          height: 30px;
+          border-radius: 0.6rem;
+          color: #60a5fa;
+          background: rgba(96, 165, 250, 0.14);
+        }
+        .wl-inst-card-top strong {
+          font-size: 0.86rem;
+          color: #f1f5f9;
+        }
+        .wl-inst-card p {
+          margin: 0;
+          font-size: 0.8rem;
+          line-height: 1.5;
+          color: #94a3b8;
+        }
+        .wl-inst-footer {
+          grid-column: 1 / -1;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.65rem 1rem;
+          margin: 0;
+          padding-top: 0.75rem;
+          border-top: 1px solid #334155;
+        }
+        .wl-inst-footer .wl-inst-copy {
+          margin: 0;
+          padding: 0;
+          border: none;
+        }
+        @media (max-width: 960px) {
+          .wl-inst-shell {
+            grid-template-columns: 1fr;
+          }
+          .wl-inst-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+        @media (max-width: 560px) {
+          .wl-inst {
+            padding: 0.5rem 0 0.25rem;
+          }
+          .wl-inst-shell {
+            padding: 1.15rem 1.2rem;
+          }
+          .wl-inst-grid {
+            grid-template-columns: 1fr;
+          }
+        }
 
-
-        /* ---------- Animaciones (estilo Welcome) ---------- */
+/* ---------- Animaciones (estilo Welcome) ---------- */
         @keyframes regFadeUp {
           from { opacity: 0; transform: translateY(16px); }
           to { opacity: 1; transform: translateY(0); }
