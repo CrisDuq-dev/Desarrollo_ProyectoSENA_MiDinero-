@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '../../contexts/ThemeContext'
+import TermsAndConditions from '../../components/TermsAndConditions'
 import {
   FiArrowRight,
   FiAward,
@@ -172,9 +173,6 @@ function Welcome() {
                 <Link to="/login" className="wl-link-login">
                   Iniciar sesión
                 </Link>
-                <Link to="/crear-cuenta" className="wl-btn-mini">
-                  Registrarme
-                </Link>
               </nav>
             </header>
 
@@ -205,9 +203,6 @@ function Welcome() {
                     Registrarme
                     <FiArrowRight size={18} className="wl-arrow" aria-hidden="true" />
                   </Link>
-                  <Link to="/login" className="wl-btn-ghost">
-                    Ya tengo cuenta · Iniciar sesión
-                  </Link>
                 </div>
 
                 <ul className="wl-points wl-anim" style={{ animationDelay: '0.32s' }}>
@@ -219,6 +214,12 @@ function Welcome() {
                   </li>
                   <li>
                     <FiCheckCircle size={15} aria-hidden="true" /> A tu ritmo
+                  </li>
+                  <li>
+                    <FiCheckCircle size={15} aria-hidden="true" /> Asistente IA
+                  </li>
+                  <li>
+                    <FiCheckCircle size={15} aria-hidden="true" /> Datos protegidos
                   </li>
                 </ul>
               </div>
@@ -427,10 +428,6 @@ function Welcome() {
               <h2>Tu primera simulación empieza aquí</h2>
               <p>Crea tu cuenta, registra tu primer movimiento y descubre cómo se ve tu dinero con claridad.</p>
               <div className="wl-cta wl-cta-center">
-                <Link to="/crear-cuenta" className="wl-btn-primary">
-                  Registrarme
-                  <FiArrowRight size={18} className="wl-arrow" aria-hidden="true" />
-                </Link>
                 <Link to="/login" className="wl-btn-light">
                   Ya tengo cuenta · Iniciar sesión
                 </Link>
@@ -454,20 +451,6 @@ function Welcome() {
                 Desarrollado en el programa SENA ADSO como apoyo didáctico a Meta
                 Autos Medellín.
               </p>
-
-              <div className="wl-credit">
-                <span className="wl-credit-avatar" aria-hidden="true">
-                  CD
-                </span>
-                <div>
-                  <small>Desarrollado por</small>
-                  <strong>Cristian Camilo Duque Franco</strong>
-                </div>
-              </div>
-
-              <p className="wl-inst-copy">
-                © 2026 Mi Dinero+ · Aprendizaje y responsabilidad financiera.
-              </p>
             </div>
 
             <div className="wl-inst-grid">
@@ -483,16 +466,33 @@ function Welcome() {
                 </article>
               ))}
             </div>
+
+            <div className="wl-inst-footer">
+              <div className="wl-credit">
+                <span className="wl-credit-avatar" aria-hidden="true">
+                  CD
+                </span>
+                <div>
+                  <small>Desarrollado por</small>
+                  <strong>Cristian Camilo Duque Franco</strong>
+                </div>
+              </div>
+              <p className="wl-inst-copy">
+                © 2026 Mi Dinero+ · Aprendizaje y responsabilidad financiera.
+              </p>
+            </div>
           </div>
         </section>
       </main>
+
+      <TermsAndConditions />
 
       <style>{`
         .welcome-page {
           --brand: #2563eb;
           --brand-deep: #1e3a8a;
           --brand-dark: #0b1220;
-          --green: #16a34a;
+          --green: #059669;
           --teal: #14b8a6;
           --page-bg: ${theme === 'light' ? '#f8fafc' : '#0b1220'};
           --alt-bg: ${theme === 'light' ? '#eef2ff' : '#0f172a'};
@@ -696,7 +696,7 @@ function Welcome() {
         }
 
         .wl-grad {
-          background: linear-gradient(90deg, #5eead4, #4ade80 55%, #a3e635);
+          background: linear-gradient(90deg, #5eead4, #34d399 55%, #6ee7b7);
           -webkit-background-clip: text;
           background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -731,13 +731,13 @@ function Welcome() {
           font-weight: 800;
           text-decoration: none;
           color: #fff;
-          background: linear-gradient(135deg, #22c55e, #15803d);
-          box-shadow: 0 14px 30px rgba(22, 163, 74, 0.4);
+          background: linear-gradient(135deg, #10b981, #047857);
+          box-shadow: 0 14px 30px rgba(16, 185, 129, 0.28);
           transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
         .wl-btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 18px 36px rgba(22, 163, 74, 0.5);
+          box-shadow: 0 18px 36px rgba(16, 185, 129, 0.35);
         }
         .wl-arrow {
           transition: transform 0.18s ease;
@@ -783,7 +783,7 @@ function Welcome() {
           gap: 0.35rem;
         }
         .wl-points svg {
-          color: #4ade80;
+          color: #34d399;
         }
 
         /* ---------- Vista previa del producto ---------- */
@@ -854,7 +854,7 @@ function Welcome() {
           border-radius: 999px;
           font-size: 0.74rem;
           font-weight: 800;
-          color: #4ade80;
+          color: #34d399;
           background: rgba(34, 197, 94, 0.14);
         }
 
@@ -874,7 +874,7 @@ function Welcome() {
           font-size: 0.98rem;
           font-weight: 800;
         }
-        .is-green { color: #4ade80; }
+        .is-green { color: #34d399; }
         .is-red { color: #f87171; }
         .is-blue { color: #93c5fd; }
 
@@ -1112,6 +1112,8 @@ function Welcome() {
           overflow: hidden;
           display: flex;
           flex-direction: column;
+          align-items: center;
+          text-align: center;
           padding: 1.5rem 1.25rem 1.25rem;
           border-radius: 1.15rem;
           background: var(--card-bg);
@@ -1151,7 +1153,7 @@ function Welcome() {
           place-items: center;
           width: 48px;
           height: 48px;
-          margin-bottom: 0.9rem;
+          margin: 0 auto 0.9rem;
           border-radius: 0.95rem;
           color: #fff;
           background: var(--accent);
@@ -1174,6 +1176,7 @@ function Welcome() {
           position: relative;
           display: flex;
           flex-wrap: wrap;
+          justify-content: center;
           gap: 0.35rem;
           margin: auto 0 0;
           padding: 0;
@@ -1249,8 +1252,7 @@ function Welcome() {
           border-radius: 1.5rem;
           color: #fff;
           background:
-            radial-gradient(600px 260px at 50% 0%, rgba(34, 197, 94, 0.3), transparent 65%),
-            linear-gradient(135deg, #1d4ed8, #0f766e);
+            linear-gradient(135deg, #1e3a8a 0%, #1e40af 45%, #0f766e 100%);
           box-shadow: 0 24px 60px rgba(29, 78, 216, 0.3);
         }
         .wl-final p {
@@ -1533,6 +1535,30 @@ function Welcome() {
             justify-content: center;
           }
         }
+
+        .wl-inst-footer {
+          grid-column: 1 / -1;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-top: 0.5rem;
+          padding-top: 1.1rem;
+          border-top: 1px solid #334155;
+        }
+        .wl-inst-footer .wl-inst-copy {
+          margin: 0;
+          padding: 0;
+          border: none;
+        }
+        .wl-inst-shell {
+          display: grid;
+          grid-template-columns: 1.1fr 1fr;
+          gap: 1.5rem 2rem;
+          align-items: start;
+        }
+
       `}</style>
     </div>
   )

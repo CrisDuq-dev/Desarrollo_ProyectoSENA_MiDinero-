@@ -377,7 +377,7 @@ function Login() {
         .login-page {
           --blue: #1660ff;
           --blue-dark: #0245ff;
-          --green: #16a34a;
+          --green: #059669;
           --red: #dc2626;
           --purple: #7c3aed;
           --bg: ${theme === 'light' ? '#eef2ff' : '#0b1220'};
@@ -410,10 +410,27 @@ function Login() {
         }
 
         .login-brand {
+          position: relative;
+          isolation: isolate;
           text-align: center;
           padding: 1.75rem 1.5rem 1.5rem;
-          background: linear-gradient(165deg, #1d4ed8 0%, #2563eb 48%, #1e3a8a 100%);
+          background: linear-gradient(165deg, #1e3a8a 0%, #1d4ed8 40%, #2563eb 100%);
           color: #fff;
+          overflow: hidden;
+        }
+
+        /* Cuadrícula decorativa (misma idea que registro) */
+        .login-brand::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background:
+            radial-gradient(420px 260px at 92% 0%, rgba(20, 184, 166, 0.38), transparent 60%),
+            radial-gradient(380px 260px at 0% 100%, rgba(124, 58, 237, 0.32), transparent 60%),
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 36px 36px,
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 36px 36px;
         }
 
         .sim-badge {

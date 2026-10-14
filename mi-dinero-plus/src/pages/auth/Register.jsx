@@ -38,7 +38,7 @@ function evaluarFuerza(password) {
   if (/[!@#$%^&*]/.test(password)) score += 1
   if (score <= 2) return { nivel: 'Débil', porcentaje: 33, color: '#dc2626' }
   if (score === 3 || score === 4) return { nivel: 'Media', porcentaje: 66, color: '#f59e0b' }
-  return { nivel: 'Fuerte', porcentaje: 100, color: '#16a34a' }
+  return { nivel: 'Fuerte', porcentaje: 100, color: '#059669' }
 }
 
 const BENEFITS = [
@@ -60,7 +60,7 @@ const BENEFITS = [
     icon: FiTarget,
     label: 'Cumple tus metas',
     desc: 'Objetivos claros con avance medible.',
-    color: '#16a34a',
+    color: '#059669',
     soft: 'rgba(22, 163, 74, 0.12)',
   },
   {
@@ -371,22 +371,16 @@ function Register() {
       <section className="register-institutional" aria-label="Proyecto institucional">
         <div className="inst-inner">
           <div className="inst-left">
-            <span className="inst-label">PROYECTO INSTITUCIONAL</span>
+            <span className="inst-label">Proyecto institucional</span>
             <h2>Una experiencia formativa para Meta Autos Medellín</h2>
             <p>
-              Mi Dinero+ combina contenido educativo con simulaciones prácticas
-              para que aprendas finanzas desde la experiencia. Ideal si buscas
-              más seguridad financiera y mejores decisiones.
+              Mi Dinero+ combina contenido educativo con simulaciones prácticas para
+              que aprendas finanzas desde la experiencia. Ideal si buscas más
+              seguridad financiera y mejores decisiones.
             </p>
             <p className="inst-note">
               Desarrollado en el programa SENA ADSO como apoyo didáctico a Meta
               Autos Medellín.
-            </p>
-            <p className="inst-copy">
-              © 2026 Mi Dinero+. Aprendizaje y responsabilidad financiera.
-              <span className="inst-credit">
-                Desarrollado por <strong>Cristian Camilo Duque Franco</strong>
-              </span>
             </p>
           </div>
 
@@ -405,13 +399,26 @@ function Register() {
               </div>
             ))}
           </div>
+
+          <div className="inst-footer">
+            <div className="inst-credit-block">
+              <span className="inst-credit-avatar" aria-hidden="true">CD</span>
+              <div>
+                <small>Desarrollado por</small>
+                <strong>Cristian Camilo Duque Franco</strong>
+              </div>
+            </div>
+            <p className="inst-copy">
+              © 2026 Mi Dinero+ · Aprendizaje y responsabilidad financiera.
+            </p>
+          </div>
         </div>
       </section>
 
       <style>{`
         .register-page {
           --blue: #2563eb;
-          --green: #16a34a;
+          --green: #059669;
           --red: #dc2626;
           --bg: ${theme === 'light' ? '#eef2ff' : '#0b1220'};
           --surface: ${theme === 'light' ? '#ffffff' : '#1e293b'};
@@ -1106,6 +1113,59 @@ function Register() {
             right: 0.6rem;
           }
         }
+
+        .inst-footer {
+          grid-column: 1 / -1;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-top: 0.35rem;
+          padding-top: 1.1rem;
+          border-top: 1px solid #334155;
+        }
+        .inst-credit-block {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.55rem 1rem 0.55rem 0.6rem;
+          border-radius: 999px;
+          background: rgba(96, 165, 250, 0.1);
+          border: 1px solid rgba(96, 165, 250, 0.3);
+        }
+        .inst-credit-avatar {
+          display: grid;
+          place-items: center;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          font-size: 0.82rem;
+          font-weight: 800;
+          color: #fff;
+          background: linear-gradient(135deg, #2563eb, #0f766e);
+        }
+        .inst-credit-block small {
+          display: block;
+          font-size: 0.68rem;
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          color: #93c5fd;
+        }
+        .inst-credit-block strong {
+          font-size: 0.98rem;
+          font-weight: 800;
+          color: #fff;
+        }
+        .inst-footer .inst-copy {
+          margin: 0;
+          padding: 0;
+          border: none;
+          font-size: 0.8rem;
+          color: #94a3b8;
+        }
+
       `}</style>
     </div>
   )
