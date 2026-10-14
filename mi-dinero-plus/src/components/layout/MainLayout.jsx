@@ -36,21 +36,20 @@ function MainLayout() {
           padding-top: 5.5rem;
         }
 
-        /* Entrada suave al cambiar de módulo */
         .page-enter {
-          animation: mdpPageEnter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: mdpPageEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        @keyframes mdpPageEnter {
-          from {
-            opacity: 0;
-            transform: translateY(14px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+      @keyframes mdpPageEnter {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+      }
+    }
 
         @media (max-width: 900px) {
           .main-content {
