@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Navbar from './Navbar'
 import ScrollToTop from './ScrollToTop'
@@ -5,6 +6,13 @@ import IdleGuard from '../common/IdleGuard'
 
 function MainLayout() {
   const location = useLocation()
+  const [enterClass, setEnterClass] = useState('page-enter')
+
+  useEffect(() => {
+    setEnterClass('page-enter')
+    const t = window.setTimeout(() => setEnterClass(''), 750)
+    return () => window.clearTimeout(t)
+  }, [location.pathname])
 
   return (
     <div className="main-layout">
@@ -12,7 +20,7 @@ function MainLayout() {
       <IdleGuard />
       <Navbar />
       <main className="main-content">
-        <div key={location.pathname} className="page-enter">
+        <div key={location.pathname} className={enterClass || undefined}>
           <Outlet />
         </div>
       </main>
@@ -37,19 +45,19 @@ function MainLayout() {
         }
 
         .page-enter {
-          animation: mdpPageEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: mdpPageEnter 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-      @keyframes mdpPageEnter {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
+        @keyframes mdpPageEnter {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: none;
+          }
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-      }
-    }
 
         @media (max-width: 900px) {
           .main-content {
