@@ -221,14 +221,46 @@
 
 .mp-fab-stack {
   position: fixed;
-  right: max(var(--fab-right), env(safe-area-inset-right, 0px));
-  bottom: max(var(--fab-bottom), env(safe-area-inset-bottom, 0px));
-  z-index: 40;
-  width: var(--fab-size);
+  right: var(--fab-right);
+  bottom: var(--fab-bottom);
+  z-index: 110;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: var(--fab-gap);
+  align-items: flex-end;
+
+  animation: mpFabStackIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.mp-fab-stack > *:nth-child(1) {
+  animation: mpFabItemIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+
+.mp-fab-stack > *:nth-child(2) {
+  animation: mpFabItemIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
+}
+
+@keyframes mpFabStackIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mpFabItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-fab-stack,
+  .mp-fab-stack > * {
+    animation: none;
+  }
 }
 
 .mp-fab {
