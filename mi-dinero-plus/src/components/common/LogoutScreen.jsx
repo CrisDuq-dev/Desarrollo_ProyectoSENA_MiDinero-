@@ -64,6 +64,9 @@ export default function LogoutScreen() {
             radial-gradient(ellipse at 50% 35%, rgba(37, 99, 235, 0.22), transparent 60%),
             var(--bg-page, #0b1220);
           color: var(--text-primary, #e2e8f0);
+          font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
           animation: logout-fade-in 0.35s ease both;
         }
         .logout-screen.is-login {
@@ -81,6 +84,7 @@ export default function LogoutScreen() {
           align-items: center;
           text-align: center;
           max-width: 28rem;
+          font-family: inherit;
         }
         .logout-logo {
           width: 120px;
@@ -90,16 +94,20 @@ export default function LogoutScreen() {
         }
         .logout-title {
           margin: 1.25rem 0 0.65rem;
+          font-family: inherit;
           font-size: 1.65rem;
-          font-weight: 800;
+          font-weight: 700;
+          letter-spacing: -0.02em;
           color: var(--text-primary, #f1f5f9);
           animation: logout-rise 0.6s ease 0.25s both;
         }
         .logout-phrase {
           margin: 0;
-          font-size: 1.08rem;
+          font-family: inherit;
+          font-size: 1.05rem;
+          font-weight: 400;
+          font-style: normal;
           line-height: 1.55;
-          font-style: italic;
           color: var(--text-muted, #94a3b8);
           text-wrap: balance;
           animation: logout-rise 0.7s ease 0.45s both;
@@ -120,11 +128,13 @@ export default function LogoutScreen() {
           border-radius: inherit;
           background: linear-gradient(90deg, #2563eb, #12b76a);
           transform-origin: left center;
-          animation: logout-progress var(--logout-ms, 2200ms) linear both;
+          animation: logout-progress var(--logout-ms, 5200ms) linear both;
         }
         .logout-note {
           margin: 0.7rem 0 0;
+          font-family: inherit;
           font-size: 0.8rem;
+          font-weight: 400;
           color: var(--text-muted, #94a3b8);
           animation: logout-rise 0.5s ease 0.7s both;
         }
@@ -145,17 +155,23 @@ export default function LogoutScreen() {
         }
 
         @media (max-width: 480px) {
+          .logout-logo { width: 96px; height: 96px; }
           .logout-title { font-size: 1.4rem; }
-          .logout-phrase { font-size: 1rem; }
+          .logout-phrase { font-size: 0.98rem; }
         }
+
         @media (prefers-reduced-motion: reduce) {
           .logout-screen,
+          .logout-screen.is-leaving,
           .logout-logo,
           .logout-title,
           .logout-phrase,
           .logout-bar,
-          .logout-note { animation-duration: 0.01ms !important; animation-delay: 0s !important; }
-          .logout-bar span { animation: none; transform: scaleX(1); }
+          .logout-note,
+          .logout-bar span {
+            animation-duration: 0.01ms !important;
+            animation-delay: 0ms !important;
+          }
         }
       `}</style>
     </div>,

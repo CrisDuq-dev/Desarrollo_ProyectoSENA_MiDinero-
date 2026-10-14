@@ -1,5 +1,5 @@
-export const LOGOUT_MIN_MS = 2200
-export const LOGIN_MIN_MS = 2200
+export const LOGOUT_MIN_MS = 5200
+export const LOGIN_MIN_MS = 5200
 
 export const LOGOUT_LEAVE_MS = 450
 export const LOGIN_LEAVE_MS = 450
