@@ -10,25 +10,30 @@ import {
 export default function LogoutScreen() {
   const { logoutState, logoutPhrase, entryState, entryPhrase } = useAuth()
 
-  const mode = logoutState ? 'logout' : entryState ? 'login' : null
+  const isLogout = Boolean(logoutState)
+  const isLogin = Boolean(entryState)
   const state = logoutState || entryState
-  if (!mode || !state) return null
 
-  const minMs = mode === 'logout' ? LOGOUT_MIN_MS : LOGIN_MIN_MS
-  const leaveMs = mode === 'logout' ? LOGOUT_LEAVE_MS : LOGIN_LEAVE_MS
-  const phrase = mode === 'logout' ? logoutPhrase : entryPhrase
+  if (!state || (!isLogout && !isLogin)) return null
 
-  const title = mode === 'logout' ? '¡Hasta pronto!' : '¡Bienvenido!'
-  const note =
-    mode === 'logout'
-      ? 'Cerrando tu sesión de forma segura…'
-      : 'Ingresando a la plataforma…'
+  const minMs = isLogout ? LOGOUT_MIN_MS : LOGIN_MIN_MS
+  const leaveMs = isLogout ? LOGOUT_LEAVE_MS : LOGIN_LEAVE_MS
+  const phrase = (isLogout ? logoutPhrase : entryPhrase) || ''
+
+  const title = isLogout ? '¡Hasta pronto!' : '¡Bienvenido!'
+  const note = isLogout
+    ? 'Cerrando tu sesión de forma segura…'
+    : 'Ingresando a la plataforma…'
 
   return createPortal(
     <div
-      className={`logout-screen${state === 'leaving' ? ' is-leaving' : ''}${
-        mode === 'login' ? ' is-login' : ''
-      }`}
+      className={[
+        'logout-screen',
+        state === 'leaving' ? 'is-leaving' : '',
+        isLogin ? 'is-login' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       role="status"
       aria-live="polite"
       style={{
@@ -45,7 +50,11 @@ export default function LogoutScreen() {
           height={120}
         />
         <h2 className="logout-title">{title}</h2>
-        {phrase ? <p className="logout-phrase">“{phrase}”</p> : null}
+        {phrase ? (
+          <p className="logout-phrase">
+            <span className="logout-phrase-inner">“{phrase}”</span>
+          </p>
+        ) : null}
         <div className="logout-bar" aria-hidden="true">
           <span />
         </div>
@@ -53,6 +62,7 @@ export default function LogoutScreen() {
       </div>
 
       <style>{`
+        /* —— Pantalla —— */
         .logout-screen {
           position: fixed;
           inset: 0;
@@ -75,13 +85,14 @@ export default function LogoutScreen() {
         .logout-screen.is-leaving {
           animation: logout-fade-out var(--logout-leave-ms, 450ms) ease both;
         }
+
+        /* —— Contenido —— */
         .logout-card {
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          width: min(36rem, 100%);
-          max-width: 36rem;
+          width: min(40rem, calc(100vw - 3rem));
         }
         .logout-logo {
           width: 120px;
@@ -89,29 +100,41 @@ export default function LogoutScreen() {
           object-fit: contain;
           animation: logout-logo-in 0.55s ease both;
         }
+
+        /* Título: igual en cierre e ingreso (como ¡Hasta pronto!) */
         .logout-title {
-          margin: 1.25rem 0 0.65rem;
+          margin: 1.25rem 0 0.7rem;
           font-size: 1.65rem;
           font-weight: 800;
+          line-height: 1.25;
           color: var(--text-primary, #f1f5f9);
           animation: logout-rise 0.6s ease 0.25s both;
         }
+
+        /* Frase: completa, cursiva, sin recorte — igual en ambos modos */
         .logout-phrase {
           margin: 0;
-          padding: 0 0.5rem;
+          padding: 0 0.75rem;
           width: 100%;
           max-width: 100%;
           font-size: 1.08rem;
-          line-height: 1.6;
+          font-weight: 400;
           font-style: italic;
+          line-height: 1.55;
           color: var(--text-muted, #94a3b8);
+          overflow: visible;
+          text-overflow: unset;
           white-space: normal;
-          overflow-wrap: break-word;
           word-break: normal;
+          overflow-wrap: break-word;
           hyphens: none;
-          text-wrap: pretty;
           animation: logout-rise 0.7s ease 0.45s both;
         }
+        .logout-phrase-inner {
+          display: inline;
+          font-style: italic;
+        }
+
         .logout-bar {
           width: min(14rem, 70%);
           height: 0.3rem;
@@ -133,6 +156,8 @@ export default function LogoutScreen() {
         .logout-note {
           margin: 0.7rem 0 0;
           font-size: 0.8rem;
+          font-weight: 400;
+          font-style: normal;
           color: var(--text-muted, #94a3b8);
           animation: logout-rise 0.5s ease 0.7s both;
         }
@@ -155,8 +180,7 @@ export default function LogoutScreen() {
         @media (max-width: 480px) {
           .logout-logo { width: 96px; height: 96px; }
           .logout-title { font-size: 1.4rem; }
-          .logout-phrase { font-size: 1rem; }
-          .logout-card { width: min(100%, 22rem); }
+          .logout-phrase { font-size: 1rem; padding: 0 0.35rem; }
         }
 
         @media (prefers-reduced-motion: reduce) {
