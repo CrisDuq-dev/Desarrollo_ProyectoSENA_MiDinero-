@@ -115,6 +115,7 @@ const INSTITUTIONAL = [
   },
 ]
 
+/** Cada bloque con la clase `wl-reveal` aparece suavemente al hacer scroll. */
 function useScrollReveal() {
   useEffect(() => {
     const items = document.querySelectorAll('.wl-reveal')
@@ -1264,16 +1265,16 @@ function Welcome() {
 
         /* ---------- PROYECTO INSTITUCIONAL ---------- */
         .wl-inst {
-          padding: 0.5rem 1.5rem 3rem;
+          padding: 0.5rem 1.5rem 1.5rem;
         }
         .wl-inst-shell {
           display: grid;
           grid-template-columns: 1.05fr 1fr;
-          gap: 1.75rem;
+          gap: 1rem 1.5rem;
           width: 100%;
           max-width: 1180px;
           margin: 0 auto;
-          padding: 2rem;
+          padding: 1.35rem 1.5rem 1.15rem;
           border-radius: 1.5rem;
           color: #f1f5f9;
           background: #1e293b;
@@ -1542,9 +1543,9 @@ function Welcome() {
           flex-wrap: wrap;
           align-items: center;
           justify-content: space-between;
-          gap: 1rem;
-          margin-top: 0.5rem;
-          padding-top: 1.1rem;
+          gap: 0.75rem 1rem;
+          margin-top: 0.1rem;
+          padding-top: 0.85rem;
           border-top: 1px solid #334155;
         }
         .wl-inst-footer .wl-inst-copy {
@@ -1553,9 +1554,6 @@ function Welcome() {
           border: none;
         }
         .wl-inst-shell {
-          display: grid;
-          grid-template-columns: 1.1fr 1fr;
-          gap: 1.5rem 2rem;
           align-items: start;
         }
 

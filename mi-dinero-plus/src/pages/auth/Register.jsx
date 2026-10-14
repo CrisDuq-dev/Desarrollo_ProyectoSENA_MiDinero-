@@ -95,9 +95,35 @@ const INSTITUTIONAL = [
   },
 ]
 
+
+/** Aparece suavemente al entrar en viewport (igual que Welcome). */
+function useScrollReveal() {
+  useEffect(() => {
+    const items = document.querySelectorAll('.reg-reveal')
+    if (typeof IntersectionObserver === 'undefined') {
+      items.forEach((el) => el.classList.add('is-visible'))
+      return undefined
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.12 }
+    )
+    items.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+}
+
 function Register() {
   const { register, loading } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  useScrollReveal()
 
   const [fullName, setFullName] = useState('')
   const [correo, setCorreo] = useState('')
@@ -159,10 +185,10 @@ function Register() {
       </button>
 
       <div className="register-shell">
-        <section className="register-hero" aria-label="Bienvenida">
-          <span className="sim-badge">SIMULACIÓN EDUCATIVA</span>
+        <section className="register-hero reg-anim" aria-label="Bienvenida" style={{ animationDelay: "0.05s" }}>
+          <span className="sim-badge reg-anim" style={{ animationDelay: "0.08s" }}>SIMULACIÓN EDUCATIVA</span>
 
-          <div className="hero-main">
+          <div className="hero-main reg-anim" style={{ animationDelay: "0.12s" }}>
             <div className="hero-logo-wrap">
               <img
                 src="/logomidineroplus.png"
@@ -186,8 +212,12 @@ function Register() {
           </div>
 
           <div className="hero-benefits">
-            {BENEFITS.map(({ icon: Icon, label, desc, color, soft }) => (
-              <div key={label} className="benefit-wrap">
+            {BENEFITS.map(({ icon: Icon, label, desc, color, soft }, index) => (
+              <div
+                key={label}
+                className="benefit-wrap reg-anim"
+                style={{ animationDelay: `${0.2 + index * 0.07}s` }}
+              >
                 <div
                   className="benefit-item"
                   style={{ '--accent': color, '--soft': soft }}
@@ -205,7 +235,7 @@ function Register() {
           </div>
         </section>
 
-        <section className="register-form-panel" aria-label="Registro">
+        <section className="register-form-panel reg-anim" aria-label="Registro" style={{ animationDelay: "0.18s" }}>
           <header className="form-header">
             <h2>Crea tu cuenta</h2>
             <p>Completa la información para comenzar tu experiencia en Mi Dinero+.</p>
@@ -369,7 +399,7 @@ function Register() {
       </div>
 
       <section className="register-institutional" aria-label="Proyecto institucional">
-        <div className="inst-inner">
+        <div className="inst-inner reg-reveal">
           <div className="inst-left">
             <span className="inst-label">Proyecto institucional</span>
             <h2>Una experiencia formativa para Meta Autos Medellín</h2>
@@ -430,7 +460,7 @@ function Register() {
           min-height: 100vh;
           background: var(--bg);
           color: var(--text);
-          padding: 1.5rem 1rem 2.5rem;
+          padding: 1.5rem 1rem 1.25rem;
           position: relative;
           font-family: 'Nunito', 'Comic Neue', system-ui, sans-serif;
         }
@@ -928,9 +958,8 @@ function Register() {
 
         .register-institutional {
           max-width: 1180px;
-          margin: 1.25rem auto 0;
-          animation: pageEnter 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-          animation-delay: 0.12s;
+          margin: 1rem auto 0;
+          padding-bottom: 0.25rem;
         }
 
         .inst-inner {
@@ -938,10 +967,10 @@ function Register() {
           color: #f1f5f9;
           border: 1px solid #334155;
           border-radius: 1.5rem;
-          padding: 1.75rem 1.85rem 1.5rem;
+          padding: 1.35rem 1.5rem 1.1rem;
           display: grid;
           grid-template-columns: 1.05fr 1fr;
-          gap: 1.5rem;
+          gap: 1rem 1.35rem;
           align-items: start;
           box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
           overflow: visible;
@@ -957,7 +986,7 @@ function Register() {
         }
 
         .inst-left h2 {
-          margin: 0 0 0.65rem;
+          margin: 0 0 0.5rem;
           font-size: 1.2rem;
           line-height: 1.3;
           font-weight: 800;
@@ -965,9 +994,9 @@ function Register() {
         }
 
         .inst-left > p {
-          margin: 0 0 0.6rem;
+          margin: 0 0 0.45rem;
           font-size: 0.9rem;
-          line-height: 1.6;
+          line-height: 1.55;
           color: #cbd5e1;
         }
 
@@ -1120,9 +1149,9 @@ function Register() {
           flex-wrap: wrap;
           align-items: center;
           justify-content: space-between;
-          gap: 1rem;
-          margin-top: 0.35rem;
-          padding-top: 1.1rem;
+          gap: 0.75rem 1rem;
+          margin-top: 0.15rem;
+          padding-top: 0.85rem;
           border-top: 1px solid #334155;
         }
         .inst-credit-block {
@@ -1164,6 +1193,36 @@ function Register() {
           border: none;
           font-size: 0.8rem;
           color: #94a3b8;
+        }
+
+
+        /* ---------- Animaciones (estilo Welcome) ---------- */
+        @keyframes regFadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .reg-anim {
+          animation: regFadeUp 0.6s ease-out both;
+        }
+        .reg-reveal {
+          opacity: 0;
+          transform: translateY(22px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reg-reveal.is-visible {
+          opacity: 1;
+          transform: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .reg-anim,
+          .page-enter {
+            animation: none !important;
+          }
+          .reg-reveal {
+            opacity: 1;
+            transform: none;
+            transition: none;
+          }
         }
 
       `}</style>
