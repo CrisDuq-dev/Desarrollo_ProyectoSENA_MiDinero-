@@ -21,8 +21,8 @@ import {
 } from 'react-icons/fi'
 
 const ALERT_MESSAGES = [
-  'Entorno de simulación educativa: aquí no se usa dinero real',
-  'Nunca escribas datos reales: ni contraseñas, ni números de tarjeta, ni cuentas bancarias',
+  'Entorno de simulación educativa, aquí no se usa dinero real',
+  'Nunca escribas contraseñas personales, números de tarjetas ni cuentas bancarias',
   'Los consejos de la IA son educativos y no reemplazan a un profesional financiero',
   'Practica sin riesgo: equivocarte aquí no cuesta nada y aprender sí vale',
   'Las tasas de cambio son de referencia y pueden diferir de las del mercado',

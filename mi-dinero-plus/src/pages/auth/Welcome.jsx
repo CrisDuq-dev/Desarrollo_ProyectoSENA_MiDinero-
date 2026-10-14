@@ -114,7 +114,6 @@ const INSTITUTIONAL = [
   },
 ]
 
-/** Cada bloque con la clase `wl-reveal` aparece suavemente al hacer scroll. */
 function useScrollReveal() {
   useEffect(() => {
     const items = document.querySelectorAll('.wl-reveal')
