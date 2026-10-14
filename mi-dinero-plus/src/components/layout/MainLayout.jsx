@@ -1,16 +1,20 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Navbar from './Navbar'
 import ScrollToTop from './ScrollToTop'
 import IdleGuard from '../common/IdleGuard'
 
 function MainLayout() {
+  const location = useLocation()
+
   return (
     <div className="main-layout">
       <ScrollToTop />
       <IdleGuard />
       <Navbar />
       <main className="main-content">
-        <Outlet />
+        <div key={location.pathname} className="page-enter">
+          <Outlet />
+        </div>
       </main>
 
       <style>{`
@@ -21,6 +25,7 @@ function MainLayout() {
           flex-direction: column;
           background: var(--bg-page, #0b1220);
           color: var(--text-primary);
+          font-family: 'Nunito', 'Comic Neue', system-ui, sans-serif;
         }
 
         .main-content {
@@ -29,6 +34,22 @@ function MainLayout() {
           box-sizing: border-box;
           min-width: 0;
           padding-top: 5.5rem;
+        }
+
+        /* Entrada suave al cambiar de módulo */
+        .page-enter {
+          animation: mdpPageEnter 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes mdpPageEnter {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         @media (max-width: 900px) {
@@ -41,6 +62,12 @@ function MainLayout() {
         @media (max-width: 480px) {
           .main-content {
             padding-top: 4.85rem;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .page-enter {
+            animation: none;
           }
         }
       `}</style>
