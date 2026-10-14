@@ -1265,16 +1265,16 @@ function Welcome() {
 
         /* ---------- PROYECTO INSTITUCIONAL ---------- */
         .wl-inst {
-          padding: 0.5rem 1.5rem 1.5rem;
+          padding: 0.5rem 1.5rem 1.25rem;
         }
         .wl-inst-shell {
           display: grid;
           grid-template-columns: 1.05fr 1fr;
-          gap: 1rem 1.5rem;
+          gap: 0.85rem 1.35rem;
           width: 100%;
           max-width: 1180px;
           margin: 0 auto;
-          padding: 1.35rem 1.5rem 1.15rem;
+          padding: 1.15rem 1.5rem;
           border-radius: 1.5rem;
           color: #f1f5f9;
           background: #1e293b;
@@ -1308,8 +1308,8 @@ function Welcome() {
           display: inline-flex;
           align-items: center;
           gap: 0.75rem;
-          margin: 0.7rem 0 0.9rem;
-          padding: 0.6rem 1rem 0.6rem 0.65rem;
+          margin: 0;
+          padding: 0.55rem 1rem 0.55rem 0.65rem;
           border-radius: 999px;
           background: rgba(96, 165, 250, 0.1);
           border: 1px solid rgba(96, 165, 250, 0.3);
@@ -1527,7 +1527,7 @@ function Welcome() {
             padding: 0.5rem 1rem 2rem;
           }
           .wl-inst-shell {
-            padding: 1.3rem;
+            padding: 1.15rem 1.2rem;
           }
           .wl-btn-primary,
           .wl-btn-ghost,
@@ -1543,9 +1543,9 @@ function Welcome() {
           flex-wrap: wrap;
           align-items: center;
           justify-content: space-between;
-          gap: 0.75rem 1rem;
-          margin-top: 0.1rem;
-          padding-top: 0.85rem;
+          gap: 0.65rem 1rem;
+          margin: 0;
+          padding-top: 0.75rem;
           border-top: 1px solid #334155;
         }
         .wl-inst-footer .wl-inst-copy {
