@@ -503,14 +503,18 @@ function Welcome() {
           --muted: ${theme === 'light' ? '#475569' : '#94a3b8'};
 
           min-height: 100vh;
+          min-height: 100dvh;
           background: var(--page-bg);
           color: var(--text);
           font-family: 'Nunito', 'Comic Neue', system-ui, sans-serif;
-          overflow-x: hidden;
+          /* Un solo scroll: el del documento. Evita barra doble con html/body */
+          overflow-x: clip;
+          overflow-y: visible;
         }
 
         .wl-main {
           display: block;
+          overflow: visible;
         }
 
         /* ---------- HERO ---------- */
