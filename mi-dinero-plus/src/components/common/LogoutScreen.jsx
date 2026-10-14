@@ -1,24 +1,39 @@
 import { createPortal } from 'react-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { LOGOUT_MIN_MS, LOGOUT_LEAVE_MS } from '../../data/logoutPhrases'
+import {
+  LOGOUT_MIN_MS,
+  LOGOUT_LEAVE_MS,
+  LOGIN_MIN_MS,
+  LOGIN_LEAVE_MS,
+} from '../../data/logoutPhrases'
 
-/**
- * Pantalla de despedida a pantalla completa.
- * Vive por encima de las rutas (se monta dentro de AuthProvider), por eso
- * sigue visible aunque la sesión se cierre y la app cambie de página.
- */
 export default function LogoutScreen() {
-  const { logoutState, logoutPhrase } = useAuth()
-  if (!logoutState) return null
+  const { logoutState, logoutPhrase, entryState, entryPhrase } = useAuth()
+
+  const mode = logoutState ? 'logout' : entryState ? 'login' : null
+  const state = logoutState || entryState
+  if (!mode || !state) return null
+
+  const minMs = mode === 'logout' ? LOGOUT_MIN_MS : LOGIN_MIN_MS
+  const leaveMs = mode === 'logout' ? LOGOUT_LEAVE_MS : LOGIN_LEAVE_MS
+  const phrase = mode === 'logout' ? logoutPhrase : entryPhrase
+
+  const title = mode === 'logout' ? '¡Hasta pronto!' : '¡Bienvenido!'
+  const note =
+    mode === 'logout'
+      ? 'Cerrando tu sesión de forma segura…'
+      : 'Ingresando a la plataforma…'
 
   return createPortal(
     <div
-      className={`logout-screen${logoutState === 'leaving' ? ' is-leaving' : ''}`}
+      className={`logout-screen${state === 'leaving' ? ' is-leaving' : ''}${
+        mode === 'login' ? ' is-login' : ''
+      }`}
       role="status"
       aria-live="polite"
       style={{
-        '--logout-ms': `${LOGOUT_MIN_MS}ms`,
-        '--logout-leave-ms': `${LOGOUT_LEAVE_MS}ms`,
+        '--logout-ms': `${minMs}ms`,
+        '--logout-leave-ms': `${leaveMs}ms`,
       }}
     >
       <div className="logout-card">
@@ -29,12 +44,12 @@ export default function LogoutScreen() {
           width={120}
           height={120}
         />
-        <h2 className="logout-title">¡Hasta pronto!</h2>
-        <p className="logout-phrase">“{logoutPhrase}”</p>
+        <h2 className="logout-title">{title}</h2>
+        {phrase ? <p className="logout-phrase">“{phrase}”</p> : null}
         <div className="logout-bar" aria-hidden="true">
           <span />
         </div>
-        <p className="logout-note">Cerrando tu sesión de forma segura…</p>
+        <p className="logout-note">{note}</p>
       </div>
 
       <style>{`
@@ -49,32 +64,35 @@ export default function LogoutScreen() {
             radial-gradient(ellipse at 50% 35%, rgba(37, 99, 235, 0.22), transparent 60%),
             var(--bg-page, #0b1220);
           color: var(--text-primary, #e2e8f0);
-          font-family: 'Nunito', 'Inter', system-ui, sans-serif;
-          animation: logout-fade-in 0.3s ease both;
+          animation: logout-fade-in 0.35s ease both;
+        }
+        .logout-screen.is-login {
+          background:
+            radial-gradient(ellipse at 50% 35%, rgba(18, 183, 106, 0.18), transparent 55%),
+            radial-gradient(ellipse at 50% 35%, rgba(37, 99, 235, 0.2), transparent 60%),
+            var(--bg-page, #0b1220);
         }
         .logout-screen.is-leaving {
-          animation: logout-fade-out var(--logout-leave-ms, 450ms) ease forwards;
-          pointer-events: none;
+          animation: logout-fade-out var(--logout-leave-ms, 450ms) ease both;
         }
         .logout-card {
-          width: min(46rem, 100%);
-          text-align: center;
           display: flex;
           flex-direction: column;
           align-items: center;
+          text-align: center;
+          max-width: 28rem;
         }
         .logout-logo {
-          width: 7.5rem;
-          height: auto;
-          max-width: 40vw;
+          width: 120px;
+          height: 120px;
           object-fit: contain;
-          animation: logout-logo-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+          animation: logout-logo-in 0.55s ease both;
         }
         .logout-title {
-          margin: 1.1rem 0 0.6rem;
-          font-size: 1.6rem;
+          margin: 1.25rem 0 0.65rem;
+          font-size: 1.65rem;
           font-weight: 800;
-          letter-spacing: 0.01em;
+          color: var(--text-primary, #f1f5f9);
           animation: logout-rise 0.6s ease 0.25s both;
         }
         .logout-phrase {
@@ -83,8 +101,6 @@ export default function LogoutScreen() {
           line-height: 1.55;
           font-style: italic;
           color: var(--text-muted, #94a3b8);
-          /* Evita que quede una palabra sola en la última línea:
-             si la frase no cabe en una línea, reparte el texto en líneas parejas */
           text-wrap: balance;
           animation: logout-rise 0.7s ease 0.45s both;
         }

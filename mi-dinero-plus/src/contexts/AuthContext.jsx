@@ -9,7 +9,10 @@ import {
 import {
   LOGOUT_MIN_MS,
   LOGOUT_LEAVE_MS,
+  LOGIN_MIN_MS,
+  LOGIN_LEAVE_MS,
   pickLogoutPhrase,
+  pickLoginPhrase,
 } from '../data/logoutPhrases'
 import { cacheProfileResponse } from '../utils/profileCache'
 
@@ -38,7 +41,6 @@ const persistUser = (userData) => {
   window.localStorage.removeItem(USER_STORAGE_KEY)
 }
 
-/** Limpia restos legacy de tokens en localStorage (migración anti-XSS). */
 const clearLegacyTokens = () => {
   if (typeof window === 'undefined') return
   window.localStorage.removeItem('token')
@@ -65,10 +67,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
-  // Pantalla de despedida: null | 'active' | 'leaving'
   const [logoutState, setLogoutState] = useState(null)
   const [logoutPhrase, setLogoutPhrase] = useState('')
   const logoutRunning = useRef(false)
+
+  const [entryState, setEntryState] = useState(null)
+  const [entryPhrase, setEntryPhrase] = useState('')
+  const entryRunning = useRef(false)
 
   const clearSession = useCallback(() => {
     clearLegacyTokens()
@@ -91,7 +96,6 @@ export function AuthProvider({ children }) {
         }
         if (cancelled) return
 
-        // 2) Perfil con access (recién renovado o aún válido)
         const profileData = await getProfile()
         if (cancelled) return
 
@@ -117,6 +121,22 @@ export function AuthProvider({ children }) {
       cancelled = true
     }
   }, [clearSession])
+
+
+  const playEntryTransition = useCallback(async () => {
+    if (entryRunning.current) return
+    entryRunning.current = true
+    setEntryPhrase(pickLoginPhrase())
+    setEntryState('active')
+    try {
+      await wait(LOGIN_MIN_MS)
+    } finally {
+      setEntryState('leaving')
+      await wait(LOGIN_LEAVE_MS)
+      setEntryState(null)
+      entryRunning.current = false
+    }
+  }, [])
 
   const login = async (emailOrCredentials, password) => {
     const credentials =
@@ -150,7 +170,38 @@ export function AuthProvider({ children }) {
         console.warn('AuthContext: profile after login failed', err?.message || err)
       }
 
+      await playEntryTransition()
+
       return data
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const acceptExternalSession = async (userData) => {
+    if (!userData) throw new Error('No se pudo completar el inicio de sesión')
+
+    setLoading(true)
+    try {
+      persistUser(userData)
+      setUser(userData)
+      setIsAuthenticated(true)
+      clearLegacyTokens()
+
+      try {
+        const profileData = await getProfile()
+        const fullUser = profileData?.user || userData
+        if (fullUser) {
+          persistUser(fullUser)
+          setUser(fullUser)
+        }
+        dispatchProfileLoaded(profileData)
+      } catch (err) {
+        console.warn('AuthContext: profile after OAuth failed', err?.message || err)
+      }
+
+      await playEntryTransition()
+      return userData
     } finally {
       setLoading(false)
     }
@@ -168,8 +219,6 @@ export function AuthProvider({ children }) {
     setLogoutState('active')
 
     try {
-      // Espera al servidor Y un mínimo de tiempo para que se lea la frase.
-      // Aunque falle la red, limpiamos estado local.
       await Promise.all([logoutUser().catch(() => {}), wait(LOGOUT_MIN_MS)])
     } finally {
       clearSession()
@@ -201,6 +250,9 @@ export function AuthProvider({ children }) {
         logout,
         logoutState,
         logoutPhrase,
+        entryState,
+        entryPhrase,
+        acceptExternalSession,
         updateUser,
       }}
     >

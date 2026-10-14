@@ -1,7 +1,8 @@
 export const LOGOUT_MIN_MS = 2200
+export const LOGIN_MIN_MS = 2200
 
-// Duración del desvanecimiento final.
 export const LOGOUT_LEAVE_MS = 450
+export const LOGIN_LEAVE_MS = 450
 
 export const LOGOUT_PHRASES = [
   'Cada peso que cuidas hoy es una decisión que tu yo del futuro te va a agradecer.',
@@ -18,6 +19,25 @@ export const LOGOUT_PHRASES = [
   'Hoy avanzaste. Mañana seguimos.',
 ]
 
+export const LOGIN_PHRASES = [
+  'Hoy es un buen día para ordenar tus números.',
+  'Cada registro te acerca un poco más a tus metas.',
+  'La claridad financiera empieza en cuanto entras.',
+  'Practica con calma: aquí no hay dinero real en riesgo.',
+  'Tu mapa financiero te espera; vamos paso a paso.',
+  'Pequeñas decisiones de hoy construyen el mañana.',
+  'Bienvenido de nuevo a tu espacio de práctica.',
+  'Observa, registra y decide con más criterio.',
+  'El hábito se forma con constancia, no con prisa.',
+  'Aquí aprendes equivocándote sin miedo.',
+  'Tu progreso se construye un movimiento a la vez.',
+  'Listo para retomar el control de tu simulación.',
+]
+
 export function pickLogoutPhrase() {
   return LOGOUT_PHRASES[Math.floor(Math.random() * LOGOUT_PHRASES.length)]
+}
+
+export function pickLoginPhrase() {
+  return LOGIN_PHRASES[Math.floor(Math.random() * LOGIN_PHRASES.length)]
 }

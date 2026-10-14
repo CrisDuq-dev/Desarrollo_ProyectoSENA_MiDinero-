@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { exchangeGoogleCode } from '../../services/api'
+import { useAuth } from '../../contexts/AuthContext'
 
 function GoogleCallback() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
+  const { acceptExternalSession } = useAuth()
   const [message, setMessage] = useState('Completando inicio de sesión con Google…')
   const didRun = useRef(false)
 
@@ -28,8 +30,8 @@ function GoogleCallback() {
           throw new Error(data?.message || 'No se pudo completar el inicio de sesión')
         }
 
-        // Cookies ya puestas por el backend
-        window.location.replace('/dashboard')
+        await acceptExternalSession(data.user)
+        navigate('/dashboard', { replace: true })
       } catch (err) {
         console.error('Google exchange failed:', err?.message || err)
         setMessage(
@@ -41,7 +43,7 @@ function GoogleCallback() {
     }
 
     run()
-  }, [params, navigate])
+  }, [params, navigate, acceptExternalSession])
 
   return (
     <div
