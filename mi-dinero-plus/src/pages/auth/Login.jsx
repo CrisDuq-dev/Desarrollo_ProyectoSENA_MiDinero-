@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { resendVerificationEmail } from '../../services/api'
-import { FiEye, FiEyeOff, FiCopy, FiCheck, FiX } from 'react-icons/fi'
+import { FiEye, FiEyeOff, FiCopy, FiCheck, FiX, FiChevronDown } from 'react-icons/fi'
 
 const ADMIN_USER = 'Admin_Dev'
 const ADMIN_PASS = '#Ing7080'
 const GATE_PASS = 'ADSO'
+const SAVED_ACCOUNTS_KEY = 'midinero_saved_accounts'
 
 const isAdminDevUser = (valor) =>
   String(valor || '').trim().toLowerCase() === 'admin_dev'
@@ -18,6 +19,32 @@ const validarCorreo = (valor) => {
 }
 
 const validarPassword = (valor) => valor.trim().length >= 6
+
+function loadSavedAccounts() {
+  try {
+    const raw = localStorage.getItem(SAVED_ACCOUNTS_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list) ? list : []
+  } catch {
+    return []
+  }
+}
+
+export function saveLoginAccount({ email, provider = 'local' }) {
+  const normalized = String(email || '').trim().toLowerCase()
+  if (!normalized) return
+  const list = loadSavedAccounts().filter((a) => a.email !== normalized)
+  list.unshift({
+    email: normalized,
+    provider: provider === 'google' ? 'google' : 'local',
+    savedAt: Date.now(),
+  })
+  try {
+    localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(list.slice(0, 5)))
+  } catch {
+    // ignore quota
+  }
+}
 
 function Login() {
   const { login, loading } = useAuth()
@@ -31,6 +58,11 @@ function Login() {
   const [info, setInfo] = useState('')
   const [resending, setResending] = useState(false)
 
+  const [savedAccounts, setSavedAccounts] = useState([])
+  const [accountsOpen, setAccountsOpen] = useState(false)
+  const accountsRef = useRef(null)
+  const passwordRef = useRef(null)
+
   // Panel oculto dev
   const [devOpen, setDevOpen] = useState(false)
   const [gateInput, setGateInput] = useState('')
@@ -40,7 +72,19 @@ function Login() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    setSavedAccounts(loadSavedAccounts())
   }, [])
+
+  useEffect(() => {
+    if (!accountsOpen) return
+    const onDocClick = (e) => {
+      if (accountsRef.current && !accountsRef.current.contains(e.target)) {
+        setAccountsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [accountsOpen])
 
   const manejarEnvio = async (event) => {
     event.preventDefault()
@@ -62,6 +106,7 @@ function Login() {
     if (Object.keys(nuevosErrores).length === 0) {
       try {
         await login(correo.trim(), password)
+        saveLoginAccount({ email: correo.trim(), provider: 'local' })
         navigate('/dashboard')
       } catch (error) {
         const code = error?.data?.code
@@ -107,9 +152,35 @@ function Login() {
     }
   }
 
-  const manejarGoogle = () => {
+  const googleAuthUrl = (opts = {}) => {
     const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
-    window.location.href = `${apiBase}/auth/google`
+    const params = new URLSearchParams()
+    if (opts.loginHint) params.set('login_hint', opts.loginHint)
+    if (opts.selectAccount) params.set('prompt', 'select_account')
+    const qs = params.toString()
+    return `${apiBase}/auth/google${qs ? `?${qs}` : ''}`
+  }
+
+  const manejarGoogle = () => {
+    window.location.href = googleAuthUrl({ selectAccount: true })
+  }
+
+  const elegirCuenta = (account) => {
+    setAccountsOpen(false)
+    setErrores({})
+    setInfo('')
+
+    if (account.provider === 'google') {
+      window.location.href = googleAuthUrl({
+        loginHint: account.email,
+        selectAccount: true,
+      })
+      return
+    }
+
+    setCorreo(account.email)
+    setPassword('')
+    setTimeout(() => passwordRef.current?.focus(), 50)
   }
 
   const openDevPanel = () => {
@@ -176,6 +247,65 @@ function Login() {
         <section className="login-body">
           <h2>Acceso a la Plataforma</h2>
 
+          {/* Un solo botón cuadrado → al clic muestra cuentas guardadas */}
+          <div className="saved-accounts-wrap" ref={accountsRef}>
+            <button
+              type="button"
+              className={`saved-accounts-btn${accountsOpen ? ' is-open' : ''}`}
+              onClick={() => setAccountsOpen((o) => !o)}
+              aria-expanded={accountsOpen}
+              aria-haspopup="listbox"
+              title="Cuentas guardadas"
+            >
+              <FiCheck size={20} strokeWidth={2.5} aria-hidden />
+              <FiChevronDown size={14} className="saved-chevron" aria-hidden />
+            </button>
+
+            {accountsOpen && (
+              <div className="saved-accounts-panel" role="listbox">
+                {savedAccounts.length === 0 ? (
+                  <p className="saved-empty">
+                    Aún no hay cuentas guardadas. Inicia sesión o usa Google y
+                    se recordará el correo aquí.
+                  </p>
+                ) : (
+                  savedAccounts.map((account) => (
+                    <button
+                      key={account.email}
+                      type="button"
+                      className="saved-account-item"
+                      role="option"
+                      onClick={() => elegirCuenta(account)}
+                    >
+                      <span className="saved-account-avatar" aria-hidden>
+                        {account.email.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="saved-account-meta">
+                        <strong>{account.email}</strong>
+                        <span className="saved-account-pass">••••••••</span>
+                        <span className="saved-account-provider">
+                          {account.provider === 'google'
+                            ? 'Google'
+                            : 'Correo y contraseña'}
+                        </span>
+                      </span>
+                    </button>
+                  ))
+                )}
+                <button
+                  type="button"
+                  className="saved-account-other"
+                  onClick={() => {
+                    setAccountsOpen(false)
+                    manejarGoogle()
+                  }}
+                >
+                  Usar otra cuenta con Google
+                </button>
+              </div>
+            )}
+          </div>
+
           <form onSubmit={manejarEnvio} noValidate className="login-form">
             <label>
               Correo electrónico
@@ -195,6 +325,7 @@ function Login() {
               Contraseña
               <div className="password-field">
                 <input
+                  ref={passwordRef}
                   type={mostrarPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -419,7 +550,6 @@ function Login() {
           overflow: hidden;
         }
 
-        /* Cuadrícula decorativa (misma idea que registro) */
         .login-brand::before {
           content: '';
           position: absolute;
@@ -481,11 +611,150 @@ function Login() {
         }
 
         .login-body h2 {
-          margin: 0 0 1.25rem;
+          margin: 0 0 1rem;
           font-size: 1.15rem;
           font-weight: 700;
           text-align: center;
           color: var(--text);
+        }
+
+        /* ——— Cuentas guardadas: un cuadrado con chulo ——— */
+        .saved-accounts-wrap {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          margin-bottom: 1.15rem;
+        }
+
+        .saved-accounts-btn {
+          width: 3rem;
+          height: 3rem;
+          border-radius: 0.85rem;
+          border: 1.5px solid var(--border);
+          background: var(--input-bg);
+          color: var(--green);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.1rem;
+          cursor: pointer;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+        }
+
+        .saved-accounts-btn:hover,
+        .saved-accounts-btn.is-open {
+          border-color: var(--green);
+          box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.18);
+          transform: translateY(-1px);
+        }
+
+        .saved-chevron {
+          color: var(--muted);
+          margin-left: -2px;
+        }
+
+        .saved-accounts-panel {
+          position: absolute;
+          top: calc(100% + 0.45rem);
+          left: 50%;
+          transform: translateX(-50%);
+          width: min(100%, 320px);
+          z-index: 20;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 0.9rem;
+          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.18);
+          padding: 0.45rem;
+          display: grid;
+          gap: 0.25rem;
+        }
+
+        .saved-empty {
+          margin: 0;
+          padding: 0.75rem 0.65rem;
+          font-size: 0.8rem;
+          line-height: 1.4;
+          color: var(--muted);
+          text-align: center;
+          font-weight: 500;
+        }
+
+        .saved-account-item {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          width: 100%;
+          text-align: left;
+          border: none;
+          background: transparent;
+          color: var(--text);
+          border-radius: 0.65rem;
+          padding: 0.55rem 0.6rem;
+          cursor: pointer;
+          font: inherit;
+          transition: background 0.15s ease;
+        }
+
+        .saved-account-item:hover {
+          background: ${theme === 'light' ? 'rgba(5, 150, 105, 0.08)' : 'rgba(5, 150, 105, 0.12)'};
+        }
+
+        .saved-account-avatar {
+          width: 2.15rem;
+          height: 2.15rem;
+          border-radius: 0.55rem;
+          background: linear-gradient(145deg, #10b981, #059669);
+          color: #fff;
+          font-weight: 800;
+          font-size: 0.95rem;
+          display: grid;
+          place-items: center;
+          flex-shrink: 0;
+        }
+
+        .saved-account-meta {
+          display: grid;
+          gap: 0.1rem;
+          min-width: 0;
+        }
+
+        .saved-account-meta strong {
+          font-size: 0.88rem;
+          font-weight: 700;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .saved-account-pass {
+          font-size: 0.78rem;
+          color: var(--muted);
+          letter-spacing: 0.06em;
+        }
+
+        .saved-account-provider {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: var(--muted);
+        }
+
+        .saved-account-other {
+          margin-top: 0.15rem;
+          width: 100%;
+          border: none;
+          border-top: 1px solid var(--border);
+          background: transparent;
+          color: var(--blue);
+          font: inherit;
+          font-size: 0.82rem;
+          font-weight: 700;
+          padding: 0.65rem 0.5rem 0.45rem;
+          cursor: pointer;
+          border-radius: 0 0 0.65rem 0.65rem;
+        }
+
+        .saved-account-other:hover {
+          text-decoration: underline;
         }
 
         .login-form {
@@ -726,7 +995,6 @@ function Login() {
           }
         }
 
-        /* ——— Dev access (punto + panel) ——— */
         .dev-dot {
           position: fixed;
           right: 14px;
