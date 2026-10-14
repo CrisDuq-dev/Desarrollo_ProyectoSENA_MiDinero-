@@ -7,6 +7,7 @@ import {
   FiAlertCircle,
   FiCheck,
   FiTrash2,
+  FiSearch,
 } from 'react-icons/fi'
 import { useFinance } from '../../contexts/FinanceContext'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
@@ -36,6 +37,29 @@ function isDeletedActivity(n) {
   return event.includes('deleted') || title.includes('eliminad')
 }
 
+function matchesSearch(n, query) {
+  const q = String(query || '')
+    .trim()
+    .toLowerCase()
+  if (!q) return true
+
+  const title = String(n.title || '').toLowerCase()
+  const message = String(n.message || '').toLowerCase()
+  const eventType = String(n.eventType || '').toLowerCase()
+  const category = String(n.category || '').toLowerCase()
+  const dateLocal = formatDate(n.createdAt).toLowerCase()
+  const dateIso = n.createdAt ? String(n.createdAt).toLowerCase() : ''
+
+  return (
+    title.includes(q) ||
+    message.includes(q) ||
+    eventType.includes(q) ||
+    category.includes(q) ||
+    dateLocal.includes(q) ||
+    dateIso.includes(q)
+  )
+}
+
 function ActivityCenter() {
   const {
     activities,
@@ -53,6 +77,7 @@ function ActivityCenter() {
   const [txFilter, setTxFilter] = useState('all')
   const [goalsFilter, setGoalsFilter] = useState('all')
   const [debtsFilter, setDebtsFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [clearing, setClearing] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
 
@@ -88,17 +113,23 @@ function ActivityCenter() {
     return list
   }
 
+  const applySearch = (list) => list.filter((n) => matchesSearch(n, searchQuery))
+
   const filteredTransactions = useMemo(
-    () => applyFilter(grouped.transactions, txFilter),
-    [grouped.transactions, txFilter]
+    () => applySearch(applyFilter(grouped.transactions, txFilter)),
+    [grouped.transactions, txFilter, searchQuery]
   )
   const filteredGoals = useMemo(
-    () => applyFilter(grouped.goals, goalsFilter),
-    [grouped.goals, goalsFilter]
+    () => applySearch(applyFilter(grouped.goals, goalsFilter)),
+    [grouped.goals, goalsFilter, searchQuery]
   )
   const filteredDebts = useMemo(
-    () => applyFilter(grouped.debts, debtsFilter),
-    [grouped.debts, debtsFilter]
+    () => applySearch(applyFilter(grouped.debts, debtsFilter)),
+    [grouped.debts, debtsFilter, searchQuery]
+  )
+  const filteredOther = useMemo(
+    () => applySearch(grouped.other),
+    [grouped.other, searchQuery]
   )
 
   const countUnread = (list) => list.filter((n) => !n.read).length
@@ -152,7 +183,11 @@ function ActivityCenter() {
       return (
         <div className="empty-box">
           <FiActivity size={22} aria-hidden="true" />
-          <p>Aún no hay actividades aquí.</p>
+          <p>
+            {searchQuery.trim()
+              ? 'No hay resultados para tu búsqueda.'
+              : 'Aún no hay actividades aquí.'}
+          </p>
         </div>
       )
     }
@@ -213,24 +248,36 @@ function ActivityCenter() {
         </div>
       </header>
 
-      <div className="activity-actions">
-        <button
-          type="button"
-          className="secondary-button"
-          onClick={() => markAllActivitiesAsRead()}
-        >
-          <FiCheck size={15} />
-          Marcar todas como leídas
-        </button>
-        <button
-          type="button"
-          className="secondary-button danger"
-          onClick={() => setConfirmOpen(true)}
-          disabled={clearing || (activities || []).length === 0}
-        >
-          <FiTrash2 size={15} />
-          {clearing ? 'Vaciando…' : 'Vaciar historial'}
-        </button>
+      <div className="activity-toolbar">
+        <div className="activity-search">
+          <FiSearch size={16} aria-hidden="true" className="search-icon" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por nombre, fecha o letra…"
+            aria-label="Buscar en el historial de actividad"
+          />
+        </div>
+        <div className="activity-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => markAllActivitiesAsRead()}
+          >
+            <FiCheck size={15} />
+            Marcar todas como leídas
+          </button>
+          <button
+            type="button"
+            className="secondary-button danger"
+            onClick={() => setConfirmOpen(true)}
+            disabled={clearing || (activities || []).length === 0}
+          >
+            <FiTrash2 size={15} />
+            {clearing ? 'Vaciando…' : 'Vaciar historial'}
+          </button>
+        </div>
       </div>
 
       {activityCenterError && <p className="error">{activityCenterError}</p>}
@@ -305,7 +352,7 @@ function ActivityCenter() {
         </div>
       )}
 
-      {!activityCenterLoading && grouped.other.length > 0 && (
+      {!activityCenterLoading && filteredOther.length > 0 && (
         <article className="activity-card other">
           <div className="card-head">
             <div className="card-title">
@@ -314,9 +361,9 @@ function ActivityCenter() {
               </span>
               <h2>Otras actividades</h2>
             </div>
-            <span className="count">{grouped.other.length}</span>
+            <span className="count">{filteredOther.length}</span>
           </div>
-          {renderColumn(grouped.other, 'other')}
+          {renderColumn(filteredOther, 'other')}
         </article>
       )}
 
@@ -411,7 +458,6 @@ function ActivityCenter() {
           line-height: 1.45;
         }
 
-        /* ===== Progreso General — morado difuminado ===== */
         .progress-box {
           min-width: 170px;
           background: linear-gradient(
@@ -454,6 +500,56 @@ function ActivityCenter() {
             var(--ac-purple-soft) 100%
           );
           box-shadow: 0 0 12px rgba(124, 58, 237, 0.45);
+        }
+
+        .activity-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.85rem 1rem;
+          flex-wrap: wrap;
+        }
+
+        .activity-search {
+          position: relative;
+          flex: 1 1 220px;
+          max-width: 340px;
+        }
+        .activity-search .search-icon {
+          position: absolute;
+          left: 0.9rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--text-muted);
+          pointer-events: none;
+        }
+        .activity-search input {
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid var(--border);
+          background: var(--bg-surface);
+          color: var(--text-primary);
+          border-radius: 999px;
+          padding: 0.65rem 1rem 0.65rem 2.45rem;
+          font: inherit;
+          font-size: 0.9rem;
+          font-weight: 600;
+          outline: none;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .activity-search input::placeholder {
+          color: var(--text-muted);
+          font-weight: 500;
+        }
+        .activity-search input:focus {
+          border-color: var(--ac-purple);
+          box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
+        }
+        .activity-search input[type='search']::-webkit-search-cancel-button,
+        .activity-search input[type='search']::-webkit-search-decoration {
+          -webkit-appearance: none;
+          appearance: none;
+          display: none;
         }
 
         .activity-actions {
@@ -757,6 +853,10 @@ function ActivityCenter() {
           }
           .activity-center {
             padding: 1rem 1rem 1.4rem;
+          }
+          .activity-search {
+            max-width: none;
+            flex-basis: 100%;
           }
         }
       `}</style>
