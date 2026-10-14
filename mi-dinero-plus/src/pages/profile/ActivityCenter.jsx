@@ -389,8 +389,8 @@ function ActivityCenter() {
           --ac-blue: #2563eb;
           --ac-green: #16a34a;
           --ac-red: #dc2626;
-          --ac-purple: #a7a7a7;
-          --ac-purple-soft: #c4bbdf;
+          --ac-purple: #b8b8b8;
+          --ac-purple-soft: #ffffff;
           --ac-radius: 1.05rem;
           --ac-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 
