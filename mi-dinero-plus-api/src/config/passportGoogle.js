@@ -60,7 +60,6 @@ function configurePassportGoogle() {
             return done(null, byGoogle[0])
           }
 
-          // 2) ¿Existe el mismo email? → vincular (SIN borrar password_hash)
           const [byEmail] = await pool.query(
             `SELECT id, full_name, email, email_verified, password_hash
              FROM users WHERE email = ? LIMIT 1`,
@@ -81,7 +80,6 @@ function configurePassportGoogle() {
                WHERE id = ?`,
               [googleId, local.id]
             )
-            // Si no estaba verificado, revocar sesiones viejas por seguridad
             if (!local.email_verified) {
               await revokeAllUserRefreshTokens(local.id)
             }

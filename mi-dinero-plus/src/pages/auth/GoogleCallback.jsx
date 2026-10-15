@@ -31,7 +31,6 @@ function GoogleCallback() {
       }
 
       try {
-        // Envía también la contraseña del modal para guardarla en el servidor
         const data = await exchangeGoogleCode(code, {
           password: pending?.password || undefined,
         })
