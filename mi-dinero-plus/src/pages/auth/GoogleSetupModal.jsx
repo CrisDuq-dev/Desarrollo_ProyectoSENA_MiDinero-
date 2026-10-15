@@ -7,7 +7,7 @@ export default function GoogleSetupModal({
   open,
   onClose,
   onContinue,
-  source = 'login',
+  source = 'login', // 'login' | 'register'
   theme = 'light',
 }) {
   const [email, setEmail] = useState('')
