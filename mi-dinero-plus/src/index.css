@@ -1,3 +1,5 @@
+@import './cursors.css';
+
 /* Reset and global variables */
 * {
   box-sizing: border-box;
@@ -94,89 +96,4 @@ input,
 select,
 textarea {
   font-family: inherit;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  html,
-  body,
-  #root,
-  *,
-  *::before,
-  *::after {
-    cursor: url('/cursors/default.png') 3 3, auto !important;
-    cursor: -webkit-image-set(
-        url('/cursors/default.png') 1x,
-        url('/cursors/default@2x.png') 2x
-      )
-      3 3,
-      auto !important;
-  }
-
-  a,
-  button,
-  summary,
-  select,
-  label[for],
-  [onclick],
-  [role='button'],
-  [type='submit'],
-  [type='button'],
-  [type='reset'],
-  input[type='checkbox'],
-  input[type='radio'],
-  input[type='range'],
-  input[type='file'],
-  input[type='color'],
-  .cursor-pointer,
-  [style*='cursor: pointer'],
-  [style*='cursor:pointer'],
-  .btn-primary,
-  .btn-google,
-  .gs-submit,
-  .pin-submit,
-  .theme-fab,
-  .saved-accounts-btn,
-  .mp-chat-send,
-  .atrapa-game-fab {
-    cursor: url('/cursors/pointer.png') 12 3, pointer !important;
-    cursor: -webkit-image-set(
-        url('/cursors/pointer.png') 1x,
-        url('/cursors/pointer@2x.png') 2x
-      )
-      12 3,
-      pointer !important;
-  }
-
-  textarea,
-  [contenteditable='true'],
-  input:not([type]),
-  input[type='text'],
-  input[type='email'],
-  input[type='password'],
-  input[type='search'],
-  input[type='number'],
-  input[type='tel'],
-  input[type='url'] {
-    cursor: url('/cursors/text.png') 16 16, text !important;
-    cursor: -webkit-image-set(
-        url('/cursors/text.png') 1x,
-        url('/cursors/text@2x.png') 2x
-      )
-      16 16,
-      text !important;
-  }
-
-  button:disabled,
-  input:disabled,
-  select:disabled,
-  textarea:disabled,
-  [aria-disabled='true'] {
-    cursor: url('/cursors/default.png') 3 3, auto !important;
-    cursor: -webkit-image-set(
-        url('/cursors/default.png') 1x,
-        url('/cursors/default@2x.png') 2x
-      )
-      3 3,
-      auto !important;
-  }
 }
