@@ -60,7 +60,6 @@ body,
   }
 }
 
-/* —— Scrollbar fina —— */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
@@ -95,4 +94,57 @@ input,
 select,
 textarea {
   font-family: inherit;
+}
+
+html,
+body,
+#root {
+  cursor: url('/cursors/default.png') 3 3, auto;
+  cursor: -webkit-image-set(
+      url('/cursors/default.png') 1x,
+      url('/cursors/default@2x.png') 2x
+    )
+    3 3,
+    url('/cursors/default.png') 3 3,
+    auto;
+}
+
+a,
+button,
+[role='button'],
+[type='submit'],
+[type='button'],
+select,
+label[for],
+.btn-primary,
+.btn-google,
+.gs-submit,
+.pin-submit,
+.theme-fab,
+.saved-accounts-btn,
+.mp-chat-send,
+.atrapa-game-fab {
+  cursor: url('/cursors/pointer.png') 12 3, pointer;
+  cursor: -webkit-image-set(
+      url('/cursors/pointer.png') 1x,
+      url('/cursors/pointer@2x.png') 2x
+    )
+    12 3,
+    url('/cursors/pointer.png') 12 3,
+    pointer;
+}
+
+input,
+textarea {
+  cursor: text;
+}
+
+@media (hover: none), (pointer: coarse) {
+  html,
+  body,
+  #root,
+  a,
+  button {
+    cursor: auto;
+  }
 }
