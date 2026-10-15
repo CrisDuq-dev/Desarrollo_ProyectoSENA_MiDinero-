@@ -13,6 +13,13 @@ import {
   FiLock,
   FiChevronRight,
 } from 'react-icons/fi'
+import GoogleSetupModal from '../../components/auth/GoogleSetupModal'
+import { saveGoogleSetupPending } from '../../utils/googleSetupStorage'
+import {
+  loadSavedAccounts,
+  saveLoginAccount as persistAccount,
+  removeSavedAccount,
+} from '../../utils/savedAccountsStorage'
 
 const ADMIN_USER = 'Admin_Dev'
 const ADMIN_PASS = '#Ing7080'
@@ -51,19 +58,9 @@ function persistAccounts(list) {
   }
 }
 
-export function saveLoginAccount({ email, password, provider = 'local' }) {
-  const e = String(email || '').trim()
-  if (!e || isAdminDevUser(e)) return
-  const list = loadAccounts().filter(
-    (a) => a.email.toLowerCase() !== e.toLowerCase()
-  )
-  list.unshift({
-    email: e,
-    password: String(password || ''),
-    provider: provider === 'google' ? 'google' : 'local',
-    savedAt: Date.now(),
-  })
-  persistAccounts(list)
+/** @deprecated usar utils/savedAccountsStorage — se mantiene por compatibilidad */
+export function saveLoginAccount(opts) {
+  persistAccount(opts)
 }
 
 function loadVaultMeta() {
@@ -110,6 +107,7 @@ function Login() {
   const [errores, setErrores] = useState({})
   const [info, setInfo] = useState('')
   const [resending, setResending] = useState(false)
+  const [googleSetupOpen, setGoogleSetupOpen] = useState(false)
 
   const [savedAccounts, setSavedAccounts] = useState([])
   const [accountsOpen, setAccountsOpen] = useState(false)
@@ -134,7 +132,7 @@ function Login() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-    setSavedAccounts(loadAccounts())
+    setSavedAccounts(loadSavedAccounts())
   }, [])
 
   useEffect(() => {
@@ -174,7 +172,7 @@ function Login() {
           password,
           provider: 'local',
         })
-        setSavedAccounts(loadAccounts())
+        setSavedAccounts(loadSavedAccounts())
         navigate('/dashboard')
       } catch (error) {
         const code = error?.data?.code
@@ -220,13 +218,22 @@ function Login() {
     }
   }
 
-  const manejarGoogle = () => {
+  const goToGoogleOAuth = () => {
     const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
     window.location.href = `${apiBase}/auth/google`
   }
 
+  const manejarGoogle = () => {
+    setGoogleSetupOpen(true)
+  }
+
+  const onGoogleSetupContinue = async ({ email, password }) => {
+    saveGoogleSetupPending({ email, password, source: 'login' })
+    goToGoogleOAuth()
+  }
+
   const openAccounts = () => {
-    setSavedAccounts(loadAccounts())
+    setSavedAccounts(loadSavedAccounts())
     setAccountsOpen((o) => !o)
     setMenuOpen(false)
   }
@@ -320,10 +327,7 @@ function Login() {
   }
 
   const removeAccount = (email) => {
-    const next = loadAccounts().filter(
-      (a) => a.email.toLowerCase() !== String(email).toLowerCase()
-    )
-    persistAccounts(next)
+    const next = removeSavedAccount(email)
     setSavedAccounts(next)
   }
 
@@ -600,7 +604,16 @@ function Login() {
         </div>
       </div>
 
-      {pinModal && (
+      
+      <GoogleSetupModal
+        open={googleSetupOpen}
+        onClose={() => setGoogleSetupOpen(false)}
+        onContinue={onGoogleSetupContinue}
+        source="login"
+        theme={theme}
+      />
+
+{pinModal && (
         <div
           className="pin-overlay"
           onClick={() => !pinBusy && setPinModal(null)}

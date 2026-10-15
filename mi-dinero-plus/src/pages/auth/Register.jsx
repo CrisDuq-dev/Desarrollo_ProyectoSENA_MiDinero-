@@ -2,6 +2,8 @@ import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
+import GoogleSetupModal from '../../components/auth/GoogleSetupModal'
+import { saveGoogleSetupPending } from '../../utils/googleSetupStorage'
 import {
   FiBarChart2,
   FiDollarSign,
@@ -95,8 +97,6 @@ const INSTITUTIONAL = [
   },
 ]
 
-
-/** Aparece suavemente al entrar en viewport (igual que Welcome). */
 function useScrollReveal() {
   useEffect(() => {
     const items = document.querySelectorAll('.reg-reveal')
@@ -134,6 +134,7 @@ function Register() {
   const [enviado, setEnviado] = useState(false)
   const [error, setError] = useState('')
   const [errorKey, setErrorKey] = useState(0)
+  const [googleSetupOpen, setGoogleSetupOpen] = useState(false)
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
@@ -165,11 +166,18 @@ function Register() {
     }
   }
 
-  const manejarGoogle = () => {
-    const apiBase = (
-      import.meta.env.VITE_API_URL || '/api'
-    ).replace(/\/$/, '')
+  const goToGoogleOAuth = () => {
+    const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
     window.location.href = `${apiBase}/auth/google`
+  }
+
+  const manejarGoogle = () => {
+    setGoogleSetupOpen(true)
+  }
+
+  const onGoogleSetupContinue = async ({ email, password: pass }) => {
+    saveGoogleSetupPending({ email, password: pass, source: 'register' })
+    goToGoogleOAuth()
   }
 
   return (
@@ -444,6 +452,14 @@ function Register() {
           </div>
         </div>
       </section>
+
+      <GoogleSetupModal
+        open={googleSetupOpen}
+        onClose={() => setGoogleSetupOpen(false)}
+        onContinue={onGoogleSetupContinue}
+        source="register"
+        theme={theme}
+      />
 
       <style>{`
         .register-page {

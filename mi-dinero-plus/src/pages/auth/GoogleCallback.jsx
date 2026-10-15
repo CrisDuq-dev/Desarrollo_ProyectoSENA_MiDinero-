@@ -2,6 +2,12 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { exchangeGoogleCode } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import {
+  loadGoogleSetupPending,
+  clearGoogleSetupPending,
+  emailsMatch,
+} from '../../utils/googleSetupStorage'
+import { saveLoginAccount } from '../../utils/savedAccountsStorage'
 
 function GoogleCallback() {
   const [params] = useSearchParams()
@@ -16,6 +22,7 @@ function GoogleCallback() {
 
     const run = async () => {
       const code = params.get('code')
+      const pending = loadGoogleSetupPending()
 
       if (!code) {
         setMessage('No se recibió código de Google. Intenta de nuevo.')
@@ -30,10 +37,37 @@ function GoogleCallback() {
           throw new Error(data?.message || 'No se pudo completar el inicio de sesión')
         }
 
+        const googleEmail = data.user.email
+
+        if (pending?.email) {
+          if (!emailsMatch(pending.email, googleEmail)) {
+            clearGoogleSetupPending()
+            setMessage(
+              `El correo de Google (${googleEmail}) no coincide con el que registraste (${pending.email}). Usa la misma cuenta.`
+            )
+            setTimeout(() => navigate('/login', { replace: true }), 3500)
+            return
+          }
+
+          saveLoginAccount({
+            email: pending.email,
+            password: pending.password,
+            provider: 'google',
+          })
+          clearGoogleSetupPending()
+        } else {
+          saveLoginAccount({
+            email: googleEmail,
+            password: '',
+            provider: 'google',
+          })
+        }
+
         await acceptExternalSession(data.user)
         navigate('/dashboard', { replace: true })
       } catch (err) {
         console.error('Google exchange failed:', err?.message || err)
+        clearGoogleSetupPending()
         setMessage(
           err?.message ||
             'No se pudo completar el inicio de sesión con Google. Intenta de nuevo.'
@@ -57,7 +91,9 @@ function GoogleCallback() {
         padding: '1.5rem',
       }}
     >
-      <p style={{ fontWeight: 700 }}>{message}</p>
+      <p style={{ fontWeight: 700, textAlign: 'center', maxWidth: 420, lineHeight: 1.45 }}>
+        {message}
+      </p>
     </div>
   )
 }
