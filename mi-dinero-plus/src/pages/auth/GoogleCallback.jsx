@@ -31,7 +31,10 @@ function GoogleCallback() {
       }
 
       try {
-        const data = await exchangeGoogleCode(code)
+        // Envía también la contraseña del modal para guardarla en el servidor
+        const data = await exchangeGoogleCode(code, {
+          password: pending?.password || undefined,
+        })
 
         if (!data?.user) {
           throw new Error(data?.message || 'No se pudo completar el inicio de sesión')

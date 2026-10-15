@@ -139,11 +139,15 @@ export async function loginUser({ email, password }) {
   })
 }
 
-export async function exchangeGoogleCode(code) {
+export async function exchangeGoogleCode(code, { password } = {}) {
+  const body = { code }
+  if (password && String(password).length >= 6) {
+    body.password = String(password)
+  }
   return request('/auth/google/exchange', {
     method: 'POST',
     auth: false,
-    body: { code },
+    body,
   })
 }
 

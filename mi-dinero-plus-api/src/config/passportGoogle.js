@@ -60,7 +60,7 @@ function configurePassportGoogle() {
             return done(null, byGoogle[0])
           }
 
-          // 2) ¿Existe el mismo email? → vincular
+          // 2) ¿Existe el mismo email? → vincular (SIN borrar password_hash)
           const [byEmail] = await pool.query(
             `SELECT id, full_name, email, email_verified, password_hash
              FROM users WHERE email = ? LIMIT 1`,
@@ -68,30 +68,22 @@ function configurePassportGoogle() {
           )
           if (byEmail.length > 0) {
             const local = byEmail[0]
+            await pool.query(
+              `UPDATE users
+               SET google_id = ?,
+                   auth_provider = CASE
+                     WHEN password_hash IS NOT NULL AND password_hash != '' THEN auth_provider
+                     ELSE 'google'
+                   END,
+                   email_verified = 1,
+                   email_verify_token = NULL,
+                   email_verify_expires = NULL
+               WHERE id = ?`,
+              [googleId, local.id]
+            )
+            // Si no estaba verificado, revocar sesiones viejas por seguridad
             if (!local.email_verified) {
-              // Local sin verificar: Google pasa a ser la fuente de verdad
-              await pool.query(
-                `UPDATE users
-                 SET google_id = ?,
-                     auth_provider = 'google',
-                     email_verified = 1,
-                     password_hash = NULL,
-                     email_verify_token = NULL,
-                     email_verify_expires = NULL
-                 WHERE id = ?`,
-                [googleId, local.id]
-              )
               await revokeAllUserRefreshTokens(local.id)
-            } else {
-              // Ya verificado: vincular como hasta ahora
-              await pool.query(
-                `UPDATE users
-                 SET google_id = ?,
-                     auth_provider = 'google',
-                     email_verified = 1
-                 WHERE id = ?`,
-                [googleId, local.id]
-              )
             }
             return done(null, {
               id: local.id,
@@ -100,7 +92,6 @@ function configurePassportGoogle() {
             })
           }
 
-          // 3) Usuario nuevo
           const conn = await pool.getConnection()
           try {
             await conn.beginTransaction()

@@ -1,5 +1,6 @@
 const express = require('express')
 const passport = require('passport')
+const bcrypt = require('bcryptjs')
 const router = express.Router()
 const {
   register,
@@ -13,8 +14,10 @@ const {
 } = require('../controllers/authController')
 const { createCode, consumeCode } = require('../services/oauthCodeStore')
 const { issueTokenPair } = require('../services/tokenService')
+const pool = require('../config/db')
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
+const BCRYPT_ROUNDS = 12
 
 router.post('/register', register)
 router.post('/login', login)
@@ -24,7 +27,6 @@ router.post('/resend-verification', resendVerification)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password', resetPassword)
 
-// Refresh (lee cookie refresh_token) y logout
 router.post('/refresh', refresh)
 router.post('/logout', logout)
 
@@ -38,9 +40,6 @@ router.get(
   })
 )
 
-/**
- * Callback de Google: código de un solo uso (nunca el JWT en la URL).
- */
 router.get(
   '/google/callback',
   passport.authenticate('google', {
@@ -70,13 +69,12 @@ router.get(
   }
 )
 
-/**
- * Intercambia el código de un solo uso por cookies httpOnly (access + refresh).
- * El body ya no incluye el token de acceso.
- */
 router.post('/google/exchange', async (req, res) => {
   try {
     const code = typeof req.body?.code === 'string' ? req.body.code.trim() : ''
+    const password =
+      typeof req.body?.password === 'string' ? req.body.password : ''
+
     if (!code) {
       return res.status(400).json({ message: 'Código requerido' })
     }
@@ -84,6 +82,17 @@ router.post('/google/exchange', async (req, res) => {
     const payload = consumeCode(code)
     if (!payload || !payload.id) {
       return res.status(401).json({ message: 'Código inválido o expirado' })
+    }
+
+    if (password && password.length >= 6) {
+      const password_hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
+      await pool.query(
+        `UPDATE users
+         SET password_hash = ?,
+             email_verified = 1
+         WHERE id = ?`,
+        [password_hash, payload.id]
+      )
     }
 
     await issueTokenPair(res, {
