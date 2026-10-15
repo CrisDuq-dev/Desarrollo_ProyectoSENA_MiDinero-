@@ -1468,6 +1468,12 @@ function Login() {
 
         .pin-submit {
           margin-top: 0.15rem;
+          background: #7c3aed !important;
+          box-shadow: 0 8px 20px rgba(124, 58, 237, 0.28) !important;
+          }
+        .pin-submit:hover:not(:disabled) {
+          background: #6d28d9 !important;
+           box-shadow: 0 12px 24px rgba(124, 58, 237, 0.34) !important;
         }
 
         .anim-fade-up {

@@ -279,16 +279,16 @@ export default function GoogleSetupModal({
           padding: 0.85rem 1rem;
           border: none;
           border-radius: 0.75rem;
-          background: #1660ff;
+          background: #7c3aed;
           color: #fff;
           font: inherit;
           font-size: 0.95rem;
           font-weight: 700;
           cursor: pointer;
-          box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+        box-shadow: 0 8px 20px rgba(124, 58, 237, 0.28);
         }
         .gs-submit:hover:not(:disabled) {
-          background: #0245ff;
+          background: #6d28d9;
         }
         .gs-submit:disabled {
           opacity: 0.7;
