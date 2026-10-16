@@ -429,12 +429,12 @@ function Welcome() {
               <h2>Tu primera simulación empieza aquí</h2>
               <p>Crea tu cuenta, registra tu primer movimiento y descubre cómo se ve tu dinero con claridad.</p>
               <div className="wl-cta wl-cta-center wl-cta-stack">
-                <Link to="/login" className="wl-btn-light">
-                  Ya tengo cuenta · Iniciar sesión
-                </Link>
                 <Link to="/crear-cuenta" className="wl-btn-light wl-btn-register">
                   Registrarme
                   <FiArrowRight size={18} className="wl-arrow" aria-hidden="true" />
+                </Link>
+                <Link to="/login" className="wl-btn-light">
+                  Ya tengo cuenta · Iniciar sesión
                 </Link>
               </div>
             </div>
