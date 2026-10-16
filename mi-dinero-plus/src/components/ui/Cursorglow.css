@@ -9,7 +9,7 @@
 
 .cursor-glow--viewport {
   position: fixed;
-  z-index: 30; 
+  z-index: -1; 
   border-radius: 0;
 }
 
