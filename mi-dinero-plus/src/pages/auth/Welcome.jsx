@@ -83,7 +83,7 @@ const TRUST = [
   {
     icon: FiLock,
     title: 'Datos protegidos',
-    desc: 'Protección de datos y privacidad en cada simulación.',
+    desc: 'Protección de datos y privacidad en cada simulación, para que practiques con tranquilidad y confianza.',
   },
   {
     icon: FiZap,
@@ -1243,6 +1243,7 @@ function Welcome() {
         }
         .wl-trust-list {
           display: grid;
+          grid-auto-rows: 1fr; /* las 3 tarjetas con el mismo alto (el de la más alta) */
           gap: 0.8rem;
         }
         .wl-trust-item {
