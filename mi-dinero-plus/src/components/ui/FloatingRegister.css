@@ -1,0 +1,107 @@
+.fr-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(2.1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0 1.25rem;
+  pointer-events: none;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px);
+  transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s linear 0.35s;
+}
+
+.fr-dock.is-visible {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.35s ease, transform 0.35s ease, visibility 0s;
+}
+
+.fr-dock > * {
+  pointer-events: auto;
+}
+
+.fr-register {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(135deg, #0e9068, #066a4c);
+  box-shadow: 0 12px 28px rgba(4, 60, 44, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.fr-register:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #10a075, #077a58);
+  box-shadow: 0 16px 32px rgba(4, 60, 44, 0.48), inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.fr-arrow {
+  transition: transform 0.18s ease;
+}
+
+.fr-register:hover .fr-arrow {
+  transform: translateX(4px);
+}
+
+.fr-top {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.28);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  backdrop-filter: blur(14px) saturate(160%);
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.fr-top:hover {
+  transform: translateY(-2px);
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+[data-theme='light'] .fr-top {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.62);
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+}
+
+[data-theme='light'] .fr-top:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.2);
+}
+
+.fr-register:focus-visible,
+.fr-top:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fr-dock,
+  .fr-dock.is-visible {
+    transform: none;
+    transition: opacity 0.2s ease, visibility 0s;
+  }
+}

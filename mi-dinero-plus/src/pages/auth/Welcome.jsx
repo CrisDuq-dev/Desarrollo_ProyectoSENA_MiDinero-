@@ -115,6 +115,7 @@ const INSTITUTIONAL = [
   },
 ]
 
+/** Cada bloque con la clase `wl-reveal` aparece suavemente al hacer scroll. */
 function useScrollReveal() {
   useEffect(() => {
     const items = document.querySelectorAll('.wl-reveal')
@@ -427,9 +428,13 @@ function Welcome() {
             <div className="wl-final wl-reveal">
               <h2>Tu primera simulación empieza aquí</h2>
               <p>Crea tu cuenta, registra tu primer movimiento y descubre cómo se ve tu dinero con claridad.</p>
-              <div className="wl-cta wl-cta-center">
+              <div className="wl-cta wl-cta-center wl-cta-stack">
                 <Link to="/login" className="wl-btn-light">
                   Ya tengo cuenta · Iniciar sesión
+                </Link>
+                <Link to="/crear-cuenta" className="wl-btn-light wl-btn-register">
+                  Registrarme
+                  <FiArrowRight size={18} className="wl-arrow" aria-hidden="true" />
                 </Link>
               </div>
             </div>
@@ -609,7 +614,8 @@ function Welcome() {
         .wl-logo-text {
           display: flex;
           flex-direction: column;
-          align-items: center;
+          align-items: center; /* "Meta Autos Medellín" queda centrado bajo "Mi Dinero+" */
+          text-align: center;
           line-height: 1.1;
         }
 
@@ -623,8 +629,6 @@ function Welcome() {
         .wl-subbrand {
           font-size: 0.72rem;
           font-weight: 700;
-          letter-spacing: 0.04em;
-          text-align: center;
           color: rgba(226, 232, 240, 0.85);
         }
 
@@ -771,6 +775,22 @@ function Welcome() {
         .wl-btn-light:hover {
           background: rgba(255, 255, 255, 0.16);
           border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Llamada final: botones apilados, centrados y del mismo ancho (el del más largo) */
+        .wl-cta-stack {
+          display: grid;
+          justify-content: center;
+          gap: 0.75rem;
+        }
+        .wl-cta-stack .wl-btn-light {
+          justify-content: center;
+        }
+        .wl-btn-register {
+          gap: 0.55rem;
+        }
+        .wl-btn-register:hover .wl-arrow {
+          transform: translateX(4px);
         }
 
         .wl-points {
@@ -1035,6 +1055,7 @@ function Welcome() {
           font-weight: 800;
           line-height: 1.2;
           letter-spacing: -0.02em;
+          text-wrap: balance;
         }
         .wl-head p {
           margin: 0;
@@ -1263,9 +1284,10 @@ function Welcome() {
           box-shadow: 0 24px 60px rgba(29, 78, 216, 0.3);
         }
         .wl-final p {
-          max-width: 34rem;
+          max-width: 52rem;
           margin: 0 auto 1.6rem;
           line-height: 1.6;
+          text-wrap: balance;
           color: rgba(241, 245, 249, 0.92);
         }
 
