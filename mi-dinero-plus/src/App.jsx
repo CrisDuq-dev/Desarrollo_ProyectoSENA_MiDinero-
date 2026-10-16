@@ -20,11 +20,6 @@ import LogoutScreen from './components/common/LogoutScreen'
 import MundoPlusHome from './pages/mundo-plus/MundoPlusHome'
 import MundoPlusArticle from './pages/mundo-plus/MundoPlusArticle'
 
-/**
- * Rutas privadas: requieren sesión.
- * Sin sesión → / (Welcome).
- * Durante loading mostramos un placeholder (no null) para no “pantalla gris”.
- */
 function RequireAuth({ children }) {
   const { isAuthenticated, loading } = useAuth()
   if (loading) {
@@ -46,11 +41,6 @@ function RequireAuth({ children }) {
   return isAuthenticated ? children : <Navigate to="/" replace />
 }
 
-/**
- * Login / registro: si ya hay sesión → dashboard.
- * Importante: con loading seguimos mostrando children para no desmontar
- * el formulario de registro (si no, se pierde el check de “Registro exitoso”).
- */
 function GuestRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return children
