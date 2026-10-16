@@ -32,20 +32,46 @@
 
 /* —— Saludo —— */
 .dashboard-greeting {
+  --greeting-from: #2563eb;
+  --greeting-to: #0d9488;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.5rem;
   width: 100%;
   max-width: none;
   margin: 0;
   background: var(--dash-glass);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 1.15rem 1.25rem;
+  padding: 1.3rem 1.5rem;
   border-radius: 1rem;
   border: 1px solid var(--border);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme='dark'] .dashboard-greeting {
+  --greeting-from: #7db3ff;
+  --greeting-to: #5fcdb6;
+}
+
+.dashboard-greeting::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(520px 230px at 0% 0%, color-mix(in srgb, var(--dash-blue) 16%, transparent), transparent 70%),
+    radial-gradient(420px 200px at 55% 125%, color-mix(in srgb, #14b8a6 12%, transparent), transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--text-primary) 4%, transparent) 1px, transparent 1px) 0 0 / 36px 36px,
+    linear-gradient(90deg, color-mix(in srgb, var(--text-primary) 4%, transparent) 1px, transparent 1px) 0 0 / 36px 36px;
+  -webkit-mask-image: linear-gradient(90deg, #000 25%, transparent 88%);
+  mask-image: linear-gradient(90deg, #000 25%, transparent 88%);
 }
 
 .greeting-text {
@@ -57,17 +83,24 @@
   padding: 0.1rem 0;
 }
 
+/* 1) "Hola, Nombre" como etiqueta destacada */
 .dashboard-greeting .eyebrow {
-  margin: 0 0 0.35rem;
-  display: flex;
+  align-self: flex-start;
+  margin: 0 0 0.65rem;
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
+  padding: 0.3rem 0.9rem 0.3rem 0.75rem;
+  border-radius: 999px;
   font-family: inherit;
-  font-size: 1.35rem;
+  font-size: 1.02rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.25;
   color: var(--text-primary);
+  background: color-mix(in srgb, var(--dash-blue) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--dash-blue) 30%, transparent);
+  animation: greetingRise 0.5s ease-out 0.05s backwards;
 }
 
 .greeting-wave {
@@ -77,28 +110,71 @@
   color: var(--dash-blue-text);
   flex-shrink: 0;
   line-height: 1;
+  transform-origin: 70% 75%;
+  animation: greetingWave 2.4s ease-in-out 0.7s 2;
 }
 
 .dashboard-greeting .greeting-name {
-  font-weight: 700;
+  font-weight: 800;
   color: inherit;
 }
 
 .dashboard-greeting h1 {
-  margin: 0 0 0.4rem;
-  font-size: clamp(1.45rem, 2.4vw, 1.75rem);
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
   font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  text-wrap: balance;
   color: var(--text-primary);
+  animation: greetingRise 0.55s ease-out 0.12s backwards;
+}
+
+.greeting-accent {
+  background: linear-gradient(90deg, var(--greeting-from), var(--greeting-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.dashboard-greeting h1::after {
+  content: '';
+  display: block;
+  width: 3.25rem;
+  height: 4px;
+  margin-top: 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--greeting-from), var(--greeting-to));
 }
 
 .greeting-text .greeting-sub {
-  margin: 0;
-  max-width: 36rem;
-  font-size: 0.92rem;
-  line-height: 1.5;
+  margin: 0.6rem 0 0;
+  max-width: 38rem;
+  font-size: 0.98rem;
+  line-height: 1.55;
   color: var(--text-muted);
+  animation: greetingRise 0.55s ease-out 0.2s backwards;
+}
+
+@keyframes greetingRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes greetingWave {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(16deg); }
+  20% { transform: rotate(-9deg); }
+  30% { transform: rotate(16deg); }
+  40% { transform: rotate(-5deg); }
+  50% { transform: rotate(10deg); }
 }
 
 .greeting-rates {
@@ -828,7 +904,11 @@
   .dash-mundo-plus-meta,
   .dash-mundo-plus-feature h3,
   .dash-mundo-plus-feature p,
-  .rate-bar-fill {
+  .rate-bar-fill,
+  .dashboard-greeting .eyebrow,
+  .dashboard-greeting h1,
+  .greeting-text .greeting-sub,
+  .greeting-wave {
     animation: none !important;
     transition: none !important;
   }
@@ -973,4 +1053,11 @@
   .summary-card > p {
     font-size: 1.25rem;
   }
+}
+
+.dashboard-greeting.is-entering .eyebrow,
+.dashboard-greeting.is-entering h1,
+.dashboard-greeting.is-entering .greeting-sub,
+.dashboard-greeting.is-entering .greeting-wave {
+  animation-play-state: paused;
 }

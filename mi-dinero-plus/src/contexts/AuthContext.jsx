@@ -17,6 +17,7 @@ import {
 import { cacheProfileResponse } from '../utils/profileCache'
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const ENTRY_COVER_MS = 450
 
 const AuthContext = createContext(null)
 
@@ -123,19 +124,24 @@ export function AuthProvider({ children }) {
   }, [clearSession])
 
 
-  const playEntryTransition = useCallback(async () => {
-    if (entryRunning.current) return
+  const playEntryTransition = useCallback(() => {
+    if (entryRunning.current) return Promise.resolve()
     entryRunning.current = true
     setEntryPhrase(pickLoginPhrase())
     setEntryState('active')
-    try {
-      await wait(LOGIN_MIN_MS)
-    } finally {
-      setEntryState('leaving')
-      await wait(LOGIN_LEAVE_MS)
-      setEntryState(null)
-      entryRunning.current = false
-    }
+
+    ;(async () => {
+      try {
+        await wait(LOGIN_MIN_MS)
+      } finally {
+        setEntryState('leaving')
+        await wait(LOGIN_LEAVE_MS)
+        setEntryState(null)
+        entryRunning.current = false
+      }
+    })()
+
+    return wait(ENTRY_COVER_MS)
   }, [])
 
   const login = async (emailOrCredentials, password) => {

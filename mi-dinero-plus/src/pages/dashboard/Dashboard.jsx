@@ -62,7 +62,6 @@ function formatPct(value) {
   return `${sign}${value.toFixed(2)}%`
 }
 
-/** Ancho 0–100 de la barra según |%| (escala visual) */
 function barWidthFromPct(pct) {
   if (pct == null || !Number.isFinite(pct)) return 0
   return Math.max(8, Math.min(100, Math.abs(pct) * 40))
@@ -131,7 +130,7 @@ function Sparkline({ points, tone = 'neutral' }) {
 }
 
 function Dashboard() {
-  const { user } = useAuth()
+  const { user, entryState } = useAuth()
   const { getTotals, goals, debts, transactions, formatMoney } = useFinance()
   const rawUserName = user?.nombre || user?.full_name || 'usuario'
   const userName = rawUserName.split(' ')[0].trim() || rawUserName
@@ -256,7 +255,6 @@ function Dashboard() {
     }
   }, [])
 
-  // Histórico diario: la fuente publica un valor por día, así que basta con refrescar cada hora.
   useEffect(() => {
     let cancelled = false
 
@@ -282,7 +280,6 @@ function Dashboard() {
     }).format(Number(value))
   }
 
-  // % de cambio de toda la ventana (primer día vs. último): sube = verde, baja = rojo
   const rateDelta = useMemo(() => {
     if (fxSeries.length < 2) return { usd: null, eur: null }
     const first = fxSeries[0]
@@ -303,7 +300,6 @@ function Dashboard() {
     [fxSeries]
   )
 
-  // El valor mostrado viene de la cotización en vivo; si esa falla, se usa el último día del histórico.
   const fxLast = fxSeries[fxSeries.length - 1]
   const shownUsd = rates.usd ?? fxLast?.usd ?? null
   const shownEur = rates.eur ?? fxLast?.eur ?? null
@@ -314,15 +310,20 @@ function Dashboard() {
 
   return (
     <main className="dashboard-page">
-      <section className="dashboard-greeting">
+      <section
+        className={`dashboard-greeting${entryState === 'active' ? ' is-entering' : ''}`}
+      >
         <div className="greeting-text">
           <p className="eyebrow">
             Hola, <span className="greeting-name">{userName}</span>
             <span className="greeting-wave" aria-hidden="true">
-              <MdWavingHand size={20} />
+              <MdWavingHand size={18} />
             </span>
           </p>
-          <h1>Bienvenido de nuevo a tu centro financiero</h1>
+          <h1>
+            Bienvenido de nuevo a tu{' '}
+            <span className="greeting-accent">centro financiero</span>
+          </h1>
           <p className="greeting-sub">
             Revisa tu estado financiero y las últimas actividades en tu cuenta.
           </p>
