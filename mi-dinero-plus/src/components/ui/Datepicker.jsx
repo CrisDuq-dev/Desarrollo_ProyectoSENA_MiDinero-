@@ -24,6 +24,7 @@ const display = (s) => {
 }
 const todayISO = () => dateToISO(new Date())
 
+// 6 semanas x 7 días, la semana empieza en lunes
 function buildGrid(y, m) {
   const offset = (new Date(y, m, 1).getDay() + 6) % 7
   return Array.from({ length: 42 }, (_, i) => {
@@ -32,6 +33,16 @@ function buildGrid(y, m) {
   })
 }
 
+/**
+ * Selector de fecha propio (reemplaza <input type="date">).
+ *
+ * Props:
+ *  - value:    'YYYY-MM-DD' (o '' si no hay fecha)
+ *  - onChange: recibe el string 'YYYY-MM-DD' (o '' al borrar)  -> onChange={setFecha}
+ *  - min, max: 'YYYY-MM-DD' opcionales
+ *  - name:     si lo pasas, agrega un <input type="hidden"> para formularios
+ *  - id, disabled, placeholder, className, aria-label
+ */
 export default function DatePicker({
   value = '',
   onChange,
@@ -61,6 +72,7 @@ export default function DatePicker({
     if (disabled) return
     const b = parseISO(value) || parseISO(today)
     setView({ y: b.y, m: b.m })
+    // el popup va en <body>; copiamos el tema (claro/oscuro) del contenedor
     setTheme(fieldRef.current?.closest('[data-theme]')?.getAttribute('data-theme') || null)
     setPos(null)
     setOpen(true)
@@ -71,6 +83,7 @@ export default function DatePicker({
     if (refocus) fieldRef.current?.focus()
   }, [])
 
+  // Posición: debajo del campo, o encima si no cabe
   const place = useCallback(() => {
     const f = fieldRef.current
     const p = popRef.current
@@ -95,7 +108,7 @@ export default function DatePicker({
     }
     const onKey = (e) => {
       if (e.key === 'Escape') {
-        e.stopPropagation()
+        e.stopPropagation() // no cierra el modal de atrás, solo el calendario
         close(true)
       }
     }
@@ -116,6 +129,7 @@ export default function DatePicker({
   const inView = (iso) => grid.some((c) => !c.outside && c.iso === iso)
   const focusISO = inView(value) ? value : inView(today) ? today : `${view.y}-${pad(view.m + 1)}-01`
 
+  // al abrir, el foco va al día seleccionado (o a hoy)
   const ready = pos !== null
   useEffect(() => {
     if (!open || !ready) return

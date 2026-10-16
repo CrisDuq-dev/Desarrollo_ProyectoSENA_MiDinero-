@@ -5,6 +5,7 @@ import { expenseCategories, incomeCategories } from '../../constants/categories'
 import { formatHistoricalFx } from '../../utils/currency'
 import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
+import DatePicker from '../../components/ui/DatePicker'
 import {
   FiArrowUp,
   FiArrowDown,
@@ -402,10 +403,9 @@ function Transactions() {
                 <label className="tx-field">
                   <span className="tx-label">Fecha</span>
                   <div className="tx-date-wrap">
-                    <input
-                      type="date"
+                    <DatePicker
                       value={form.date}
-                      onChange={manejarCambio('date')}
+                      onChange={(value) => manejarCambio('date')({ target: { value } })}
                       min={dateBounds.min}
                       max={dateBounds.max}
                     />
@@ -750,10 +750,9 @@ function Transactions() {
                 <label className="tx-field">
                   <span className="tx-label">Fecha</span>
                   <div className="tx-date-wrap">
-                    <input
-                      type="date"
+                    <DatePicker
                       value={editForm.date}
-                      onChange={manejarCambioEdit('date')}
+                      onChange={(value) => manejarCambioEdit('date')({ target: { value } })}
                       min={editDateMin}
                       max={dateBounds.max}
                     />

@@ -41,7 +41,6 @@
   color: var(--text-muted);
 }
 
-/* Calendario flotante */
 .dp-popover {
   position: fixed;
   z-index: 100000;
@@ -165,4 +164,35 @@
 
 .dp-link:hover {
   background: rgba(37, 99, 235, 0.15);
+}
+
+.tx-date-wrap .dp-field,
+.goal-date-wrap .dp-field,
+.debt-date-wrap .dp-field {
+  min-height: 2.75rem;
+  padding: 0.76rem 0.9rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tx-date-wrap .dp-field:hover:not(:disabled),
+.tx-date-wrap .dp-field:focus-visible,
+.tx-date-wrap .dp-field.is-open,
+.goal-date-wrap .dp-field:hover:not(:disabled),
+.goal-date-wrap .dp-field:focus-visible,
+.goal-date-wrap .dp-field.is-open,
+.debt-date-wrap .dp-field:hover:not(:disabled),
+.debt-date-wrap .dp-field:focus-visible,
+.debt-date-wrap .dp-field.is-open {
+  border: none;
+  box-shadow: none;
+}
+
+.tx-date-wrap:has(.dp-field.is-open),
+.goals-page .goal-date-wrap:has(.dp-field.is-open),
+.debt-date-wrap:has(.dp-field.is-open) {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
 }

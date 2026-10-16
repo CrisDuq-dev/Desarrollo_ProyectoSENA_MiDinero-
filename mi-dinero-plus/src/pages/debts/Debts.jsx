@@ -5,6 +5,7 @@ import { useFinance } from '../../contexts/FinanceContext'
 import { convertToCOP } from '../../utils/currency'
 import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
+import DatePicker from '../../components/ui/DatePicker'
 import './Debts.css'
 
 const formInicial = {
@@ -486,10 +487,9 @@ function Debts() {
                   <label>
                     Vencimiento
                     <div className="debt-date-wrap">
-                      <input
-                        type="date"
+                      <DatePicker
                         value={form.dueDate}
-                        onChange={manejarCambio('dueDate')}
+                        onChange={(value) => manejarCambio('dueDate')({ target: { value } })}
                         min={todayISO}
                       />
                     </div>
@@ -867,10 +867,9 @@ function Debts() {
                   <label>
                     Vencimiento
                     <div className="debt-date-wrap">
-                      <input
-                        type="date"
+                      <DatePicker
                         value={editForm.dueDate}
-                        onChange={manejarCambioEdit('dueDate')}
+                        onChange={(value) => manejarCambioEdit('dueDate')({ target: { value } })}
                       />
                     </div>
                     {editErrors.dueDate && (

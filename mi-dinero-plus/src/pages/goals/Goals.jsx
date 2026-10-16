@@ -5,6 +5,7 @@ import { useFinance } from '../../contexts/FinanceContext'
 import { convertToCOP } from '../../utils/currency'
 import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
+import DatePicker from '../../components/ui/DatePicker'
 import './Goals.css'
 
 const formInicial = {
@@ -520,10 +521,9 @@ function Goals() {
                 <label>
                   Fecha Límite
                   <div className="goal-date-wrap">
-                    <input
-                      type="date"
+                    <DatePicker
                       value={form.deadline}
-                      onChange={manejarCambio('deadline')}
+                      onChange={(value) => manejarCambio('deadline')({ target: { value } })}
                       min={todayISO}
                     />
                   </div>
@@ -691,10 +691,9 @@ function Goals() {
                 <label>
                   Fecha Límite
                   <div className="goal-date-wrap">
-                    <input
-                      type="date"
+                    <DatePicker
                       value={editForm.deadline}
-                      onChange={manejarCambioEdit('deadline')}
+                      onChange={(value) => manejarCambioEdit('deadline')({ target: { value } })}
                     />
                   </div>
                   {editErrors.deadline && (
