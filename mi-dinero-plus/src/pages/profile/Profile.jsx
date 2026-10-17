@@ -133,7 +133,7 @@ function MomentumTooltip({ active, payload }) {
           <span className="mt-muted">
             {it.label}
             {it.count > 1 ? ` ×${it.count}` : ''}
-            {it.count > it.counted ? ` · máx. ${DAILY_LIMIT}/día` : ''}
+            {it.count > it.counted ? ` · máx. ${it.counted}/día` : ''}
           </span>
           <b className={it.points > 0 ? 'is-up' : 'is-down'}>
             {formatPoints(it.points)}
@@ -250,8 +250,9 @@ function MomentumChart({ chart }) {
             ))}
           </ul>
           <p className="momentum-rules-note">
-            Cada tipo suma hasta {DAILY_LIMIT} veces por día (las metas cumplidas y las
-            deudas pagadas no tienen tope).
+            Lo que suma cuenta hasta {DAILY_LIMIT} veces por día (las metas cumplidas y las
+            deudas pagadas no tienen tope). Lo que resta, gastos y deudas nuevas, cuenta
+            solo una vez por día.
           </p>
         </div>
       )}

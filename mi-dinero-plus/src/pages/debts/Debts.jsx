@@ -690,9 +690,14 @@ function Debts() {
                         {showSim && (
                           <div className="amort-wrap">
                             <p className="amort-scroll-hint">
-                              Desliza horizontalmente para ver todas las columnas
+                              Desliza dentro de la tabla para ver los {periods} meses
                             </p>
-                            <div className="table-scroll" role="region" aria-label="Tabla de amortización">
+                            <div
+                              className="table-scroll"
+                              role="region"
+                              aria-label="Tabla de amortización"
+                              tabIndex={0}
+                            >
                               <table className="amort-table">
                                 <thead>
                                   <tr>

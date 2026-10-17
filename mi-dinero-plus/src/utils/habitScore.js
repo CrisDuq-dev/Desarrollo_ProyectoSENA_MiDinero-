@@ -1,13 +1,13 @@
 export const DAILY_LIMIT = 2
 export const POINT_RULES = [
-  { kind: 'income', label: 'Ingreso', plural: 'Ingresos', points: 3, capped: true },
+  { kind: 'income', label: 'Ingreso', plural: 'Ingresos', points: 2, capped: true },
   { kind: 'goalCreated', label: 'Meta creada', plural: 'Metas creadas', points: 2, capped: true },
   { kind: 'goalContribution', label: 'Abono a meta', plural: 'Abonos a metas', points: 1, capped: true },
   { kind: 'debtPayment', label: 'Abono a deuda', plural: 'Abonos a deudas', points: 1, capped: true },
   { kind: 'goalCompleted', label: 'Meta cumplida', plural: 'Metas cumplidas', points: 3, capped: false },
   { kind: 'debtPaid', label: 'Deuda pagada', plural: 'Deudas pagadas', points: 3, capped: false },
-  { kind: 'expense', label: 'Gasto', plural: 'Gastos', points: -3, capped: true },
-  { kind: 'debtCreated', label: 'Deuda nueva', plural: 'Deudas nuevas', points: -2, capped: true },
+  { kind: 'expense', label: 'Gasto', plural: 'Gastos', points: -1, capped: true, limit: 1 },
+  { kind: 'debtCreated', label: 'Deuda nueva', plural: 'Deudas nuevas', points: -4, capped: true, limit: 1 },
 ]
 
 const RULE = Object.fromEntries(POINT_RULES.map((r) => [r.kind, r]))
@@ -128,7 +128,7 @@ export function buildScoreModel(input) {
   const days = [...byDay.keys()].sort().map((day) => {
     const items = [...byDay.get(day)].map(([kind, count]) => {
       const rule = RULE[kind]
-      const counted = rule.capped ? Math.min(count, DAILY_LIMIT) : count
+      const counted = rule.capped ? Math.min(count, rule.limit ?? DAILY_LIMIT) : count
       return {
         kind,
         label: counted === 1 ? rule.label : rule.plural,
