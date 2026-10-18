@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import copFlag from '../../assets/currency/cop.webp'
 import usdFlag from '../../assets/currency/usd.webp'
 import eurFlag from '../../assets/currency/eur.webp'
-import './CurrencyBadge.css'
+import './CurrencyBadge.css' 
 
 const FLAGS = { COP: copFlag, USD: usdFlag, EUR: eurFlag }
 const FLIP_MS = 600
