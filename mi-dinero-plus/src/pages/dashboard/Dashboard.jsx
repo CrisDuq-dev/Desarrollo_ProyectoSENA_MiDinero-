@@ -7,6 +7,7 @@ import { getFxHistory } from '../../services/fxHistory'
 import { ARTICLES } from '../../data/mundoplus/articles'
 import { MdWavingHand } from 'react-icons/md'
 import './Dashboard.css'
+import './DashboardRates.css'
 
 function splitHistoricalFx(amount, rateUsd, rateEur) {
   const full = formatHistoricalFx(amount, rateUsd, rateEur)
@@ -123,7 +124,7 @@ function Sparkline({ points, tone = 'neutral' }) {
       aria-hidden="true"
     >
       <path d={area} className="sparkline-area" />
-      <path d={d} className="sparkline-path" fill="none" />
+      <path d={d} pathLength="1" className="sparkline-path" fill="none" />
       <circle cx={end.x} cy={end.y} r="2.2" className="sparkline-dot" />
     </svg>
   )
