@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useFinance } from '../../contexts/FinanceContext'
 import ConfirmDialog from '../ui/ConfirmDialog'
+import CurrencyBadge from '../ui/CurrencyBadge'
 import {
   FiHome,
   FiRepeat,
@@ -186,13 +187,7 @@ function Navbar() {
         </nav>
 
         <div className="navbar-actions">
-          <span
-            className="currency-badge"
-            title={`Moneda activa: ${currency || 'COP'}`}
-            aria-label={`Moneda activa: ${currency || 'COP'}`}
-          >
-            {currency || 'COP'}
-          </span>
+          <CurrencyBadge code={currency || 'COP'} />
 
           <div className="notification-wrapper" ref={dropdownRef}>
             <button
@@ -609,25 +604,6 @@ function Navbar() {
           margin-left: auto;
         }
 
-        .currency-badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 2.35rem;
-          height: 2.35rem;
-          min-width: 2.35rem;
-          padding: 0;
-          border-radius: 50%;
-          font-size: 0.68rem;
-          font-weight: 800;
-          letter-spacing: 0.03em;
-          background: #2563eb;
-          color: #fff;
-          user-select: none;
-          box-sizing: border-box;
-          line-height: 1;
-        }
-
         .notification-wrapper {
           position: relative;
         }
@@ -969,19 +945,6 @@ function Navbar() {
         }
 
         @media (max-width: 768px) {
-          .currency-badge {
-            width: 44px;
-            height: 44px;
-            min-width: 44px;
-            min-height: 44px;
-            padding: 0;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            box-sizing: border-box;
-          }
-
           .notification-button {
             min-width: 44px;
             min-height: 44px;
@@ -1044,9 +1007,6 @@ function Navbar() {
           }
           .navbar-brand-text .brand-script {
             font-size: 1.2rem;
-          }
-          .currency-badge {
-            font-size: 0.72rem;
           }
           .theme-toggle .theme-label-full {
             display: none;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   FiActivity,
@@ -60,6 +60,52 @@ function matchesSearch(n, query) {
   )
 }
 
+function useCountUp(target, duration = 1100) {
+  const [value, setValue] = useState(0)
+  const fromRef = useRef(0)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      fromRef.current = target
+      setValue(target)
+      return undefined
+    }
+    const from = fromRef.current
+    const startedAt = performance.now()
+    let raf = 0
+    const tick = (now) => {
+      const t = Math.min(1, (now - startedAt) / duration)
+      const eased = 1 - Math.pow(1 - t, 3)
+      const current = from + (target - from) * eased
+      fromRef.current = current
+      setValue(Math.round(current))
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration])
+  return value
+}
+
+function ProgressBox({ progress }) {
+  const shown = useCountUp(progress)
+  return (
+    <div className="progress-box">
+      <span>Progreso General</span>
+      <strong>{shown}%</strong>
+      <div
+        className="progress-bar"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+        aria-label="Progreso general"
+      >
+        <div className="progress-fill" style={{ width: `${shown}%` }} />
+      </div>
+    </div>
+  )
+}
+
 function ActivityCenter() {
   const {
     activities,
@@ -80,6 +126,12 @@ function ActivityCenter() {
   const [searchQuery, setSearchQuery] = useState('')
   const [clearing, setClearing] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [entered, setEntered] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setEntered(true), 1400)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     loadActivities()
@@ -178,7 +230,7 @@ function ActivityCenter() {
     </div>
   )
 
-  const renderColumn = (list, variant) => {
+  const renderColumn = (list, variant, animKey = variant) => {
     if (!list.length) {
       return (
         <div className="empty-box">
@@ -192,10 +244,11 @@ function ActivityCenter() {
       )
     }
     return (
-      <ul className="column-list">
-        {list.map((n) => (
+      <ul className="column-list" key={animKey}>
+        {list.map((n, i) => (
           <li
             key={n.id}
+            style={{ '--i': Math.min(i, 8) }}
             className={`activity-item ${n.read ? 'read' : 'unread'} ${
               isDeletedActivity(n) ? 'deleted' : ''
             } item-${variant}`}
@@ -224,7 +277,7 @@ function ActivityCenter() {
   }
 
   return (
-    <section className="activity-center">
+    <section className={`activity-center${entered ? ' is-entered' : ''}`}>
       <div className="activity-top">
         <Link to="/profile" className="back-link">
           Volver a Mi Perfil
@@ -233,19 +286,21 @@ function ActivityCenter() {
 
       <header className="activity-hero">
         <div className="hero-text">
-          <h1>Centro de Actividad Financiera</h1>
-          <p>
+          <div className="hero-eyebrow">
+            <span className="hero-eyebrow-icon">
+              <FiActivity size={16} aria-hidden="true" />
+            </span>
+            Tu actividad
+          </div>
+          <h1>
+            Centro de <span className="hero-accent">Actividad Financiera</span>
+          </h1>
+          <p className="hero-sub">
             Historial de movimientos, metas y deudas de tu simulación. Filtra,
             marca como leídas o vacía el registro cuando quieras.
           </p>
         </div>
-        <div className="progress-box">
-          <span>Progreso General</span>
-          <strong>{progress}%</strong>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
+        <ProgressBox progress={progress} />
       </header>
 
       <div className="activity-toolbar">
@@ -305,7 +360,7 @@ function ActivityCenter() {
               </div>
             </div>
             {renderFilterRow(txFilter, setTxFilter, 'tx')}
-            {renderColumn(filteredTransactions, 'tx')}
+            {renderColumn(filteredTransactions, 'tx', txFilter)}
           </article>
 
           <article className="activity-card goals">
@@ -326,7 +381,7 @@ function ActivityCenter() {
               </div>
             </div>
             {renderFilterRow(goalsFilter, setGoalsFilter, 'goals')}
-            {renderColumn(filteredGoals, 'goals')}
+            {renderColumn(filteredGoals, 'goals', goalsFilter)}
           </article>
 
           <article className="activity-card debts">
@@ -347,7 +402,7 @@ function ActivityCenter() {
               </div>
             </div>
             {renderFilterRow(debtsFilter, setDebtsFilter, 'debts')}
-            {renderColumn(filteredDebts, 'debts')}
+            {renderColumn(filteredDebts, 'debts', debtsFilter)}
           </article>
         </div>
       )}
@@ -425,68 +480,183 @@ function ActivityCenter() {
         }
 
         .activity-hero {
+          --hero-from: #2563eb;
+          --hero-to: #0d9488;
+
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
           display: flex;
           justify-content: space-between;
-          gap: 1.25rem;
+          gap: 1.5rem;
           flex-wrap: wrap;
           align-items: center;
           background: var(--bg-surface);
           border: 1px solid var(--border);
           border-radius: var(--ac-radius);
-          padding: 1.2rem 1.35rem;
+          padding: 1.4rem 1.6rem;
           box-shadow: var(--ac-shadow);
+          animation: acHeroIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
         }
+        [data-theme='dark'] .activity-hero {
+          --hero-from: #7db3ff;
+          --hero-to: #5fcdb6;
+        }
+
+        /* Fondo decorativo: luces suaves y cuadrícula sutil (misma familia visual del tablero) */
+        .activity-hero::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background:
+            radial-gradient(520px 230px at 0% 0%, color-mix(in srgb, var(--ac-blue) 16%, transparent), transparent 70%),
+            radial-gradient(420px 200px at 55% 125%, color-mix(in srgb, #14b8a6 12%, transparent), transparent 70%),
+            linear-gradient(color-mix(in srgb, var(--text-primary) 4%, transparent) 1px, transparent 1px) 0 0 / 36px 36px,
+            linear-gradient(90deg, color-mix(in srgb, var(--text-primary) 4%, transparent) 1px, transparent 1px) 0 0 / 36px 36px;
+          -webkit-mask-image: linear-gradient(90deg, #000 25%, transparent 88%);
+          mask-image: linear-gradient(90deg, #000 25%, transparent 88%);
+        }
+
         .hero-text {
           flex: 1 1 22rem;
           min-width: 0;
-        }
-        .hero-text h1 {
-          margin: 0 0 0.35rem;
-          font-size: 1.3rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          color: var(--text-primary);
-        }
-        .hero-text p {
-          margin: 0;
-          color: var(--text-muted);
-          max-width: none;
-          text-wrap: pretty;
-          overflow-wrap: anywhere;
-          font-size: 0.92rem;
-          font-weight: 500;
-          line-height: 1.45;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
         }
 
+        /* 1) Etiqueta destacada */
+        .hero-eyebrow {
+          align-self: flex-start;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          margin: 0 0 0.65rem;
+          padding: 0.3rem 0.9rem 0.3rem 0.75rem;
+          border-radius: 999px;
+          font-size: 0.98rem;
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          line-height: 1.25;
+          color: var(--text-primary);
+          background: color-mix(in srgb, var(--ac-blue) 12%, transparent);
+          border: 1px solid color-mix(in srgb, var(--ac-blue) 30%, transparent);
+          animation: acRise 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s backwards;
+        }
+        .hero-eyebrow-icon {
+          display: inline-flex;
+          color: var(--hero-from);
+          animation: acPulse 2.8s ease-in-out 1s infinite;
+        }
+
+        /* 2) Titular con el resaltado en degradado */
+        .hero-text h1 {
+          margin: 0;
+          font-size: clamp(1.5rem, 3vw, 2.2rem);
+          font-weight: 800;
+          letter-spacing: -0.025em;
+          line-height: 1.15;
+          text-wrap: balance;
+          color: var(--text-primary);
+          animation: acRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.18s backwards;
+        }
+        .hero-accent {
+          background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
+        }
+        .hero-text h1::after {
+          content: '';
+          display: block;
+          width: 3.25rem;
+          height: 4px;
+          margin-top: 0.55rem;
+          border-radius: 999px;
+          background: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+          transform-origin: left center;
+          animation: acBar 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.55s backwards;
+        }
+
+        /* 3) Texto de apoyo */
+        .hero-text .hero-sub {
+          margin: 0.6rem 0 0;
+          max-width: 38rem;
+          color: var(--text-muted);
+          text-wrap: pretty;
+          overflow-wrap: anywhere;
+          font-size: 0.98rem;
+          font-weight: 500;
+          line-height: 1.55;
+          animation: acRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.3s backwards;
+        }
+
+        @keyframes acHeroIn {
+          from { opacity: 0; transform: translateY(14px); }
+          to { opacity: 1; transform: none; }
+        }
+        @keyframes acRise {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: none; }
+        }
+        @keyframes acBar {
+          from { transform: scaleX(0); opacity: 0; }
+          to { transform: scaleX(1); opacity: 1; }
+        }
+        @keyframes acPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.18); }
+        }
+        @keyframes acCardIn {
+          from { opacity: 0; transform: translateY(24px) scale(0.985); }
+          to { opacity: 1; transform: none; }
+        }
+        @keyframes acItemIn {
+          from { opacity: 0; transform: translate3d(-12px, 10px, 0); }
+          to { opacity: 1; transform: none; }
+        }
+
+        /* Tarjeta de progreso: a escala del titular (el número mide casi lo mismo que el título) */
         .progress-box {
-          min-width: 170px;
+          flex: 0 1 17.5rem;
+          min-width: 15rem;
+          box-sizing: border-box;
           background: linear-gradient(
             145deg,
-            rgba(124, 58, 237, 0.12),
-            rgba(167, 139, 250, 0.06)
+            rgba(124, 58, 237, 0.16),
+            rgba(167, 139, 250, 0.07)
           );
-          border: 1px solid rgba(124, 58, 237, 0.28);
-          border-radius: 0.9rem;
-          padding: 0.85rem 1rem;
-          box-shadow: 0 6px 18px rgba(124, 58, 237, 0.1);
+          border: 1px solid rgba(124, 58, 237, 0.32);
+          border-radius: 1.1rem;
+          padding: 1.2rem 1.45rem 1.3rem;
+          box-shadow: 0 10px 26px rgba(124, 58, 237, 0.14);
+          animation: acRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.35s backwards;
         }
         .progress-box span {
           display: block;
           color: var(--text-muted);
-          font-size: 0.8rem;
+          font-size: 0.92rem;
           font-weight: 700;
+          letter-spacing: 0.01em;
         }
         .progress-box strong {
           display: block;
-          margin: 0.2rem 0 0.55rem;
-          font-size: 1.35rem;
+          margin: 0.15rem 0 0.8rem;
+          font-size: clamp(2rem, 3.4vw, 2.5rem);
+          line-height: 1.1;
           font-weight: 800;
           color: var(--ac-purple);
-          letter-spacing: -0.02em;
+          letter-spacing: -0.03em;
+        }
+        [data-theme='dark'] .progress-box strong {
+          color: #a78bfa;
         }
         .progress-bar {
-          height: 0.55rem;
-          background: rgba(124, 58, 237, 0.15);
+          height: 0.8rem;
+          background: rgba(124, 58, 237, 0.18);
           border-radius: 999px;
           overflow: hidden;
         }
@@ -605,7 +775,12 @@ function ActivityCenter() {
           box-shadow: var(--ac-shadow);
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
+          animation: acCardIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards;
         }
+        .activity-grid .activity-card:nth-child(1) { animation-delay: 0.2s; }
+        .activity-grid .activity-card:nth-child(2) { animation-delay: 0.34s; }
+        .activity-grid .activity-card:nth-child(3) { animation-delay: 0.48s; }
+        .activity-card.other { animation-delay: 0.6s; }
         .activity-card.tx {
           background: rgba(37, 99, 235, 0.08);
           border-color: rgba(37, 99, 235, 0.28);
@@ -736,11 +911,25 @@ function ActivityCenter() {
           gap: 0.65rem;
         }
         .activity-item {
+          --base: 0.5s; /* primera vez: espera a que su tarjeta aparezca */
           padding: 0.7rem 0.75rem;
           border-radius: 0.75rem;
           background: rgba(255, 255, 255, 0.04);
           border: 1px solid var(--border);
-          transition: border-color 0.15s ease, background 0.15s ease;
+          transition:
+            border-color 0.25s ease,
+            background 0.25s ease,
+            transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 0.3s ease;
+          animation: acItemIn 0.75s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+          animation-delay: calc(var(--base) + var(--i, 0) * 0.09s);
+        }
+        .is-entered .activity-item {
+          --base: 0.05s; /* al cambiar de filtro ya no hace falta esperar */
+        }
+        .activity-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 18px rgba(2, 6, 23, 0.18);
         }
         .activity-item.unread {
           background: rgba(255, 255, 255, 0.06);
@@ -845,6 +1034,29 @@ function ActivityCenter() {
         .error {
           color: var(--ac-red);
           font-weight: 700;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .activity-hero,
+          .hero-eyebrow,
+          .hero-eyebrow-icon,
+          .hero-text h1,
+          .hero-text h1::after,
+          .hero-text .hero-sub,
+          .progress-box,
+          .activity-card,
+          .activity-item {
+            animation: none;
+          }
+          .activity-item:hover {
+            transform: none;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .progress-box {
+            flex: 1 1 100%;
+          }
         }
 
         @media (max-width: 960px) {

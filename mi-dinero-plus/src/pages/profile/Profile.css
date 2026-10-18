@@ -856,3 +856,15 @@
   border-top: 1px dashed var(--border);
   font-weight: 700;
 }
+
+.profile-page .reports-actions .secondary-button {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(22, 163, 74, 0.28);
+}
+
+.profile-page .reports-actions .secondary-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: none;
+  box-shadow: 0 10px 22px rgba(22, 163, 74, 0.35);
+}

@@ -1,0 +1,104 @@
+.cur-badge {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  min-width: 2.35rem;
+  border-radius: 50%;
+  box-sizing: border-box;
+  user-select: none;
+  perspective: 260px; /* da profundidad al giro */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 2px 8px rgba(2, 6, 23, 0.35);
+}
+
+[data-theme='light'] .cur-badge {
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.2);
+}
+
+.cur-badge__face {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  pointer-events: none;
+  backface-visibility: hidden;
+}
+
+.cur-badge__fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  color: #fff;
+  background: #2563eb;
+}
+
+.cur-badge.is-changing {
+  animation: cur-pulse 0.6s ease-out;
+}
+
+.cur-badge__face.is-out {
+  animation: cur-flip-out 0.26s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.cur-badge__face.is-in {
+  animation: cur-flip-in 0.34s cubic-bezier(0, 0, 0.2, 1) 0.24s both;
+}
+
+@keyframes cur-flip-out {
+  from {
+    transform: rotateY(0deg) scale(1);
+  }
+  to {
+    transform: rotateY(90deg) scale(0.92);
+  }
+}
+
+@keyframes cur-flip-in {
+  0% {
+    transform: rotateY(-90deg) scale(0.92);
+  }
+  70% {
+    transform: rotateY(8deg) scale(1.08);
+  }
+  100% {
+    transform: rotateY(0deg) scale(1);
+  }
+}
+
+@keyframes cur-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.55), 0 2px 8px rgba(2, 6, 23, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 12px rgba(96, 165, 250, 0), 0 2px 8px rgba(2, 6, 23, 0.35);
+  }
+}
+
+@media (max-width: 768px) {
+  .cur-badge {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cur-badge.is-changing,
+  .cur-badge__face.is-in,
+  .cur-badge__face.is-out {
+    animation: none;
+  }
+  .cur-badge__face.is-out {
+    display: none;
+  }
+}

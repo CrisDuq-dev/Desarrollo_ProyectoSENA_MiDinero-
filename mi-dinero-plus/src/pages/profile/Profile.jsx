@@ -13,6 +13,10 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useFinance } from '../../contexts/FinanceContext'
 import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
+import Select from '../../components/ui/Select'
+import copFlag from '../../assets/currency/cop.webp'
+import usdFlag from '../../assets/currency/usd.webp'
+import eurFlag from '../../assets/currency/eur.webp'
 import {
   readProfileCache,
   writeProfileCache,
@@ -42,6 +46,18 @@ import {
   getLevelInfo,
 } from '../../utils/habitScore'
 import './Profile.css'
+
+const CURRENCY_OPTIONS = [
+  { value: 'COP', label: 'COP', icon: copFlag },
+  { value: 'USD', label: 'USD', icon: usdFlag },
+  { value: 'EUR', label: 'EUR', icon: eurFlag },
+]
+
+const EDUCATION_OPTIONS = [
+  { value: 'basic', label: 'Básico' },
+  { value: 'intermediate', label: 'Intermedio' },
+  { value: 'advanced', label: 'Avanzado' },
+]
 
 const JOB_ROLES = [
   { value: 'Asesor', label: 'Asesor' },
@@ -924,46 +940,30 @@ function Profile() {
           <div className="panel-form is-compact">
             <label>
               Cargo / labor
-              <select
+              <Select
                 value={jobRole}
                 disabled={savingProfile || loadingProfile}
-                onChange={(e) => handleJobRoleSave(e.target.value)}
-              >
-                <option value="">Selecciona un cargo</option>
-                {JOB_ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => handleJobRoleSave(value)}
+                options={[{ value: '', label: 'Selecciona un cargo' }, ...JOB_ROLES]}
+              />
             </label>
             <label>
               Moneda
-              <select
+              <Select
                 value={currency}
-                onChange={(e) =>
-                  handleSettingsSave({ currency: e.target.value })
-                }
+                onChange={(value) => handleSettingsSave({ currency: value })}
                 disabled={savingSettings}
-              >
-                <option value="COP">COP</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-              </select>
+                options={CURRENCY_OPTIONS}
+              />
             </label>
             <label>
               Nivel educativo
-              <select
+              <Select
                 value={educationLevel}
-                onChange={(e) =>
-                  handleSettingsSave({ educationLevel: e.target.value })
-                }
+                onChange={(value) => handleSettingsSave({ educationLevel: value })}
                 disabled={savingSettings}
-              >
-                <option value="basic">Básico</option>
-                <option value="intermediate">Intermedio</option>
-                <option value="advanced">Avanzado</option>
-              </select>
+                options={EDUCATION_OPTIONS}
+              />
             </label>
             <label className="check-row">
               <input
