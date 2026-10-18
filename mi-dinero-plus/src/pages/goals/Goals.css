@@ -924,3 +924,35 @@
     flex: 1;
   }
 }
+
+.goals-page .goals-list {
+  --scroll-accent: var(--goals-green);
+  box-sizing: border-box; 
+  display: flex;
+  flex-direction: column;
+}
+
+.goals-page .goals-list > .goals-section-title,
+.goals-page .goals-list > .achievements-intro {
+  flex: none;
+}
+
+.goals-page .goals-list .goal-cards {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-content: start;
+}
+
+.goals-page .goals-active {
+  max-height: var(--list-max-h, none);
+}
+
+.goals-page .goals-achievements {
+  max-height: min(32rem, 70vh);
+}
+
+@media (max-width: 960px) {
+  .goals-page .goals-active {
+    max-height: min(75vh, 44rem);
+  }
+}

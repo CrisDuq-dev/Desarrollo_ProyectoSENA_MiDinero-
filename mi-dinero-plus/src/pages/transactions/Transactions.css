@@ -911,3 +911,26 @@
   font-weight: 600;
   color: var(--text-muted, #94a3b8);
 }
+
+.tx-history {
+  --scroll-accent: var(--tx-blue);
+  box-sizing: border-box; /* el tope incluye padding y borde: base alineada con la búsqueda */
+  display: flex;
+  flex-direction: column;
+  max-height: var(--list-max-h, none);
+}
+
+.tx-history-head {
+  flex: none;
+}
+
+.tx-history .tx-history-sections {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (max-width: 960px) {
+  .tx-history {
+    max-height: min(75vh, 44rem);
+  }
+}

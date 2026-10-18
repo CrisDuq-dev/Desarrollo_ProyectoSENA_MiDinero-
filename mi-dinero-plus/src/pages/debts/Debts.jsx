@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FiCpu, FiSearch, FiTrash2, FiEdit2, FiX } from 'react-icons/fi'
 import { useFinance } from '../../contexts/FinanceContext'
@@ -7,6 +7,8 @@ import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
 import DatePicker from '../../components/ui/DatePicker'
 import './Debts.css'
+import '../../components/ui/scroll-panel.css'
+import useColumnLimit from '../../hooks/useColumnLimit'
 
 const formInicial = {
   name: '',
@@ -108,6 +110,10 @@ function monthsUntil(dueDate) {
 }
 
 function Debts() {
+  const leftColumnRef = useRef(null)
+  const activeListRef = useRef(null)
+  useColumnLimit(leftColumnRef, activeListRef)
+
   const location = useLocation()
   const {
     debts,
@@ -438,7 +444,7 @@ function Debts() {
         </section>
 
         <div className="debts-layout">
-          <div className="debts-left">
+          <div className="debts-left" ref={leftColumnRef}>
             <section className="debt-form-card">
               <h1>Registrar Deuda</h1>
               <form onSubmit={manejarEnvio} noValidate>
@@ -573,7 +579,7 @@ function Debts() {
               </div>
             </section>
 
-            <section className="debts-list">
+            <section className="debts-list debts-active" ref={activeListRef}>
               {debtsLoading ? (
                 <p className="empty-state">Cargando deudas...</p>
               ) : debtsError ? (
@@ -587,7 +593,12 @@ function Debts() {
                   No se encontró ninguna deuda con “{searchQuery.trim()}”.
                 </p>
               ) : (
-                <div className="debt-cards">
+                <div
+                  className="debt-cards scroll-panel"
+                  role="region"
+                  aria-label="Deudas activas"
+                  tabIndex={0}
+                >
                   {activeDebts.map((debt) => {
                     const total = Number(debt.totalAmount) || 0
                     const pending = Number(debt.pendingBalance) || 0
@@ -745,7 +756,12 @@ function Debts() {
                 <p className="paid-intro">
                   ¡Bien hecho! Estas deudas ya quedaron en cero.
                 </p>
-                <div className="debt-cards">
+                <div
+                  className="debt-cards scroll-panel"
+                  role="region"
+                  aria-label="Deudas saldadas"
+                  tabIndex={0}
+                >
                   {paidDebts.map((debt) => {
                     const total = Number(debt.totalAmount) || 0
                     return (

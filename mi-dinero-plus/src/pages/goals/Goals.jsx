@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FiCpu, FiSearch, FiTrash2, FiEdit2, FiX } from 'react-icons/fi'
 import { useFinance } from '../../contexts/FinanceContext'
@@ -7,6 +7,8 @@ import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
 import DatePicker from '../../components/ui/DatePicker'
 import './Goals.css'
+import '../../components/ui/scroll-panel.css'
+import useColumnLimit from '../../hooks/useColumnLimit'
 
 const formInicial = {
   name: '',
@@ -96,6 +98,10 @@ function isGoalCompleted(goal) {
 }
 
 function Goals() {
+  const leftColumnRef = useRef(null)
+  const activeListRef = useRef(null)
+  useColumnLimit(leftColumnRef, activeListRef)
+
   const location = useLocation()
   const {
     goals,
@@ -488,7 +494,7 @@ function Goals() {
         </section>
 
         <div className="goals-layout">
-          <div className="goals-left">
+          <div className="goals-left" ref={leftColumnRef}>
             <section className="goal-form-card">
               <h1>Nueva Meta</h1>
               <form onSubmit={manejarEnvio} noValidate>
@@ -609,7 +615,7 @@ function Goals() {
               </div>
             </section>
 
-            <section className="goals-list">
+            <section className="goals-list goals-active" ref={activeListRef}>
               <h2 className="goals-section-title">Metas activas</h2>
               {goalsLoading ? (
                 <p className="empty-state">Cargando metas...</p>
@@ -624,7 +630,12 @@ function Goals() {
                     : 'No tienes metas activas. ¡Crea una o revisa tus logros abajo!'}
                 </p>
               ) : (
-                <div className="goal-cards">
+                <div
+                  className="goal-cards scroll-panel"
+                  role="region"
+                  aria-label="Metas activas"
+                  tabIndex={0}
+                >
                   {activeGoals.map((goal) => renderGoalCard(goal))}
                 </div>
               )}
@@ -638,7 +649,12 @@ function Goals() {
                 <p className="achievements-intro">
                   ¡Bien hecho! Estas metas ya alcanzaron su objetivo.
                 </p>
-                <div className="goal-cards">
+                <div
+                  className="goal-cards scroll-panel"
+                  role="region"
+                  aria-label="Logros cumplidos"
+                  tabIndex={0}
+                >
                   {completedGoals.map((goal) => renderGoalCard(goal))}
                 </div>
               </section>

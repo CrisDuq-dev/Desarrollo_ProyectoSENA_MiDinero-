@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useFinance } from '../../contexts/FinanceContext'
 import { expenseCategories, incomeCategories } from '../../constants/categories'
@@ -17,6 +17,8 @@ import {
   FiX,
 } from 'react-icons/fi'
 import './Transactions.css'
+import '../../components/ui/scroll-panel.css'
+import useColumnLimit from '../../hooks/useColumnLimit'
 
 const formInicial = {
   type: 'income',
@@ -79,6 +81,10 @@ function txDateKey(value) {
 }
 
 function Transactions() {
+  const leftColumnRef = useRef(null)
+  const historyCardRef = useRef(null)
+  useColumnLimit(leftColumnRef, historyCardRef)
+
   const location = useLocation()
   const {
     transactions,
@@ -338,7 +344,7 @@ function Transactions() {
         </section>
 
         <div className="tx-layout">
-          <div className="tx-left">
+          <div className="tx-left" ref={leftColumnRef}>
             <section className="tx-form-card">
               <header className="tx-form-head">
                 <h1>Nueva Transacción</h1>
@@ -507,7 +513,7 @@ function Transactions() {
               </div>
             </section>
 
-            <section className="tx-history">
+            <section className="tx-history" ref={historyCardRef}>
               <div className="tx-history-head">
                 <h2>Historial de Movimientos</h2>
                 <span>
@@ -534,7 +540,12 @@ function Transactions() {
                   No se encontró ningún movimiento con “{searchQuery.trim()}”.
                 </p>
               ) : (
-                <div className="tx-history-sections">
+                <div
+                  className="tx-history-sections scroll-panel"
+                  role="region"
+                  aria-label="Lista de movimientos"
+                  tabIndex={0}
+                >
                   {/* INGRESOS */}
                   <div className="tx-history-section">
                     <div className="tx-history-section-head income">
