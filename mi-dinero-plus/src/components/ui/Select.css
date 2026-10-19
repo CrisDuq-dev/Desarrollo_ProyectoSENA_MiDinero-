@@ -6,11 +6,12 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  margin-top: 0.35rem;
+  margin-top: var(--sel-gap, 0.35rem);
   padding: 0.72rem 1rem 0.72rem 0.95rem;
   box-sizing: border-box;
   font: inherit;
   font-weight: 600;
+  font-size: 0.95rem;
   text-align: left;
   color: var(--text-primary);
   background: var(--bg-page);
@@ -20,14 +21,23 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
+.sel-trigger.is-flush {
+  margin-top: 0;
+}
+
+.sel-trigger.is-sm {
+  padding: 0.58rem 0.85rem 0.58rem 0.8rem;
+  font-size: 0.92rem;
+}
+
 .sel-trigger:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--text-muted) 55%, var(--border));
+  border-color: color-mix(in srgb, var(--sel-accent, #2563eb) 45%, var(--border));
 }
 
 .sel-trigger:focus-visible,
 .sel-trigger.is-open {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  border-color: var(--sel-accent, #2563eb);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sel-accent, #2563eb) 22%, transparent);
 }
 
 .sel-trigger:disabled {
@@ -60,7 +70,7 @@
 
 .sel-trigger.is-open .sel-chevron {
   transform: rotate(180deg);
-  color: #2563eb;
+  color: var(--sel-accent, #2563eb);
 }
 
 .sel-flag {
@@ -78,7 +88,7 @@
 
 .sel-list {
   position: fixed;
-  z-index: 100000;
+  z-index: 100000; 
   margin: 0;
   padding: 0.35rem;
   list-style: none;
@@ -95,7 +105,7 @@
   animation: sel-pop-down 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   transform-origin: top center;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--text-muted) 45%, transparent) transparent;
+  scrollbar-color: color-mix(in srgb, var(--sel-accent, #2563eb) 75%, transparent) transparent;
 }
 
 .sel-list[data-origin='bottom'] {
@@ -108,7 +118,7 @@
 }
 
 .sel-list::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--text-muted) 45%, transparent);
+  background: color-mix(in srgb, var(--sel-accent, #2563eb) 75%, transparent);
   border-radius: 999px;
 }
 
@@ -139,17 +149,17 @@
 }
 
 .sel-option.is-active {
-  background: color-mix(in srgb, #2563eb 16%, transparent);
+  background: color-mix(in srgb, var(--sel-accent, #2563eb) 16%, transparent);
 }
 
 .sel-option.is-selected {
-  color: #60a5fa;
+  color: color-mix(in srgb, var(--sel-accent, #2563eb) 60%, #ffffff);
   font-weight: 800;
-  background: color-mix(in srgb, #2563eb 22%, transparent);
+  background: color-mix(in srgb, var(--sel-accent, #2563eb) 22%, transparent);
 }
 
 [data-theme='light'] .sel-option.is-selected {
-  color: #1d4ed8;
+  color: color-mix(in srgb, var(--sel-accent, #2563eb) 82%, #000000);
 }
 
 .sel-check {

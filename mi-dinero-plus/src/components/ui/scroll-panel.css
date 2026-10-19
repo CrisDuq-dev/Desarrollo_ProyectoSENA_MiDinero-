@@ -1,31 +1,13 @@
-/* =========================
-   .scroll-panel — zona con scroll para listas dentro de tarjetas
-   Cada página define --scroll-accent
-   ========================= */
-
 .scroll-panel {
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-accent, #2563eb)
+    color-mix(in srgb, var(--scroll-accent, #2563eb) 14%, transparent);
   grid-auto-rows: max-content;
   padding: 3px 0.7rem 8px 3px;
   margin: -3px -0.7rem -8px -3px;
-
-  background:
-    linear-gradient(var(--scroll-bg, var(--bg-surface)) 30%, transparent) top / 100% 1.6rem no-repeat local,
-    linear-gradient(transparent, var(--scroll-bg, var(--bg-surface)) 70%) bottom / 100% 1.6rem no-repeat local,
-    radial-gradient(
-        farthest-side at 50% 0,
-        color-mix(in srgb, var(--scroll-accent, #2563eb) 20%, transparent),
-        transparent
-      )
-      top / 100% 0.7rem no-repeat scroll,
-    radial-gradient(
-        farthest-side at 50% 100%,
-        color-mix(in srgb, var(--scroll-accent, #2563eb) 20%, transparent),
-        transparent
-      )
-      bottom / 100% 0.7rem no-repeat scroll;
 }
 
 .scroll-panel:focus-visible {
@@ -34,7 +16,6 @@
   border-radius: 0.6rem;
 }
 
-/* Chrome, Edge, Safari */
 .scroll-panel::-webkit-scrollbar {
   width: 9px;
 }
@@ -52,13 +33,4 @@
 }
 .scroll-panel::-webkit-scrollbar-thumb:hover {
   background-color: color-mix(in srgb, var(--scroll-accent, #2563eb) 78%, #000);
-}
-
-/* Firefox */
-@supports not selector(::-webkit-scrollbar) {
-  .scroll-panel {
-    scrollbar-width: thin;
-    scrollbar-color: var(--scroll-accent, #2563eb)
-      color-mix(in srgb, var(--scroll-accent, #2563eb) 12%, transparent);
-  }
 }

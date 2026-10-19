@@ -9,6 +9,9 @@ export default function Select({
   options = [],
   placeholder = 'Selecciona…',
   disabled = false,
+  accent,
+  flush = false,
+  size = 'md',
   id,
   className = '',
   'aria-label': ariaLabel,
@@ -74,7 +77,7 @@ export default function Select({
       if (!popRef.current?.contains(e.target) && !triggerRef.current?.contains(e.target)) close()
     }
     const onMove = (e) => {
-      if (e?.target && popRef.current?.contains(e.target)) return
+      if (e?.target && popRef.current?.contains(e.target))
       place()
     }
     document.addEventListener('mousedown', onDown)
@@ -156,7 +159,10 @@ export default function Select({
         type="button"
         ref={triggerRef}
         id={id}
-        className={`sel-trigger${open ? ' is-open' : ''}${className ? ` ${className}` : ''}`}
+        className={`sel-trigger${open ? ' is-open' : ''}${flush ? ' is-flush' : ''}${
+          size === 'sm' ? ' is-sm' : ''
+        }${className ? ` ${className}` : ''}`}
+        style={accent ? { '--sel-accent': accent } : undefined}
         disabled={disabled}
         onClick={() => (open ? close() : openList())}
         onKeyDown={onKeyDown}
@@ -183,8 +189,8 @@ export default function Select({
             className="sel-list"
             data-theme={theme || undefined}
             data-origin={pos?.origin || 'top'}
-            style={
-              pos
+            style={{
+              ...(pos
                 ? {
                     left: pos.left,
                     width: pos.width,
@@ -192,8 +198,9 @@ export default function Select({
                     top: pos.top,
                     bottom: pos.bottom,
                   }
-                : { left: 0, top: 0, visibility: 'hidden' }
-            }
+                : { left: 0, top: 0, visibility: 'hidden' }),
+              ...(accent ? { '--sel-accent': accent } : null),
+            }}
           >
             {options.map((o, i) => (
               <li
@@ -206,7 +213,7 @@ export default function Select({
                   o.value === value ? ' is-selected' : ''
                 }${o.value === '' ? ' is-empty' : ''}`}
                 onMouseMove={() => i !== active && setActive(i)}
-                onMouseDown={(e) => e.preventDefault()} // no quita el foco del campo
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => choose(i)}
               >
                 {o.icon && <img className="sel-flag" src={o.icon} alt="" aria-hidden="true" />}

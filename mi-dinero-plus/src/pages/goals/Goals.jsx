@@ -6,9 +6,16 @@ import { convertToCOP } from '../../utils/currency'
 import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
 import DatePicker from '../../components/ui/DatePicker'
+import Select from '../../components/ui/Select'
 import './Goals.css'
 import '../../components/ui/scroll-panel.css'
 import useColumnLimit from '../../hooks/useColumnLimit'
+
+const PRIORITY_OPTIONS = [
+  { value: 'low', label: 'Baja' },
+  { value: 'medium', label: 'Media' },
+  { value: 'high', label: 'Alta' },
+]
 
 const formInicial = {
   name: '',
@@ -541,15 +548,13 @@ function Goals() {
 
                 <label>
                   Prioridad
-                  <select
-                    className="priority-select"
+                  <Select
+                    flush
+                    accent="#16a34a"
                     value={form.priority}
-                    onChange={manejarCambio('priority')}
-                  >
-                    <option value="low">Baja</option>
-                    <option value="medium">Media</option>
-                    <option value="high">Alta</option>
-                  </select>
+                    onChange={(value) => manejarCambio('priority')({ target: { value } })}
+                    options={PRIORITY_OPTIONS}
+                  />
                   {errors.priority && (
                     <span className="error">{errors.priority}</span>
                   )}
@@ -719,15 +724,14 @@ function Goals() {
 
                 <label>
                   Prioridad
-                  <select
-                    className="priority-select"
+                  <Select
+                    flush
+                    size="sm"
+                    accent="#16a34a"
                     value={editForm.priority}
-                    onChange={manejarCambioEdit('priority')}
-                  >
-                    <option value="low">Baja</option>
-                    <option value="medium">Media</option>
-                    <option value="high">Alta</option>
-                  </select>
+                    onChange={(value) => manejarCambioEdit('priority')({ target: { value } })}
+                    options={PRIORITY_OPTIONS}
+                  />
                   {editErrors.priority && (
                     <span className="error">{editErrors.priority}</span>
                   )}

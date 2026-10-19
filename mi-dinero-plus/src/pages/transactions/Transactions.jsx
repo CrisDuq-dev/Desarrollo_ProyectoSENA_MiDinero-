@@ -6,6 +6,7 @@ import { formatHistoricalFx } from '../../utils/currency'
 import Modal from '../../components/ui/Modal'
 import Toast from '../../components/ui/Toast'
 import DatePicker from '../../components/ui/DatePicker'
+import Select from '../../components/ui/Select'
 import {
   FiArrowUp,
   FiArrowDown,
@@ -81,6 +82,7 @@ function txDateKey(value) {
 }
 
 function Transactions() {
+  // El historial crece hasta la base de la tarjeta de búsqueda y luego hace scroll
   const leftColumnRef = useRef(null)
   const historyCardRef = useRef(null)
   useColumnLimit(leftColumnRef, historyCardRef)
@@ -424,17 +426,16 @@ function Transactions() {
 
                 <label className="tx-field">
                   <span className="tx-label">Categoría</span>
-                  <select
+                  <Select
+                    flush
+                    accent="#2563eb"
                     value={form.category}
-                    onChange={manejarCambio('category')}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {categorias.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => manejarCambio('category')({ target: { value } })}
+                    options={[
+                      { value: '', label: 'Seleccionar...' },
+                      ...categorias.map((c) => ({ value: c, label: c })),
+                    ]}
+                  />
                   {errors.category && (
                     <span className="tx-err">{errors.category}</span>
                   )}
@@ -775,17 +776,17 @@ function Transactions() {
 
                 <label className="tx-field">
                   <span className="tx-label">Categoría</span>
-                  <select
+                  <Select
+                    flush
+                    size="sm"
+                    accent="#2563eb"
                     value={editForm.category}
-                    onChange={manejarCambioEdit('category')}
-                  >
-                    <option value="">Seleccionar...</option>
-                    {editCategorias.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => manejarCambioEdit('category')({ target: { value } })}
+                    options={[
+                      { value: '', label: 'Seleccionar...' },
+                      ...editCategorias.map((c) => ({ value: c, label: c })),
+                    ]}
+                  />
                   {editErrors.category && (
                     <span className="tx-err">{editErrors.category}</span>
                   )}
