@@ -171,7 +171,6 @@ function Register() {
     const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
     window.location.href = `${apiBase}/auth/google`
   }
-
   const manejarGoogle = () => {
     setGoogleSetupOpen(true)
   }
@@ -195,7 +194,7 @@ function Register() {
 
       <div className="register-shell">
         <section className="register-hero reg-anim" aria-label="Bienvenida" style={{ animationDelay: "0.05s" }}>
-          <CursorGlow scope="parent" size={520} color="38 , 0, 230" opacity={0.95} />
+          <CursorGlow scope="parent" size={520} color="38 , 0, 230" opacity={0.55} />
           <span className="sim-badge reg-anim" style={{ animationDelay: "0.08s" }}>SIMULACIÓN EDUCATIVA</span>
 
           <div className="hero-main reg-anim" style={{ animationDelay: "0.12s" }}>
