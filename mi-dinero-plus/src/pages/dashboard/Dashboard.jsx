@@ -8,6 +8,7 @@ import { ARTICLES } from '../../data/mundoplus/articles'
 import { MdWavingHand } from 'react-icons/md'
 import './Dashboard.css'
 import './DashboardRates.css'
+import './DashboardSummary.css'
 
 function splitHistoricalFx(amount, rateUsd, rateEur) {
   const full = formatHistoricalFx(amount, rateUsd, rateEur)
@@ -63,6 +64,7 @@ function formatPct(value) {
   return `${sign}${value.toFixed(2)}%`
 }
 
+/** Ancho 0–100 de la barra según |%| (escala visual) */
 function barWidthFromPct(pct) {
   if (pct == null || !Number.isFinite(pct)) return 0
   return Math.max(8, Math.min(100, Math.abs(pct) * 40))
@@ -141,6 +143,12 @@ function Dashboard() {
   const safeDebts = Array.isArray(debts) ? debts : []
   const safeTx = Array.isArray(transactions) ? transactions : []
 
+  // Resumen de todo lo registrado (sin contar lo eliminado)
+  const countTx = safeTx.filter((t) => t && !t.deletedAt).length
+  const countGoals = safeGoals.filter((g) => g && !g.deletedAt).length
+  const countDebts = safeDebts.filter((d) => d && !d.deletedAt).length
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
+
   const activeDebtsAll = safeDebts.filter(
     (debt) => debt && debt.status === 'active' && !debt.deletedAt
   )
@@ -211,7 +219,6 @@ function Dashboard() {
 
   const [rates, setRates] = useState({ usd: null, eur: null, updatedAt: null })
   const [ratesStatus, setRatesStatus] = useState('loading')
-  /** Histórico diario real (últimos días) para el % y las gráficas */
   const [fxSeries, setFxSeries] = useState([])
 
   useEffect(() => {
@@ -395,6 +402,24 @@ function Dashboard() {
           )}
         </aside>
       </section>
+
+      <div
+        className={`dashboard-section-head${entryState === 'active' ? ' is-entering' : ''}`}
+      >
+        <h2>Resumen de tu simulación</h2>
+        <p>
+          {countTx + countGoals + countDebts === 0 ? (
+            'Aún no tienes registros. Agrega tu primer movimiento para ver tu progreso aquí.'
+          ) : (
+            <>
+              Hasta el momento has registraste{' '}
+              <strong>{plural(countTx, 'transacción', 'transacciones')}</strong>,{' '}
+              <strong>{plural(countGoals, 'meta', 'metas')}</strong> y{' '}
+              <strong>{plural(countDebts, 'deuda', 'deudas')}</strong>.
+            </>
+          )}
+        </p>
+      </div>
 
       <section className="dashboard-summary-grid" aria-label="Resumen rápido">
         <article className="summary-card is-balance">

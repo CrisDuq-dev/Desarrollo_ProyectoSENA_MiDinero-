@@ -76,17 +76,20 @@ export default function Select({
     const onDown = (e) => {
       if (!popRef.current?.contains(e.target) && !triggerRef.current?.contains(e.target)) close()
     }
-    const onMove = (e) => {
-      if (e?.target && popRef.current?.contains(e.target))
-      place()
+    const openedAt = performance.now()
+    const onScroll = (e) => {
+      if (e.target instanceof Node && popRef.current?.contains(e.target)) return
+      if (performance.now() - openedAt < 150) return
+      close()
     }
+    const onResize = () => place()
     document.addEventListener('mousedown', onDown)
-    window.addEventListener('resize', onMove)
-    window.addEventListener('scroll', onMove, true)
+    window.addEventListener('resize', onResize)
+    window.addEventListener('scroll', onScroll, true)
     return () => {
       document.removeEventListener('mousedown', onDown)
-      window.removeEventListener('resize', onMove)
-      window.removeEventListener('scroll', onMove, true)
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('scroll', onScroll, true)
     }
   }, [open, close, place])
 

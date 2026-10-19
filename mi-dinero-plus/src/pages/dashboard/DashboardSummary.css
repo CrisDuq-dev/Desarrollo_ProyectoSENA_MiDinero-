@@ -1,0 +1,59 @@
+/* ==========================================================================
+   Tablero: más aire bajo el saludo + encabezado de resumen sobre las 4 tarjetas
+   ========================================================================== */
+   
+.dashboard-greeting {
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-summary-grid {
+  margin-bottom: 0.4rem;
+}
+
+.dashboard-section-head {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.35rem 0.15rem -0.25rem;
+  animation: dashHeadIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s backwards;
+}
+
+.dashboard-section-head h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.dashboard-section-head p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.dashboard-section-head strong {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+@keyframes dashHeadIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.dashboard-section-head.is-entering {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-section-head {
+    animation: none;
+  }
+}
