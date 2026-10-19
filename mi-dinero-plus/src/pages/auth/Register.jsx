@@ -194,7 +194,7 @@ function Register() {
 
       <div className="register-shell">
         <section className="register-hero reg-anim" aria-label="Bienvenida" style={{ animationDelay: "0.05s" }}>
-          <CursorGlow scope="parent" size={520} color="18 , 111, 203" opacity={0.55} />
+          <CursorGlow scope="parent" size={520} color="18 , 111, 203" opacity={0.85} />
           <span className="sim-badge reg-anim" style={{ animationDelay: "0.08s" }}>SIMULACIÓN EDUCATIVA</span>
 
           <div className="hero-main reg-anim" style={{ animationDelay: "0.12s" }}>
