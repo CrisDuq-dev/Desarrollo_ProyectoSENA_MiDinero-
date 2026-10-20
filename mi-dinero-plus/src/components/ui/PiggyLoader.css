@@ -127,6 +127,38 @@
   animation: piggyTextIn 0.5s ease-out;
 }
 
+/* ---- Turn: every two cycles, the pig turns to the other side and returns ---- */
+.piggy-body {
+  transform-origin: 50% 60%;
+  animation: pigTurn 5.6s infinite;
+}
+
+/* ---- Destellos en la ranura ---- */
+.piggy-spark {
+  position: absolute;
+  left: var(--slot-x);
+  top: calc(var(--slot-y) - 5%);
+  width: 7%;
+  aspect-ratio: 1;
+  background: #fcd34d;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0;
+  pointer-events: none;
+  animation: sparkPop 2.8s infinite;
+}
+.piggy-spark.is-2 {
+  left: calc(var(--slot-x) + 10%);
+  top: calc(var(--slot-y) - 10%);
+  width: 5%;
+  animation-delay: 0.06s;
+}
+.piggy-spark.is-3 {
+  left: calc(var(--slot-x) - 10%);
+  top: calc(var(--slot-y) - 9%);
+  width: 4%;
+  animation-delay: 0.12s;
+}
+
 /* ---- Animaciones ---- */
 @keyframes pigJump {
   0% {
@@ -231,6 +263,41 @@
   }
 }
 
+/* Occurs in the second cycle (5.6 s), just after catching the coin */
+@keyframes pigTurn {
+  0%,
+  86% {
+    transform: scaleX(1) rotate(0deg);
+  }
+  91% {
+    transform: scaleX(-1) rotate(-4deg); /* se voltea hacia el otro lado */
+  }
+  94% {
+    transform: scaleX(-1) rotate(3deg);
+  }
+  99%,
+  100% {
+    transform: scaleX(1) rotate(0deg); /* regresa de frente */
+  }
+}
+
+@keyframes sparkPop {
+  0%,
+  60%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0) rotate(0deg);
+  }
+  64% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2) rotate(20deg);
+  }
+  74% {
+    opacity: 0;
+    transform: translate(-50%, -80%) scale(0.4) rotate(70deg);
+  }
+}
+
 @keyframes piggyTextIn {
   from {
     opacity: 0;
@@ -245,12 +312,14 @@
 /* Con "reducir movimiento": cerdito quieto, sin moneda, y solo cambia el texto */
 @media (prefers-reduced-motion: reduce) {
   .piggy-jump,
+  .piggy-body,
   .piggy-shadow,
   .piggy-eye,
   .piggy-text {
     animation: none;
   }
-  .piggy-coin {
+  .piggy-coin,
+  .piggy-spark {
     display: none;
   }
 }

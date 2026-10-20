@@ -32,6 +32,10 @@ export default function PiggyLoader({ messages = DEFAULT_MESSAGES, size = 220 })
             <img className="piggy-img" src={pigImg} alt="" draggable={false} />
             <span className="piggy-eye is-left" />
             <span className="piggy-eye is-right" />
+            {/* Flashes that appear when the coin enters the slot */}
+            <span className="piggy-spark is-1" />
+            <span className="piggy-spark is-2" />
+            <span className="piggy-spark is-3" />
             {/* La moneda se recorta en la línea de la ranura para que parezca que entra en ella */}
             <div className="piggy-slot-mask">
               <img className="piggy-coin" src={coinImg} alt="" draggable={false} />

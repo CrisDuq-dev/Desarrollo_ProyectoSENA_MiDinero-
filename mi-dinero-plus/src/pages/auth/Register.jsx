@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import GoogleSetupModal from '../../components/auth/GoogleSetupModal'
-import CursorGlow from '../../components/ui/CursorGlow'
+import CursorGlow from '../../components/ui/Cursorglow'
 import PiggyLoader from '../../components/ui/PiggyLoader'
 import { saveGoogleSetupPending } from '../../utils/googleSetupStorage'
 import {
