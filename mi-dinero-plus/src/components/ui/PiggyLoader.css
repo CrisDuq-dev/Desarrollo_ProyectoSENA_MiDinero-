@@ -1,0 +1,256 @@
+/* ==========================================================================
+   Cerdito de carga: salta, lanza una moneda, la atrapa por la ranura y guiña.
+   Toda la secuencia dura 2.8 s y se repite mientras dure la espera.
+   ========================================================================== */
+.piggy-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+}
+
+/* Escenario: deja espacio arriba para que la moneda suba, y abajo para la sombra */
+.piggy-stage {
+  --pig-h: calc(var(--pig-w, 220px) * 0.9607); /* alto del dibujo (proporción de la imagen) */
+  position: relative;
+  width: calc(var(--pig-w, 220px) * 1.15);
+  height: calc(var(--pig-h) + var(--pig-w, 220px) * 0.55 + 22px);
+}
+
+.piggy-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: calc(var(--pig-w, 220px) * 0.72);
+  height: 16px;
+  margin-left: calc(var(--pig-w, 220px) * -0.36);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0) 70%);
+  opacity: 0.28;
+  animation: pigShadow 2.8s infinite;
+}
+
+.piggy-jump {
+  position: absolute;
+  left: calc(50% - var(--pig-w, 220px) / 2);
+  bottom: 18px;
+  width: var(--pig-w, 220px);
+  transform-origin: 50% 100%; /* se aplasta y se estira desde el piso */
+  animation: pigJump 2.8s infinite;
+  will-change: transform;
+}
+
+/* ---- Ajustes del dibujo: si cambias la imagen, mueve estos valores (% del cerdito) ---- */
+.piggy-body {
+  --eye-w: 5.4%;
+  --eye-h: 7.4%;
+  --eye-l-x: 13.5%;
+  --eye-l-y: 40.5%;
+  --eye-r-x: 41.5%;
+  --eye-r-y: 41%;
+  --slot-x: 48.5%; /* centro de la ranura de la alcancía */
+  --slot-y: 6.8%;
+  --coin-w: 16%;
+
+  position: relative;
+  width: 100%;
+}
+
+.piggy-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ---- Ojos (el dibujo no los trae: así pueden parpadear y guiñar) ---- */
+.piggy-eye {
+  position: absolute;
+  width: var(--eye-w);
+  height: var(--eye-h);
+  border-radius: 50%;
+  background: #3a282c;
+  transform-origin: 50% 50%;
+}
+.piggy-eye::after {
+  content: '';
+  position: absolute;
+  left: 20%;
+  top: 12%;
+  width: 42%;
+  height: 32%;
+  border-radius: 50%;
+  background: #fff;
+}
+.piggy-eye.is-left {
+  left: calc(var(--eye-l-x) - var(--eye-w) / 2);
+  top: calc(var(--eye-l-y) - var(--eye-h) / 2);
+  animation: eyeBlink 2.8s infinite;
+}
+.piggy-eye.is-right {
+  left: calc(var(--eye-r-x) - var(--eye-w) / 2);
+  top: calc(var(--eye-r-y) - var(--eye-h) / 2);
+  animation: eyeWink 2.8s infinite;
+}
+
+/* ---- Moneda: se recorta justo en la ranura, así parece que entra en la alcancía ---- */
+.piggy-slot-mask {
+  position: absolute;
+  left: calc(var(--slot-x) - var(--coin-w) / 2);
+  width: var(--coin-w);
+  bottom: calc(100% - var(--slot-y));
+  height: 80%;
+  overflow: hidden;
+  perspective: 260px;
+  pointer-events: none;
+}
+.piggy-coin {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: block;
+  width: 100%;
+  height: auto;
+  transform: translateY(105%);
+  animation: coinToss 2.8s infinite;
+  will-change: transform;
+}
+
+.piggy-text {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  animation: piggyTextIn 0.5s ease-out;
+}
+
+/* ---- Animaciones ---- */
+@keyframes pigJump {
+  0% {
+    transform: translateY(0) scale(1, 1);
+    animation-timing-function: ease-out;
+  }
+  7% {
+    transform: translateY(0) scale(1.06, 0.94); /* se agacha para lanzar */
+    animation-timing-function: ease-out;
+  }
+  15% {
+    transform: translateY(-9%) scale(0.97, 1.04); /* salta */
+    animation-timing-function: ease-in;
+  }
+  24% {
+    transform: translateY(0) scale(1.05, 0.95); /* aterriza */
+    animation-timing-function: ease-out;
+  }
+  31%,
+  58% {
+    transform: translateY(0) scale(1, 1);
+    animation-timing-function: ease-out;
+  }
+  63% {
+    transform: translateY(0) scale(1.07, 0.93); /* recibe la moneda */
+    animation-timing-function: ease-out;
+  }
+  69% {
+    transform: translateY(-3%) scale(0.99, 1.02);
+    animation-timing-function: ease-in-out;
+  }
+  76%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+@keyframes pigShadow {
+  0%,
+  31%,
+  58%,
+  76%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.28;
+  }
+  15% {
+    transform: scaleX(0.78);
+    opacity: 0.16;
+  }
+  69% {
+    transform: scaleX(0.92);
+    opacity: 0.22;
+  }
+}
+
+/* La moneda sube girando, queda de frente en lo más alto y cae de canto para entrar en la ranura */
+@keyframes coinToss {
+  0%,
+  9% {
+    transform: translateY(105%) rotateY(0deg);
+    animation-timing-function: cubic-bezier(0.15, 0.7, 0.35, 1);
+  }
+  36% {
+    transform: translateY(-270%) rotateY(540deg);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.85, 0.4);
+  }
+  62%,
+  100% {
+    transform: translateY(105%) rotateY(1170deg);
+  }
+}
+
+@keyframes eyeBlink {
+  0%,
+  86%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+  90% {
+    transform: scaleY(0.12);
+  }
+}
+
+/* Guiño al atrapar la moneda, y parpadeo normal al final */
+@keyframes eyeWink {
+  0%,
+  60%,
+  80%,
+  86%,
+  94%,
+  100% {
+    transform: scaleY(1) rotate(0deg);
+  }
+  64%,
+  76% {
+    transform: scaleY(0.12) rotate(-8deg);
+  }
+  90% {
+    transform: scaleY(0.12) rotate(0deg);
+  }
+}
+
+@keyframes piggyTextIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Con "reducir movimiento": cerdito quieto, sin moneda, y solo cambia el texto */
+@media (prefers-reduced-motion: reduce) {
+  .piggy-jump,
+  .piggy-shadow,
+  .piggy-eye,
+  .piggy-text {
+    animation: none;
+  }
+  .piggy-coin {
+    display: none;
+  }
+}

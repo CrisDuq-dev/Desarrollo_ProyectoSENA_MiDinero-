@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import GoogleSetupModal from '../../components/auth/GoogleSetupModal'
-import CursorGlow from "../../components/ui/Cursorglow";
+import CursorGlow from '../../components/ui/CursorGlow'
+import PiggyLoader from '../../components/ui/PiggyLoader'
 import { saveGoogleSetupPending } from '../../utils/googleSetupStorage'
 import {
   FiBarChart2,
@@ -133,6 +134,7 @@ function Register() {
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [enviado, setEnviado] = useState(false)
+  const [submitting, setSubmitting] = useState(false) // solo mientras se envía el formulario (no el loading general)
   const [error, setError] = useState('')
   const [errorKey, setErrorKey] = useState(0)
   const [googleSetupOpen, setGoogleSetupOpen] = useState(false)
@@ -149,6 +151,7 @@ function Register() {
 
   const manejarEnvio = async (event) => {
     event.preventDefault()
+    if (submitting) return
     setError('')
 
     if (!(nombreValido && correoValido && passwordValido && confirmarValido)) {
@@ -157,6 +160,7 @@ function Register() {
       return
     }
 
+    setSubmitting(true)
     try {
       await register(fullName, correo, password)
       setEnviado(true)
@@ -164,6 +168,8 @@ function Register() {
     } catch (err) {
       setError(err.message || 'No se pudo completar el registro')
       setErrorKey((k) => k + 1)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -171,6 +177,7 @@ function Register() {
     const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
     window.location.href = `${apiBase}/auth/google`
   }
+
   const manejarGoogle = () => {
     setGoogleSetupOpen(true)
   }
@@ -194,7 +201,7 @@ function Register() {
 
       <div className="register-shell">
         <section className="register-hero reg-anim" aria-label="Bienvenida" style={{ animationDelay: "0.05s" }}>
-          <CursorGlow scope="parent" size={520} color="18 , 111, 203" opacity={0.85} />
+          <CursorGlow scope="parent" size={520} color="219, 234, 254" opacity={0.32} />
           <span className="sim-badge reg-anim" style={{ animationDelay: "0.08s" }}>SIMULACIÓN EDUCATIVA</span>
 
           <div className="hero-main reg-anim" style={{ animationDelay: "0.12s" }}>
@@ -245,6 +252,11 @@ function Register() {
         </section>
 
         <section className="register-form-panel reg-anim" aria-label="Registro" style={{ animationDelay: "0.18s" }}>
+          {submitting && (
+            <div className="register-loading">
+              <PiggyLoader />
+            </div>
+          )}
           <header className="form-header">
             <h2>Crea tu cuenta</h2>
             <p>Completa la información para comenzar tu experiencia en Mi Dinero+.</p>
@@ -731,6 +743,7 @@ function Register() {
         }
 
         .register-form-panel {
+          position: relative;
           background: var(--surface);
           padding: 2rem 1.85rem;
           display: flex;
@@ -738,6 +751,28 @@ function Register() {
           border-radius: 1.5rem;
           box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
           border: 1px solid var(--border);
+        }
+
+        /* Capa de carga con el cerdito: cubre el formulario sin moverlo ni borrar lo escrito */
+        .register-loading {
+          position: absolute;
+          inset: 0;
+          z-index: 20;
+          display: grid;
+          place-items: center;
+          border-radius: inherit;
+          background: color-mix(in srgb, var(--surface) 93%, transparent);
+          -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+          animation: regLoadingIn 0.3s ease-out;
+        }
+        @keyframes regLoadingIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
         }
 
         .form-header h2 {
