@@ -586,7 +586,7 @@ function Debts() {
                 <p className="empty-state error">{debtsError}</p>
               ) : activeDebtsAll.length === 0 ? (
                 <p className="empty-state">
-                  No hay deudas activas por el momento.
+                  No hay deudas activas por el momento...
                 </p>
               ) : activeDebts.length === 0 ? (
                 <p className="empty-state">
