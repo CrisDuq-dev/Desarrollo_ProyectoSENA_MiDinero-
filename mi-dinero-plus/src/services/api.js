@@ -371,6 +371,37 @@ export async function sendMonthlyReport(_token) {
   return request('/reports/send-monthly', { method: 'POST', body: {} })
 }
 
+export async function downloadReport(_token, type, { _retried = false } = {}) {
+  let response
+  try {
+    response = await fetch(`${API_URL}/reports/download/${type}`, {
+      method: 'GET',
+      credentials: 'include',
+    })
+  } catch {
+    const err = new Error(
+      'No se pudo conectar con el servidor. ¿Está el API en marcha?'
+    )
+    err.status = 0
+    throw err
+  }
+
+  if (response.status === 401 && !_retried && (await tryRefresh())) {
+    return downloadReport(_token, type, { _retried: true })
+  }
+
+  if (!response.ok) {
+    const data = await parseBody(response)
+    const err = new Error(
+      (data && data.message) || `Error del servidor (${response.status})`
+    )
+    err.status = response.status
+    throw err
+  }
+
+  return response.blob()
+}
+
 // =====================
 // IA
 // =====================

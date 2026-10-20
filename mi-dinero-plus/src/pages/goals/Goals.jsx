@@ -10,6 +10,7 @@ import Select from '../../components/ui/Select'
 import './Goals.css'
 import '../../components/ui/scroll-panel.css'
 import useColumnLimit from '../../hooks/useColumnLimit'
+import LimitedInput from '../../components/ui/LimitedInput'
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Baja' },
@@ -507,12 +508,11 @@ function Goals() {
               <form onSubmit={manejarEnvio} noValidate>
                 <label>
                   Nombre de la Meta
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={manejarCambio('name')}
-                    placeholder="Nombre de tu objetivo"
-                  />
+                <LimitedInput
+                  value={form.name}
+                  onChange={manejarCambio('name')}
+                  placeholder="Nombre de tu objetivo"
+                />
                   {errors.name && <span className="error">{errors.name}</span>}
                 </label>
 
@@ -683,12 +683,11 @@ function Goals() {
               <div className="goal-edit-form">
                 <label>
                   Nombre de la Meta
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={manejarCambioEdit('name')}
-                    placeholder="Nombre de tu objetivo"
-                  />
+                <LimitedInput
+                  value={editForm.name}
+                  onChange={manejarCambioEdit('name')}
+                  placeholder="Nombre de tu objetivo"
+                />
                   {editErrors.name && (
                     <span className="error">{editErrors.name}</span>
                   )}

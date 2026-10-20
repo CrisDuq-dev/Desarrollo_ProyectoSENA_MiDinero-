@@ -20,6 +20,7 @@ import {
 import './Transactions.css'
 import '../../components/ui/scroll-panel.css'
 import useColumnLimit from '../../hooks/useColumnLimit'
+import LimitedInput from '../../components/ui/LimitedInput'
 
 const formInicial = {
   type: 'income',
@@ -443,12 +444,11 @@ function Transactions() {
 
                 <label className="tx-field">
                   <span className="tx-label">Descripción</span>
-                  <input
-                    type="text"
-                    value={form.description}
-                    onChange={manejarCambio('description')}
-                    placeholder="¿En qué se usó este dinero?"
-                  />
+                <LimitedInput
+                  value={form.description}
+                  onChange={manejarCambio('description')}
+                  placeholder="¿En qué se usó este dinero?"
+                />
                   {errors.description && (
                     <span className="tx-err">{errors.description}</span>
                   )}
@@ -794,8 +794,7 @@ function Transactions() {
 
                 <label className="tx-field">
                   <span className="tx-label">Descripción</span>
-                  <input
-                    type="text"
+                  <LimitedInput
                     value={editForm.description}
                     onChange={manejarCambioEdit('description')}
                     placeholder="Descripción del movimiento"

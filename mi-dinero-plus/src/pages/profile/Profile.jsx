@@ -33,6 +33,7 @@ import {
   updateProfile,
   sendWeeklyReport,
   sendMonthlyReport,
+  downloadReport,
   resetSimulationApi,
   changePassword,
 } from '../../services/api'
@@ -367,6 +368,8 @@ function Profile() {
     cachedProfile?.jobRole ?? user?.job_role ?? ''
   )
   const [sendingReport, setSendingReport] = useState(null)
+  const [downloadOpen, setDownloadOpen] = useState(false)
+  const [downloading, setDownloading] = useState(null)
   const [resetting, setResetting] = useState(false)
 
   const completedGoals = goals.filter((g) => g.status === 'completed').length
@@ -693,6 +696,36 @@ function Profile() {
     }
   }
 
+  const handleDownloadReport = async (type) => {
+    if (!token || downloading) return
+    setDownloading(type)
+    try {
+      const blob = await downloadReport(token, type)
+      const date = new Date().toLocaleDateString('en-CA') // AAAA-MM-DD (hora local)
+      const nombre = type === 'monthly' ? 'mensual' : 'semanal'
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `MiDinero_reporte_${nombre}_${date}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+
+      setDownloadOpen(false)
+      setToast({ message: 'Reporte descargado', visible: true })
+    } catch (err) {
+      setToast({
+        message: err.message || 'No se pudo descargar el reporte',
+        visible: true,
+      })
+    } finally {
+      setDownloading(null)
+      setTimeout(() => setToast({ message: '', visible: false }), 3500)
+    }
+  }
+
   return (
     <section className="profile-page">
       <div className="profile-hero">
@@ -922,6 +955,17 @@ function Profile() {
               {savingProfile ? 'Guardando…' : 'Actualizar correo'}
             </button>
           </form>
+
+          <hr className="divider" />
+
+          <h3 className="subhead">Tus reportes</h3>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setDownloadOpen(true)}
+          >
+            Descarga de reportes
+          </button>
         </article>
       )}
 
@@ -1092,6 +1136,61 @@ function Profile() {
             Tu cuenta, correo y configuración se mantienen.
           </p>
         </Modal>
+      )}
+
+      {downloadOpen && (
+        <div
+          className="report-dl-backdrop"
+          onClick={() => !downloading && setDownloadOpen(false)}
+        >
+          <div
+            className="report-dl-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="report-dl-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="report-dl-title">Descarga de reportes</h2>
+            <p className="report-dl-hint">
+              ¿Cuál deseas descargar? Se guarda en tu equipo como Excel (.xlsx).
+            </p>
+
+            <div className="report-dl-options">
+              <button
+                type="button"
+                className="report-dl-option"
+                disabled={!!downloading}
+                onClick={() => handleDownloadReport('weekly')}
+              >
+                <strong>
+                  {downloading === 'weekly' ? 'Generando…' : 'Resumen semanal'}
+                </strong>
+                <span>De lunes a domingo de esta semana</span>
+              </button>
+
+              <button
+                type="button"
+                className="report-dl-option"
+                disabled={!!downloading}
+                onClick={() => handleDownloadReport('monthly')}
+              >
+                <strong>
+                  {downloading === 'monthly' ? 'Generando…' : 'Resumen mensual'}
+                </strong>
+                <span>Todo el mes en curso</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="link-btn"
+              disabled={!!downloading}
+              onClick={() => setDownloadOpen(false)}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
       )}
 
       <Toast message={toast.message} visible={toast.visible} />

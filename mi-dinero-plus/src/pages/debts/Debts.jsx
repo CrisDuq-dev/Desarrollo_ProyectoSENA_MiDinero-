@@ -9,6 +9,7 @@ import DatePicker from '../../components/ui/DatePicker'
 import './Debts.css'
 import '../../components/ui/scroll-panel.css'
 import useColumnLimit from '../../hooks/useColumnLimit'
+import LimitedInput from '../../components/ui/LimitedInput'
 
 const formInicial = {
   name: '',
@@ -450,12 +451,11 @@ function Debts() {
               <form onSubmit={manejarEnvio} noValidate>
                 <label>
                   Nombre / Entidad
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={manejarCambio('name')}
-                    placeholder="Nombre de la deuda o entidad"
-                  />
+                <LimitedInput
+                  value={form.name}
+                  onChange={manejarCambio('name')}
+                  placeholder="Nombre de la deuda o entidad"
+                />
                   {errors.name && <span className="error">{errors.name}</span>}
                 </label>
 
@@ -843,12 +843,11 @@ function Debts() {
               <div className="debt-edit-form">
                 <label>
                   Nombre / Entidad
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={manejarCambioEdit('name')}
-                    placeholder="Nombre de la deuda o entidad"
-                  />
+                <LimitedInput
+                  value={editForm.name}
+                  onChange={manejarCambioEdit('name')}
+                  placeholder="Nombre de la deuda o entidad"
+                />
                   {editErrors.name && (
                     <span className="error">{editErrors.name}</span>
                   )}

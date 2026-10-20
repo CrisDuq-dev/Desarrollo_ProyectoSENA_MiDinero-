@@ -13,5 +13,6 @@ router.use(authMiddleware)
 router.get('/preview-weekly', previewWeeklyReport)
 router.post('/send-weekly', sendWeeklyReport)
 router.post('/send-monthly', sendMonthlyReport)
+router.get('/download/:type', downloadReport)
 
 module.exports = router

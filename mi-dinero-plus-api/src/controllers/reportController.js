@@ -1,5 +1,9 @@
 const { buildUserReport } = require('../services/reportService')
 const { sendFinancialReportEmail } = require('../services/emailService')
+const {
+  buildReportExcelBuffer,
+  excelFilename,
+} = require('../services/excelReportService')
 
 /**
  * POST /api/reports/send-weekly
@@ -90,8 +94,46 @@ async function previewWeeklyReport(req, res) {
   }
 }
 
+/**
+ * GET /api/reports/download/:type   (type = weekly | monthly)
+ * Descarga el reporte en Excel directamente al equipo del usuario.
+ */
+async function downloadReport(req, res) {
+  try {
+    const userId = req.user && (req.user.id || req.user.userId)
+    if (!userId) {
+      return res.status(401).json({ message: 'No autenticado' })
+    }
+
+    const type = req.params.type
+    if (type !== 'weekly' && type !== 'monthly') {
+      return res.status(400).json({ message: 'Tipo de reporte inválido' })
+    }
+
+    const report = await buildUserReport(userId, type)
+    const buffer = await buildReportExcelBuffer(report)
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${excelFilename(report)}"`
+    )
+    res.setHeader('Cache-Control', 'no-store')
+    return res.send(Buffer.from(buffer))
+  } catch (err) {
+    console.error('downloadReport:', err.message)
+    return res.status(500).json({
+      message: err.message || 'No se pudo generar el reporte',
+    })
+  }
+}
+
 module.exports = {
   sendWeeklyReport,
   sendMonthlyReport,
   previewWeeklyReport,
+  downloadReport,
 }
