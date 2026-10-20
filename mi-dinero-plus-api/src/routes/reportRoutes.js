@@ -5,6 +5,7 @@ const {
   sendWeeklyReport,
   sendMonthlyReport,
   previewWeeklyReport,
+  downloadReport,
 } = require('../controllers/reportController')
 
 // Todas las rutas de reportes requieren autenticación
