@@ -57,11 +57,23 @@ function hoursFromNow(h) {
 // =====================
 // REGISTRO
 // =====================
+// Permite crear cuentas SIN verificar el correo (modo "sin verificar").
+// Para apagarlo en producción: ALLOW_UNVERIFIED_SIGNUP=false en las variables de entorno.
+const ALLOW_UNVERIFIED_SIGNUP =
+  String(process.env.ALLOW_UNVERIFIED_SIGNUP ?? 'true').toLowerCase() !== 'false'
+
 const register = async (req, res) => {
   const full_name =
     typeof req.body.full_name === 'string' ? req.body.full_name.trim() : ''
   const email = normalizeEmail(req.body.email)
   const password = req.body.password
+  const skipVerification = req.body.skipVerification === true
+
+  if (skipVerification && !ALLOW_UNVERIFIED_SIGNUP) {
+    return res.status(403).json({
+      message: 'El registro sin verificar correo no está habilitado.',
+    })
+  }
 
   if (!full_name || !email || !password) {
     return res.status(400).json({ message: 'Todos los campos son obligatorios' })
@@ -104,15 +116,24 @@ const register = async (req, res) => {
     }
 
     const password_hash = await bcrypt.hash(password, BCRYPT_ROUNDS)
-    const verifyToken = makeToken()
-    const verifyTokenHash = hashToken(verifyToken)
-    const verifyExpires = hoursFromNow(24)
+    // Sin verificar: no se genera token ni se envía correo; queda marcado en la BD.
+    const verifyToken = skipVerification ? null : makeToken()
+    const verifyTokenHash = skipVerification ? null : hashToken(verifyToken)
+    const verifyExpires = skipVerification ? null : hoursFromNow(24)
+    const verificationMode = skipVerification ? 'skipped' : 'email'
 
     const [result] = await conn.query(
       `INSERT INTO users
-        (full_name, email, password_hash, email_verified, email_verify_token, email_verify_expires, auth_provider)
-       VALUES (?, ?, ?, 0, ?, ?, 'local')`,
-      [full_name, email, password_hash, verifyTokenHash, verifyExpires]
+        (full_name, email, password_hash, email_verified, verification_mode, email_verify_token, email_verify_expires, auth_provider)
+       VALUES (?, ?, ?, 0, ?, ?, ?, 'local')`,
+      [
+        full_name,
+        email,
+        password_hash,
+        verificationMode,
+        verifyTokenHash,
+        verifyExpires,
+      ]
     )
 
     const userId = result.insertId
@@ -123,6 +144,16 @@ const register = async (req, res) => {
     ])
 
     await conn.commit()
+
+    if (skipVerification) {
+      return res.status(201).json({
+        message:
+          'Cuenta creada sin verificar el correo. Ya puedes iniciar sesión.',
+        userId,
+        requiresVerification: false,
+        verificationSkipped: true,
+      })
+    }
 
     try {
       await sendVerificationEmail(email, verifyToken)
@@ -174,7 +205,7 @@ const login = async (req, res) => {
     const secret = getJwtSecret()
 
     const [users] = await pool.query(
-      `SELECT id, full_name, email, password_hash, account_status, email_verified
+      `SELECT id, full_name, email, password_hash, account_status, email_verified, verification_mode
        FROM users
        WHERE email = ?
        LIMIT 1`,
@@ -207,7 +238,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Credenciales incorrectas' })
     }
 
-    if (!user.email_verified) {
+    if (!user.email_verified && user.verification_mode !== 'skipped') {
       return res.status(403).json({
         message:
           'Debes verificar tu correo antes de iniciar sesión. Revisa tu bandeja de entrada.',

@@ -84,7 +84,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `account_status`         ENUM('active','inactive','suspended') NOT NULL DEFAULT 'active'
                            COMMENT 'Estado de la cuenta',
   `email_verified`         TINYINT(1) NOT NULL DEFAULT 0
-                           COMMENT '1 = correo verificado, 0 = pendiente',
+                           COMMENT '1 = email verified, 0 = pending',
+  `verification_mode`      ENUM('email','skipped') NOT NULL DEFAULT 'email'
+                           COMMENT 'email = verificó por correo; skipped = creó la cuenta sin verificar correo',
   `email_verify_token`     VARCHAR(64) NULL DEFAULT NULL
                            COMMENT 'Token temporal para verificar el correo',
   `email_verify_expires`   DATETIME NULL DEFAULT NULL

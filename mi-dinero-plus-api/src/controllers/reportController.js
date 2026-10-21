@@ -1,9 +1,22 @@
+const pool = require('../config/db')
 const { buildUserReport } = require('../services/reportService')
 const { sendFinancialReportEmail } = require('../services/emailService')
 const {
   buildReportExcelBuffer,
   excelFilename,
 } = require('../services/excelReportService')
+
+const NOT_VERIFIED_MSG =
+  'Tu correo no está verificado, por eso no enviamos reportes por correo. ' +
+  'Puedes descargarlos en Seguridad y Privacidad → Descarga de reportes.'
+
+async function emailIsVerified(userId) {
+  const [rows] = await pool.query(
+    'SELECT email_verified FROM users WHERE id = ? LIMIT 1',
+    [userId]
+  )
+  return rows.length > 0 && Boolean(rows[0].email_verified)
+}
 
 /**
  * POST /api/reports/send-weekly
@@ -14,6 +27,12 @@ async function sendWeeklyReport(req, res) {
     const userId = req.user && (req.user.id || req.user.userId)
     if (!userId) {
       return res.status(401).json({ message: 'No autenticado' })
+    }
+
+    if (!(await emailIsVerified(userId))) {
+      return res
+        .status(403)
+        .json({ message: NOT_VERIFIED_MSG, code: 'EMAIL_NOT_VERIFIED' })
     }
 
     const report = await buildUserReport(userId, 'weekly')
@@ -48,6 +67,12 @@ async function sendMonthlyReport(req, res) {
     const userId = req.user && (req.user.id || req.user.userId)
     if (!userId) {
       return res.status(401).json({ message: 'No autenticado' })
+    }
+
+    if (!(await emailIsVerified(userId))) {
+      return res
+        .status(403)
+        .json({ message: NOT_VERIFIED_MSG, code: 'EMAIL_NOT_VERIFIED' })
     }
 
     const report = await buildUserReport(userId, 'monthly')
