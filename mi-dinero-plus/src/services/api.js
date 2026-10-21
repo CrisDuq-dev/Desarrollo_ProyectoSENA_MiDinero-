@@ -123,14 +123,6 @@ async function request(
 // AUTH
 // =====================
 
-export async function registerUser({ full_name, email, password }) {
-  return request('/auth/register', {
-    method: 'POST',
-    auth: false,
-    body: { full_name, email, password },
-  })
-}
-
 export async function registerUser({ full_name, email, password, skipVerification = false }) {
   return request('/auth/register', {
     method: 'POST',
