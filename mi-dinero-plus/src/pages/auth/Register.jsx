@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import GoogleSetupModal from '../../components/auth/GoogleSetupModal'
-import CursorGlow from '../../components/ui/CursorGlow'
+import CursorGlow from '../../components/ui/CursorGlow' // *test*
 import PiggyLoader from '../../components/ui/PiggyLoader'
 import { saveGoogleSetupPending } from '../../utils/googleSetupStorage'
 import {
@@ -204,7 +204,7 @@ function Register() {
 
       <div className="register-shell">
         <section className="register-hero reg-anim" aria-label="Bienvenida" style={{ animationDelay: "0.05s" }}>
-          <CursorGlow scope="parent" size={520} color="219, 234, 254" opacity={0.32} />
+          <CursorGlow scope="parent" size={520} color="219, 234, 254" opacity={0.32} /> //*test*
           <span className="sim-badge reg-anim" style={{ animationDelay: "0.08s" }}>SIMULACIÓN EDUCATIVA</span>
 
           <div className="hero-main reg-anim" style={{ animationDelay: "0.12s" }}>
