@@ -131,11 +131,16 @@ export async function registerUser({ full_name, email, password }) {
   })
 }
 
-export async function loginUser({ email, password }) {
-  return request('/auth/login', {
+export async function registerUser({ full_name, email, password, skipVerification = false }) {
+  return request('/auth/register', {
     method: 'POST',
     auth: false,
-    body: { email, password },
+    body: {
+      full_name,
+      email,
+      password,
+      ...(skipVerification ? { skipVerification: true } : {}),
+    },
   })
 }
 

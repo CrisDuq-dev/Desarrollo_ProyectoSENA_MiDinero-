@@ -213,8 +213,8 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const register = async (full_name, email, password) => {
-    return await registerUser({ full_name, email, password })
+    const register = async (full_name, email, password, { skipVerification = false } = {}) => {
+    return await registerUser({ full_name, email, password, skipVerification })
   }
 
   const logout = async () => {

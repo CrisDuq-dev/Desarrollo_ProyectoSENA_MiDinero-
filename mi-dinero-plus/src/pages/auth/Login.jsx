@@ -14,6 +14,7 @@ import {
   FiChevronRight,
 } from 'react-icons/fi'
 import GoogleSetupModal from '../../components/auth/GoogleSetupModal'
+import PiggyWalker from '../../components/ui/PiggyWalker'
 import { saveGoogleSetupPending } from '../../utils/googleSetupStorage'
 import {
   loadSavedAccounts,
@@ -376,6 +377,7 @@ function Login() {
 
   return (
     <div className={`login-page ${theme}`}>
+      <PiggyWalker />
       <div className="login-shell">
         <div className="login-card anim-fade-up">
           <header className="login-brand">
@@ -815,6 +817,7 @@ function Login() {
 
         .login-shell {
           position: relative;
+          z-index: 1;
           width: 100%;
           max-width: 420px;
         }

@@ -1,9 +1,9 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import GoogleSetupModal from '../../components/auth/GoogleSetupModal'
-import CursorGlow from '../../components/ui/Cursorglow'
+import CursorGlow from '../../components/ui/CursorGlow'
 import PiggyLoader from '../../components/ui/PiggyLoader'
 import { saveGoogleSetupPending } from '../../utils/googleSetupStorage'
 import {
@@ -134,6 +134,8 @@ function Register() {
   const [showPass, setShowPass] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [enviado, setEnviado] = useState(false)
+  const [sinVerificar, setSinVerificar] = useState(false)
+  const [creadaSinVerificar, setCreadaSinVerificar] = useState(false)
   const [submitting, setSubmitting] = useState(false) // solo mientras se envía el formulario (no el loading general)
   const [error, setError] = useState('')
   const [errorKey, setErrorKey] = useState(0)
@@ -162,7 +164,8 @@ function Register() {
 
     setSubmitting(true)
     try {
-      await register(fullName, correo, password)
+      await register(fullName, correo, password, { skipVerification: sinVerificar })
+      setCreadaSinVerificar(sinVerificar)
       setEnviado(true)
       setError('')
     } catch (err) {
@@ -251,7 +254,7 @@ function Register() {
           </div>
         </section>
 
-        <section className="register-form-panel reg-anim" aria-label="Registro" style={{ animationDelay: "0.18s" }}>
+        <section className={`register-form-panel reg-anim${sinVerificar ? ' is-incognito' : ''}`} aria-label="Registro" style={{ animationDelay: "0.18s" }}>
           {submitting && (
             <div className="register-loading">
               <PiggyLoader />
@@ -261,6 +264,17 @@ function Register() {
             <h2>Crea tu cuenta</h2>
             <p>Completa la información para comenzar tu experiencia en Mi Dinero+.</p>
           </header>
+
+          <div className={`incognito-banner${sinVerificar && !enviado ? ' is-on' : ''}`}>
+            <div className="incognito-banner-inner">
+              <FiEyeOff size={20} />
+              <p>
+                <strong>Modo sin verificar correo.</strong> No enviaremos ningún
+                correo: tu cuenta se crea al instante y entras con este correo y
+                contraseña. Sin verificar no recibirás reportes por correo.
+              </p>
+            </div>
+          </div>
 
           {!enviado ? (
             <form onSubmit={manejarEnvio} noValidate className="register-form">
@@ -371,12 +385,23 @@ function Register() {
                 className={`submit-btn${loading ? ' is-loading' : ''}`}
                 disabled={loading}
               >
-                {loading ? 'Registrando…' : 'Crear cuenta'}
+                {loading ? 'Registrando…' : sinVerificar ? 'Crear cuenta sin verificar' : 'Crear cuenta'}
               </button>
 
               <div className="auth-divider">
                 <span>o</span>
               </div>
+
+              <button
+                type="button"
+                className={`btn-incognito${sinVerificar ? ' is-active' : ''}`}
+                onClick={() => setSinVerificar((v) => !v)}
+                aria-pressed={sinVerificar}
+                disabled={loading}
+              >
+                <FiEyeOff size={18} />
+                {sinVerificar ? 'Volver al registro normal' : 'Crear cuenta sin verificar correo'}
+              </button>
 
               <button
                 type="button"
@@ -397,14 +422,24 @@ function Register() {
               <div className="success-icon">
                 <FiCheckCircle size={36} />
               </div>
-              <h3>Registro exitoso</h3>
-              <p>
-                Tu cuenta fue creada. Revisa tu correo y haz clic en el enlace
-                de verificación antes de iniciar sesión.
-              </p>
-              <p className="field-hint" style={{ marginTop: '0.35rem' }}>
-                Si no lo ves, revisa la carpeta de spam.
-              </p>
+              <h3>{creadaSinVerificar ? 'Cuenta creada' : 'Registro exitoso'}</h3>
+              {creadaSinVerificar ? (
+                <p>
+                  Tu cuenta quedó creada <strong>sin verificar el correo</strong>.
+                  Ya puedes iniciar sesión con el correo y la contraseña que
+                  acabas de registrar.
+                </p>
+              ) : (
+                <>
+                  <p>
+                    Tu cuenta fue creada. Revisa tu correo y haz clic en el enlace
+                    de verificación antes de iniciar sesión.
+                  </p>
+                  <p className="field-hint" style={{ marginTop: '0.35rem' }}>
+                    Si no lo ves, revisa la carpeta de spam.
+                  </p>
+                </>
+              )}
               <Link to="/login" className="submit-btn">
                 Ir a iniciar sesión
               </Link>
@@ -1200,6 +1235,81 @@ function Register() {
             transform: none;
             transition: none;
           }
+        }
+
+        /* ---- Modo "sin verificar correo" (estilo incógnito) ---- */
+        .register-form-panel {
+          transition: background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
+        }
+        .register-form-panel.is-incognito {
+          background: linear-gradient(160deg, #1a1030 0%, #261447 55%, #1b0f33 100%);
+          border: 1px dashed #8b5cf6;
+          box-shadow: 0 20px 56px rgba(124, 58, 237, 0.35), inset 0 0 0 1px rgba(167, 139, 250, 0.12);
+          --surface: #1a1030;
+          --text: #f5f3ff;
+          --muted: #c4b5fd;
+          --border: #4c3a7a;
+          --input-bg: #140a28;
+          --green: #7c3aed;
+        }
+        .incognito-banner {
+          max-height: 0;
+          opacity: 0;
+          overflow: hidden;
+          margin: 0;
+          transition: max-height 0.45s ease, opacity 0.35s ease, margin 0.45s ease;
+        }
+        .incognito-banner.is-on {
+          max-height: 220px;
+          opacity: 1;
+          margin: 0 0 1rem;
+        }
+        .incognito-banner-inner {
+          display: flex;
+          gap: 0.7rem;
+          align-items: flex-start;
+          padding: 0.75rem 0.9rem;
+          border-radius: 0.9rem;
+          background: rgba(139, 92, 246, 0.16);
+          border: 1px solid rgba(167, 139, 250, 0.45);
+          color: #ede9fe;
+          font-size: 0.84rem;
+          line-height: 1.4;
+        }
+        .incognito-banner-inner svg {
+          flex: none;
+          margin-top: 0.1rem;
+        }
+        .incognito-banner-inner p {
+          margin: 0;
+        }
+        .btn-incognito {
+          width: 100%;
+          padding: 0.85rem 1rem;
+          border-radius: 999px;
+          border: 1px dashed #8b5cf6;
+          background: rgba(124, 58, 237, 0.08);
+          color: #7c3aed;
+          font: inherit;
+          font-weight: 800;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.55rem;
+          box-sizing: border-box;
+          transition: background 0.25s ease, color 0.25s ease, transform 0.15s ease;
+        }
+        .btn-incognito:hover:not(:disabled) {
+          background: rgba(124, 58, 237, 0.16);
+          transform: translateY(-1px);
+        }
+        .register-page.dark .btn-incognito,
+        .register-form-panel.is-incognito .btn-incognito {
+          color: #ddd6fe;
+        }
+        .register-form-panel.is-incognito .btn-incognito {
+          background: rgba(139, 92, 246, 0.22);
         }
 
       `}</style>
