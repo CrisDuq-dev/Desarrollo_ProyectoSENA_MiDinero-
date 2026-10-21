@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import "./Cursorglow.css";
+import "./CursorGlow.css";
 
 export default function CursorGlow({
   scope = 'parent',
