@@ -308,3 +308,97 @@
     display: none;
   }
 }
+
+/* =========================================
+   Rastro del cerdito: brillitos y billetes 
+   ========================================= */
+
+.pw-trail {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ---- Brillito dorado de 4 puntas ---- */
+.pw-spark {
+  position: absolute;
+  display: block;
+  background: radial-gradient(circle, #fffbe0 0%, #ffe37a 45%, #ffc83d 100%);
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+  filter: drop-shadow(0 0 3px rgba(255, 214, 92, 0.9));
+  opacity: 0;
+  animation: pwSpark 0.95s ease-out forwards;
+}
+
+@keyframes pwSpark {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0) rotate(0deg);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3)) scale(1.1) rotate(calc(var(--rot) * 0.4));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(0.2) rotate(var(--rot));
+  }
+}
+
+/* ---- Billete que cae y se queda un rato en el piso ---- */
+.pw-bill {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  border-radius: 3px;
+  border: 1.5px solid #2f7d4a;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.55) 0 18%, transparent 19%),
+    linear-gradient(135deg, #8fd9a8 0%, #5bbf7f 55%, #7fd39c 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.35),
+    0 2px 4px rgba(15, 23, 42, 0.25);
+  opacity: 0;
+  animation: pwBill 4.2s ease-out forwards;
+}
+
+.pw-bill::before {
+  content: '$';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 700 0.8em/1 system-ui, sans-serif;
+  font-size: 11px;
+  color: #2f7d4a;
+}
+
+@keyframes pwBill {
+  0% {
+    opacity: 0;
+    transform: translate(0, -10px) scale(0.4) rotate(0deg);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(0, -28px) scale(1) rotate(calc(var(--rot) * -0.5));
+    animation-timing-function: cubic-bezier(0.4, 0, 0.9, 0.6);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(var(--dx), var(--fall)) scale(1) rotate(var(--rot));
+  }
+  80% {
+    opacity: 1;
+    transform: translate(var(--dx), var(--fall)) scale(1) rotate(var(--rot));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--fall)) scale(0.95) rotate(var(--rot));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pw-trail {
+    display: none;
+  }
+}
