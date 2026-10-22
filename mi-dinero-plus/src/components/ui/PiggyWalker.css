@@ -147,6 +147,14 @@
   animation: pwWinkOnly 1.3s 1;
 }
 
+/* Corriendo (tramo por detrás de la tarjeta): pasitos más rápidos */
+.pw-walker[data-run] .pw-jump {
+  animation-duration: 0.26s;
+}
+.pw-walker[data-run] .pw-shadow {
+  animation-duration: 0.26s;
+}
+
 /* ---- Animaciones ---- */
 @keyframes pwStep {
   0%,

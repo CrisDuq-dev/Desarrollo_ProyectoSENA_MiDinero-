@@ -7,6 +7,8 @@ import billEdgeImg from '../../assets/mascot/billete-canto.webp'
 import './PiggyWalker.css'
 
 const SPEED = 70 // píxeles por segundo mientras camina
+const FAST_SPEED = 320 // píxeles por segundo cuando va por DETRÁS de la tarjeta (sale corriendo)
+const MIN_VISIBLE_FOR_ACTION = 0.6 // si se ve menos de esto, no se detiene a saltar ni a guiñar
 const PIG_RATIO = 0.9607 // alto / ancho del dibujo
 const TOSS_ONE_MS = 2800 // duración de UN "salto + moneda" (igual que el cerdito de carga)
 const TOSS_TIMES = 3 // cuántas veces repite el salto con la moneda seguidas
@@ -36,7 +38,8 @@ function makeImg(src, className) {
   return img
 }
 
-export default function PiggyWalker({ size }) {
+// avoidSelector: elemento que tapa al cerdito (la tarjeta del login). Pasa null para desactivarlo.
+export default function PiggyWalker({ size, avoidSelector = '.login-card' }) {
   const walkerRef = useRef(null)
   const trailRef = useRef(null) // capa DETRÁS del cerdito (billetes, monedas, brillitos al caminar)
   const fxRef = useRef(null) // capa DELANTE del cerdito (destellos de la moneda en el lomo)
@@ -219,21 +222,100 @@ export default function PiggyWalker({ size }) {
       coinFxTimer = null
     }
 
+    // ---------- La tarjeta que lo tapa ----------
+    const getCard = () => {
+      if (!avoidSelector) return null
+      const node = document.querySelector(avoidSelector)
+      if (!node) return null
+      const r = node.getBoundingClientRect()
+      if (r.width <= 0 || r.height <= 0) return null
+      const m = 8 // pequeño margen alrededor de la tarjeta
+      return { left: r.left - m, right: r.right + m, top: r.top - m, bottom: r.bottom + m }
+    }
+
+    // Qué fracción del cerdito (parado en x,y) queda a la vista (1 = se ve entero)
+    const visibleFraction = (x, y, card, b) => {
+      if (!card) return 1
+      const sc = scaleAt(y, b)
+      const w = pigW * sc
+      const h = pigH * sc
+      const left = x + pigW / 2 - w / 2
+      const top = y + pigH - h // la escala se ancla abajo al centro
+      const ox = Math.max(0, Math.min(left + w, card.right) - Math.max(left, card.left))
+      const oy = Math.max(0, Math.min(top + h, card.bottom) - Math.max(top, card.top))
+      return 1 - (ox * oy) / (w * h)
+    }
+
+    // Tramo [t0, t1] (de 0 a 1) del camino A→B en el que el cerdito queda detrás de la tarjeta
+    const hiddenRange = (ax, ay, bx, by, card) => {
+      if (!card) return null
+      const padX = pigW * 0.4
+      const padY = pigH * 0.4
+      const x0 = ax + pigW / 2
+      const y0 = ay + pigH / 2
+      const dx = bx - ax
+      const dy = by - ay
+      let t0 = 0
+      let t1 = 1
+      const clip = (pp, q) => {
+        if (pp === 0) return q >= 0
+        const r = q / pp
+        if (pp < 0) {
+          if (r > t1) return false
+          if (r > t0) t0 = r
+        } else {
+          if (r < t0) return false
+          if (r < t1) t1 = r
+        }
+        return true
+      }
+      const ok =
+        clip(-dx, x0 - (card.left - padX)) &&
+        clip(dx, card.right + padX - x0) &&
+        clip(-dy, y0 - (card.top - padY)) &&
+        clip(dy, card.bottom + padY - y0)
+      return ok && t1 > t0 ? [t0, t1] : null
+    }
+
+    // Recorre una lista de tramos, uno tras otro (cada uno con su velocidad)
+    const runSegments = (segs, i, done) => {
+      if (i >= segs.length) {
+        delete el.dataset.run
+        done()
+        return
+      }
+      const s = segs[i]
+      if (s.fast) el.dataset.run = '1'
+      else delete el.dataset.run
+      el.style.transition = `transform ${s.ms}ms linear`
+      el.style.transform = `translate3d(${s.x}px, ${s.y}px, 0) scale(${s.sc})`
+      pos.x = s.x
+      pos.y = s.y
+      later(() => runSegments(segs, i + 1, done), s.ms)
+    }
+
     // ---------- Recorrido ----------
     const step = () => {
       const b = bounds()
+      const card = getCard()
 
-      // Elige un destino lejos de donde está (al menos ~160 px)
-      let tx = 0
-      let ty = 0
-      for (let i = 0; i < 8; i += 1) {
-        tx = rand(0, b.maxX)
-        ty = rand(b.minY, b.maxY)
-        if (Math.hypot(tx - pos.x, ty - pos.y) >= 160) break
+      // Elige un destino lejos de donde está (≥ ~160 px) y, si se puede, FUERA de la tarjeta
+      let best = null
+      for (let i = 0; i < 14; i += 1) {
+        const cx = rand(0, b.maxX)
+        const cy = rand(b.minY, b.maxY)
+        if (Math.hypot(cx - pos.x, cy - pos.y) < 160) continue
+        const vf = visibleFraction(cx, cy, card, b)
+        if (!best || vf > best.vf) best = { x: cx, y: cy, vf }
+        if (vf >= 0.999) break
       }
-
-      const dist = Math.hypot(tx - pos.x, ty - pos.y)
-      const ms = Math.max(1400, (dist / SPEED) * 1000)
+      if (!best) {
+        const cx = rand(0, b.maxX)
+        const cy = rand(b.minY, b.maxY)
+        best = { x: cx, y: cy, vf: visibleFraction(cx, cy, card, b) }
+      }
+      const tx = best.x
+      const ty = best.y
 
       if (Math.abs(tx - pos.x) > 8) {
         facingRight = tx > pos.x
@@ -242,14 +324,35 @@ export default function PiggyWalker({ size }) {
       setMode('walk')
       startTrail()
 
-      el.style.transition = `transform ${ms}ms linear`
-      el.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scaleAt(ty, b)})`
-      pos.x = tx
-      pos.y = ty
+      // Si el camino pasa por detrás de la tarjeta, ese tramo lo hace corriendo
+      const ax = pos.x
+      const ay = pos.y
+      const hidden = hiddenRange(ax, ay, tx, ty, card)
+      const cuts = hidden ? [0, hidden[0], hidden[1], 1] : [0, 1]
+      const segs = []
+      for (let i = 0; i < cuts.length - 1; i += 1) {
+        const px = ax + (tx - ax) * cuts[i + 1]
+        const py = ay + (ty - ay) * cuts[i + 1]
+        const qx = ax + (tx - ax) * cuts[i]
+        const qy = ay + (ty - ay) * cuts[i]
+        const d = Math.hypot(px - qx, py - qy)
+        if (d < 2) continue
+        const fast = !!hidden && i === 1
+        let ms = (d / (fast ? FAST_SPEED : SPEED)) * 1000
+        if (!hidden) ms = Math.max(1400, ms)
+        segs.push({ x: px, y: py, sc: scaleAt(py, b), ms: Math.max(120, ms), fast })
+      }
+      if (!segs.length) segs.push({ x: tx, y: ty, sc: scaleAt(ty, b), ms: 400, fast: false })
 
-      // Al llegar: salta con la moneda (60 %) o guiña (40 %), y sigue caminando
-      later(() => {
+      runSegments(segs, 0, () => {
         stopTrail()
+        // Si quedó tapado por la tarjeta, no pierde tiempo saltando donde nadie lo ve
+        if (best.vf < MIN_VISIBLE_FOR_ACTION) {
+          setMode('idle')
+          later(step, rand(80, 220))
+          return
+        }
+        // Al llegar: salta con la moneda (60 %) o guiña (40 %), y sigue caminando
         const action = Math.random() < 0.6 ? 'toss' : 'wink'
         setMode(action)
         if (action === 'toss') startCoinFx()
@@ -261,7 +364,7 @@ export default function PiggyWalker({ size }) {
           },
           action === 'toss' ? TOSS_ONE_MS * TOSS_TIMES : WINK_MS
         )
-      }, ms)
+      })
     }
 
     // Arranca fuera de la pantalla, abajo a la izquierda, y entra caminando
@@ -279,7 +382,7 @@ export default function PiggyWalker({ size }) {
       stopTrail()
       stopCoinFx()
     }
-  }, [pigW])
+  }, [pigW, avoidSelector])
 
   return (
     <div className="pw-layer" aria-hidden="true">
