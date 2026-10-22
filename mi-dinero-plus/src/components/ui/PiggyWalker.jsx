@@ -1,16 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import pigImg from '../../assets/mascot/cerdito.webp'
 import coinImg from '../../assets/mascot/moneda.webp'
+import billFlatImg from '../../assets/mascot/billete-plano.webp'
+import billCurveImg from '../../assets/mascot/billete-curvo.webp'
+import billEdgeImg from '../../assets/mascot/billete-canto.webp'
 import './PiggyWalker.css'
 
 const SPEED = 70 // píxeles por segundo mientras camina
 const PIG_RATIO = 0.9607 // alto / ancho del dibujo
-const TOSS_MS = 2800 // duración de "salto + moneda" (igual que el cerdito de carga)
+const TOSS_ONE_MS = 2800 // duración de UN "salto + moneda" (igual que el cerdito de carga)
+const TOSS_TIMES = 3 // cuántas veces repite el salto con la moneda seguidas
 const WINK_MS = 1300
-const TRAIL_TICK_MS = 110 // cada cuánto suelta brillitos mientras camina
-const BILL_EVERY = 9 // 1 billete cada N ticks (~1 s)
-const BILL_OFFSET = 3 // en qué tick cae el primer billete
-const MAX_BILLS = 14 // máximo de billetes en pantalla a la vez
+
+// Rastro mientras camina (billetes y monedas que va dejando)
+const TRAIL_TICK_MS = 110 // cada cuánto suelta brillitos
+const DROP_EVERY = 9 // 1 billete/moneda cada N ticks (~1 s)
+const DROP_OFFSET = 3 // en qué tick cae el primero
+const MAX_DROPS = 14 // máximo de billetes/monedas en pantalla a la vez
+const COIN_FX_MS = 60 // cada cuánto revisa dónde va la moneda para soltar destellos
 
 const rand = (min, max) => min + Math.random() * (max - min)
 
@@ -20,9 +27,19 @@ function pickSize(size) {
   return window.innerWidth < 640 ? 116 : 170
 }
 
+function makeImg(src, className) {
+  const img = document.createElement('img')
+  img.src = src
+  img.alt = ''
+  img.draggable = false
+  img.className = className
+  return img
+}
+
 export default function PiggyWalker({ size }) {
   const walkerRef = useRef(null)
-  const trailRef = useRef(null)
+  const trailRef = useRef(null) // capa DETRÁS del cerdito (billetes, monedas, brillitos al caminar)
+  const fxRef = useRef(null) // capa DELANTE del cerdito (destellos de la moneda en el lomo)
   const [pigW] = useState(() => pickSize(size))
   const [mode, setMode] = useState('idle') // idle | walk | toss | wink
   const [faceRight, setFaceRight] = useState(false) // el dibujo original mira a la izquierda
@@ -60,53 +77,92 @@ export default function PiggyWalker({ size }) {
     let alive = true
     let timer = null
     let trailTimer = null
+    let coinFxTimer = null
     let facingRight = false
-    const bills = []
+    const drops = []
     const pos = { x: 0, y: 0 }
 
-    // ---- Rastro: brillitos + billetes detrás del cerdito ----
+    const later = (fn, ms) => {
+      timer = setTimeout(() => {
+        if (alive) fn()
+      }, ms)
+    }
+
+    // ---------- Brillito suelto (se centra en x,y) ----------
+    const addSpark = (layer, x, y, k, dx, dy, sizePx) => {
+      if (!layer) return
+      const s = sizePx * k
+      const spark = document.createElement('span')
+      spark.className = 'pw-spark'
+      spark.style.left = `${x - s / 2}px`
+      spark.style.top = `${y - s / 2}px`
+      spark.style.width = `${s}px`
+      spark.style.height = `${s}px`
+      spark.style.setProperty('--dx', `${dx}px`)
+      spark.style.setProperty('--dy', `${dy}px`)
+      spark.style.setProperty('--rot', `${rand(-90, 90)}deg`)
+      spark.addEventListener('animationend', () => spark.remove())
+      layer.appendChild(spark)
+    }
+
+    // ---------- Billete (cae aleteando) o moneda que se queda en el piso ----------
+    const spawnDrop = (layer, rearX, baseY, k) => {
+      const isCoin = Math.random() < 0.34
+      const w = (isCoin ? 26 : 56) * k
+      const h = (isCoin ? 26 : 38) * k
+
+      const drop = document.createElement('span')
+      drop.className = `pw-drop ${isCoin ? 'is-coin' : 'is-bill'}`
+      drop.style.left = `${rearX - w / 2}px`
+      drop.style.top = `${baseY - h / 2 - 6 * k}px`
+      drop.style.width = `${w}px`
+      drop.style.height = `${h}px`
+      drop.style.setProperty('--dx', `${rand(-18, 18)}px`)
+      drop.style.setProperty('--fall', `${rand(14, 28) * k}px`)
+      drop.style.setProperty('--rot', `${rand(-26, 26)}deg`)
+
+      if (isCoin) {
+        drop.appendChild(makeImg(coinImg, 'pw-drop-coin'))
+      } else {
+        // Tres poses del billete: de canto, plano y doblado. El CSS las alterna al caer.
+        if (Math.random() < 0.35) drop.classList.add('is-rest-curve')
+        drop.appendChild(makeImg(billEdgeImg, 'pw-f pw-f-edge'))
+        drop.appendChild(makeImg(billFlatImg, 'pw-f pw-f-flat'))
+        drop.appendChild(makeImg(billCurveImg, 'pw-f pw-f-curve'))
+      }
+
+      drop.addEventListener('animationend', (e) => {
+        if (e.target !== drop) return
+        drop.remove()
+        const i = drops.indexOf(drop)
+        if (i >= 0) drops.splice(i, 1)
+      })
+      layer.appendChild(drop)
+      drops.push(drop)
+      if (drops.length > MAX_DROPS) drops.shift().remove()
+    }
+
+    // ---------- Rastro al caminar ----------
     const spawnTrail = (tick) => {
-      const trail = trailRef.current
-      if (!trail) return
+      const layer = trailRef.current
+      if (!layer) return
       const r = el.getBoundingClientRect()
       const k = r.width / pigW // respeta la escala por profundidad
       const rearX = facingRight ? r.left + r.width * 0.12 : r.right - r.width * 0.12
       const baseY = r.bottom - r.height * 0.18
 
       for (let i = 0; i < 2; i += 1) {
-        const spark = document.createElement('span')
-        const s = rand(8, 15) * k
-        spark.className = 'pw-spark'
-        spark.style.left = `${rearX + rand(-16, 16) * k}px`
-        spark.style.top = `${baseY + rand(-30, 6) * k}px`
-        spark.style.width = `${s}px`
-        spark.style.height = `${s}px`
-        spark.style.setProperty('--dx', `${rand(-14, 14)}px`)
-        spark.style.setProperty('--dy', `${rand(-36, -12)}px`)
-        spark.style.setProperty('--rot', `${rand(-90, 90)}deg`)
-        spark.addEventListener('animationend', () => spark.remove())
-        trail.appendChild(spark)
+        addSpark(
+          layer,
+          rearX + rand(-16, 16) * k,
+          baseY + rand(-24, 0) * k,
+          k,
+          rand(-14, 14),
+          rand(-36, -12),
+          rand(8, 15)
+        )
       }
-
-      if (tick % BILL_EVERY === BILL_OFFSET) {
-        const bill = document.createElement('span')
-        bill.className = 'pw-bill'
-        bill.style.left = `${rearX - 19 * k}px`
-        bill.style.top = `${baseY - 6 * k}px`
-        bill.style.width = `${38 * k}px`
-        bill.style.height = `${20 * k}px`
-        bill.style.setProperty('--dx', `${rand(-16, 16)}px`)
-        bill.style.setProperty('--fall', `${rand(14, 26) * k}px`)
-        bill.style.setProperty('--rot', `${rand(-28, 28)}deg`)
-        bill.addEventListener('animationend', () => {
-          bill.remove()
-          const i = bills.indexOf(bill)
-          if (i >= 0) bills.splice(i, 1)
-        })
-        trail.appendChild(bill)
-        bills.push(bill)
-        if (bills.length > MAX_BILLS) bills.shift().remove()
-      }
+      if (tick % DROP_EVERY === DROP_OFFSET) spawnDrop(layer, rearX, baseY, k)
     }
 
     const startTrail = () => {
@@ -123,12 +179,47 @@ export default function PiggyWalker({ size }) {
       trailTimer = null
     }
 
-    const later = (fn, ms) => {
-      timer = setTimeout(() => {
-        if (alive) fn()
-      }, ms)
+    // ---------- Destellos de la moneda: al salir, durante el vuelo y al entrar ----------
+    const startCoinFx = () => {
+      const layer = fxRef.current
+      const coin = el.querySelector('.pw-coin')
+      const mask = el.querySelector('.pw-slot-mask')
+      if (!layer || !coin || !mask) return
+      clearInterval(coinFxTimer)
+      let wasOut = false
+
+      const burst = (x, y, k, n) => {
+        for (let i = 0; i < n; i += 1) {
+          const ang = rand(0, Math.PI * 2)
+          const dist = rand(16, 36) * k
+          addSpark(layer, x, y, k, Math.cos(ang) * dist, Math.sin(ang) * dist - 6, rand(9, 17))
+        }
+      }
+
+      coinFxTimer = setInterval(() => {
+        const c = coin.getBoundingClientRect()
+        const m = mask.getBoundingClientRect()
+        const k = el.getBoundingClientRect().width / pigW
+        const slotY = m.bottom // la ranura está en el borde inferior de la máscara
+        const cx = c.left + c.width / 2
+        const cy = c.top + c.height / 2
+        const out = cy < slotY - c.height * 0.15
+
+        if (out && !wasOut) burst(cx, slotY, k, 9) // la moneda sale de la ranura
+        if (!out && wasOut) burst(cx, slotY, k, 10) // la moneda vuelve a entrar
+        if (out) {
+          addSpark(layer, cx + rand(-10, 10) * k, cy + rand(-10, 10) * k, k, rand(-10, 10), rand(-18, -4), rand(8, 13))
+        }
+        wasOut = out
+      }, COIN_FX_MS)
     }
 
+    const stopCoinFx = () => {
+      clearInterval(coinFxTimer)
+      coinFxTimer = null
+    }
+
+    // ---------- Recorrido ----------
     const step = () => {
       const b = bounds()
 
@@ -161,12 +252,14 @@ export default function PiggyWalker({ size }) {
         stopTrail()
         const action = Math.random() < 0.6 ? 'toss' : 'wink'
         setMode(action)
+        if (action === 'toss') startCoinFx()
         later(
           () => {
+            stopCoinFx()
             setMode('idle')
             later(step, rand(300, 800))
           },
-          action === 'toss' ? TOSS_MS : WINK_MS
+          action === 'toss' ? TOSS_ONE_MS * TOSS_TIMES : WINK_MS
         )
       }, ms)
     }
@@ -184,6 +277,7 @@ export default function PiggyWalker({ size }) {
       alive = false
       clearTimeout(timer)
       stopTrail()
+      stopCoinFx()
     }
   }, [pigW])
 
@@ -193,7 +287,11 @@ export default function PiggyWalker({ size }) {
       <div
         ref={walkerRef}
         className={`pw-walker is-${mode}`}
-        style={{ '--pw-w': `${pigW}px`, '--pw-flip': faceRight ? -1 : 1 }}
+        style={{
+          '--pw-w': `${pigW}px`,
+          '--pw-flip': faceRight ? -1 : 1,
+          '--pw-toss-n': TOSS_TIMES,
+        }}
       >
         <div className="pw-flip">
           <div className="pw-shadow" />
@@ -210,6 +308,7 @@ export default function PiggyWalker({ size }) {
           </div>
         </div>
       </div>
+      <div ref={fxRef} className="pw-trail" />
     </div>
   )
 }
