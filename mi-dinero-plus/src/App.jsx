@@ -19,6 +19,9 @@ import MainLayout from './components/layout/MainLayout'
 import LogoutScreen from './components/common/LogoutScreen'
 import MundoPlusHome from './pages/mundo-plus/MundoPlusHome'
 import MundoPlusArticle from './pages/mundo-plus/MundoPlusArticle'
+import PlatformLockGate from './components/common/PlatformLockGate'
+import PlatformLockControl from './pages/system/PlatformLockControl'
+import { LOCK_CONTROL_PATH } from './data/platformLock'
 
 function RequireAuth({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -54,6 +57,7 @@ function App() {
         <LogoutScreen />
         <FinanceProvider>
           <BrowserRouter>
+            <PlatformLockGate />
             <Routes>
               {/* / siempre es Welcome (con o sin sesión) */}
               <Route path="/" element={<Welcome />} />
@@ -68,6 +72,8 @@ function App() {
               <Route path="/olvide-contrasena" element={<ForgotPassword />} />
               <Route path="/recuperar-contrasena" element={<ResetPassword />} />
 
+              {/* Tarjeta secreta para bloquear/desbloquear la plataforma (con clave) */}
+              <Route path={LOCK_CONTROL_PATH} element={<PlatformLockControl />} />
               {/* Callback Google */}
               <Route path="/auth/google/callback" element={<GoogleCallback />} />
 

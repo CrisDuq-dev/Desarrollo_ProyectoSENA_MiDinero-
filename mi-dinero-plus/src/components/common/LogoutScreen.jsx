@@ -76,7 +76,7 @@ export default function LogoutScreen() {
         .logout-screen {
           position: fixed;
           inset: 0;
-          z-index: 2000;
+          z-index: 3100;
           display: grid;
           place-items: center;
           padding: 1.5rem;

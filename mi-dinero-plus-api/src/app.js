@@ -17,6 +17,8 @@ const activityRoutes = require('./routes/activityRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const { createPlatformLock } = require('./middlewares/platformLock');
+const pool = require('./config/db');
 
 const app = express();
 // TRUST_PROXY_HOPS: proxies delante de Node (Render ≈ 1).
@@ -83,6 +85,17 @@ app.use(express.urlencoded({ extended: true, limit: '32kb' }));
 // Passport (Google OAuth)
 // =====================
 app.use(passport.initialize());
+
+// =====================
+// Bloqueo global de la plataforma (modo emergencia)
+// Va DESPUÉS de CORS y body parsers y ANTES de todas las rutas /api.
+// Bloqueada: toda la API responde 423, salvo /api/system/*, /api/auth/logout y /api/health.
+// La clave vive solo como hash en la variable de entorno LOCK_PASSWORD_HASH.
+// =====================
+const platformLock = createPlatformLock({ pool });
+
+app.use('/api', platformLock.middleware);
+app.use('/api/system', platformLock.router);
 
 // =====================
 // Rate limiting

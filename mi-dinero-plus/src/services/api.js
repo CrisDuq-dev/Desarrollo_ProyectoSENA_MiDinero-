@@ -96,6 +96,9 @@ async function request(
 
   const data = await parseBody(response)
 
+  //Admin locked platform: lock screen is displayed instantly
+  if (response.status === 423) window.dispatchEvent(new Event('platform:locked'))
+
   if (
     response.status === 401 &&
     !_retried &&
