@@ -359,20 +359,13 @@ function Login() {
     }
   }
 
-  const pegarCredenciales = async () => {
+  const pegarCredenciales = () => {
     setCorreo(ADMIN_USER)
     setPassword(ADMIN_PASS)
     setErrores({})
     setInfo('Credenciales cargadas. Pulsa: Iniciar sesión.')
-    try {
-      await navigator.clipboard.writeText(
-        `Usuario: ${ADMIN_USER}\nContraseña: ${ADMIN_PASS}`
-      )
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // Clipboard no disponible; el formulario ya tiene las credenciales
-    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -760,11 +753,15 @@ function Login() {
                 <p className="dev-gate-title">// credentials_unlocked</p>
                 <div className="dev-cred-row">
                   <span className="dev-cred-label">user</span>
-                  <code className="dev-cred-value">{ADMIN_USER}</code>
+                  <code className="dev-cred-value dev-cred-value--masked" aria-hidden="true">
+                    {'•'.repeat(ADMIN_USER.length)}
+                  </code>
                 </div>
                 <div className="dev-cred-row">
                   <span className="dev-cred-label">pass</span>
-                  <code className="dev-cred-value">{ADMIN_PASS}</code>
+                  <code className="dev-cred-value dev-cred-value--masked" aria-hidden="true">
+                    {'•'.repeat(ADMIN_PASS.length)}
+                  </code>
                 </div>
                 <button
                   type="button"
