@@ -1237,6 +1237,91 @@ function Register() {
           }
         }
 
+                /* ---------- Mobile and tablet: single column ---------- */
+        @media (max-width: 900px) {
+          .register-page {
+            padding: 1rem 0.75rem;
+            overflow-x: hidden;
+          }
+          .register-shell {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.9rem;
+          }
+          .register-hero {
+            min-height: 0;
+            padding: 1.2rem 1rem 1.05rem;
+            border-radius: 1.25rem;
+          }
+          .register-form-panel {
+            padding: 1.4rem 1.15rem;
+            border-radius: 1.25rem;
+          }
+        }
+
+        @media (max-width: 560px) {
+          .sim-badge {
+            margin-bottom: 0.7rem;
+          }
+          .hero-main {
+            gap: 0.55rem;
+            margin-bottom: 0.85rem;
+          }
+          .hero-logo {
+            width: 62px;
+            height: 62px;
+            padding: 8px;
+            border-radius: 0.95rem;
+          }
+          .hero-brand {
+            font-size: 2rem;
+            margin-top: 0.1rem;
+          }
+          .hero-subbrand {
+            font-size: 0.8rem;
+          }
+          .hero-kicker {
+            font-size: 0.62rem;
+            margin-bottom: 0.3rem;
+          }
+          .hero-copy h1 {
+            font-size: 1.15rem;
+            line-height: 1.25;
+          }
+          .hero-benefits {
+            gap: 0.5rem;
+          }
+          .benefit-item {
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.6rem 0.5rem 0.85rem;
+            border-radius: 0.8rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.16);
+          }
+          .benefit-item:hover {
+            transform: none;
+          }
+          .benefit-icon {
+            width: 1.85rem;
+            height: 1.85rem;
+            border-radius: 0.6rem;
+            box-shadow: none;
+          }
+          .benefit-icon svg {
+            width: 15px;
+            height: 15px;
+          }
+          .benefit-label {
+            font-size: 0.76rem;
+          }
+          .benefit-desc {
+            display: none;
+          }
+
+          .register-form input {
+            font-size: 1rem;
+          }
+        }
+
         /* ---- Modo "sin verificar correo" (estilo incógnito) ---- */
         .register-form-panel {
           transition: background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease;
