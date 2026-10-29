@@ -865,6 +865,12 @@
   background: linear-gradient(135deg, #15803d, #16a34a);
   color: #fff;
   box-shadow: 0 8px 18px rgba(22, 163, 74, 0.28);
+ 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  text-align: center;
 }
 
 .profile-page .reports-actions .secondary-button:hover:not(:disabled) {
