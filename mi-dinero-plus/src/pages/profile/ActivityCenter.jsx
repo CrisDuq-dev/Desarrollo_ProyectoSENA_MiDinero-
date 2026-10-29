@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   FiActivity,
@@ -84,6 +84,56 @@ function useCountUp(target, duration = 1100) {
     return () => cancelAnimationFrame(raf)
   }, [target, duration])
   return value
+}
+
+const MAX_VISIBLE_ITEMS = 5 // máximo de actividades visibles por tarjeta; si hay más, aparece scroll
+
+/**
+ * Lista de actividades con altura limitada: muestra 5 y, si hay más, el usuario baja con scroll
+ * dentro de la misma tarjeta. Mide los 5 primeros ítems reales, así que funciona aunque
+ * cada actividad tenga una altura distinta.
+ */
+function LimitedList({ children }) {
+  const listRef = useRef(null)
+  const [maxHeight, setMaxHeight] = useState(null)
+
+  const measure = useCallback(() => {
+    const list = listRef.current
+    if (!list) return
+    const items = list.children
+    if (items.length <= MAX_VISIBLE_ITEMS) {
+      setMaxHeight(null)
+      return
+    }
+    const last = items[MAX_VISIBLE_ITEMS - 1]
+    const padBottom = parseFloat(getComputedStyle(list).paddingBottom) || 0
+    const next = Math.ceil(last.offsetTop + last.offsetHeight + padBottom)
+    setMaxHeight((prev) => (prev === next ? prev : next))
+  }, [])
+
+  // En cada render (cambia la lista, se marca una leída, etc.)
+  useLayoutEffect(() => {
+    measure()
+  })
+
+  // Al cambiar el ancho (el texto se reacomoda y los ítems cambian de alto)
+  useEffect(() => {
+    const list = listRef.current
+    if (!list || typeof ResizeObserver === 'undefined') return undefined
+    const observer = new ResizeObserver(() => measure())
+    observer.observe(list)
+    return () => observer.disconnect()
+  }, [measure])
+
+  return (
+    <ul
+      ref={listRef}
+      className={`column-list${maxHeight ? ' is-scroll' : ''}`}
+      style={maxHeight ? { maxHeight } : undefined}
+    >
+      {children}
+    </ul>
+  )
 }
 
 function ProgressBox({ progress }) {
@@ -244,7 +294,7 @@ function ActivityCenter() {
       )
     }
     return (
-      <ul className="column-list" key={animKey}>
+      <LimitedList key={animKey}>
         {list.map((n, i) => (
           <li
             key={n.id}
@@ -272,7 +322,7 @@ function ActivityCenter() {
             )}
           </li>
         ))}
-      </ul>
+      </LimitedList>
     )
   }
 
@@ -764,7 +814,7 @@ function ActivityCenter() {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 1.15rem;
-          align-items: start;
+          align-items: stretch; /* las 3 tarjetas siempre con la misma altura */
         }
 
         .activity-card {
@@ -905,10 +955,35 @@ function ActivityCenter() {
 
         .column-list {
           list-style: none;
-          margin: 0;
-          padding: 0;
+          position: relative; /* para medir los ítems con offsetTop */
+          box-sizing: border-box;
+          /* El padding deja espacio para la sombra/elevación de cada ítem; el margen negativo
+             lo compensa, así la lista queda exactamente donde estaba antes. */
+          margin: -6px -6px -8px;
+          padding: 6px 6px 8px;
           display: grid;
+          grid-template-columns: minmax(0, 1fr); /* el ítem nunca se ensancha más que la tarjeta */
           gap: 0.65rem;
+          overflow-x: hidden;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+        }
+        .column-list.is-scroll {
+          padding-right: 0.5rem; /* separa el scroll de las tarjetas */
+        }
+        .column-list::-webkit-scrollbar {
+          width: 6px;
+        }
+        .column-list::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .column-list::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.45);
+          border-radius: 999px;
+        }
+        .column-list::-webkit-scrollbar-thumb:hover {
+          background: rgba(148, 163, 184, 0.7);
         }
         .activity-item {
           --base: 0.5s; /* primera vez: espera a que su tarjeta aparezca */
@@ -967,8 +1042,9 @@ function ActivityCenter() {
 
         .activity-item .meta {
           display: flex;
+          flex-wrap: wrap; /* si la fecha no cabe junto al título, baja a la línea de abajo */
           justify-content: space-between;
-          gap: 0.75rem;
+          gap: 0.15rem 0.75rem;
           align-items: flex-start;
         }
         .activity-item strong {
